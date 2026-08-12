@@ -253,3 +253,39 @@ wrong stably fails (vs a one-off agent misstep). Then:
 | correct | 1.0 | 323 | 28,887 | 63 | 106 |
 | irrelevant | 1.0 | 289 | 33,364 | 79 | 126 |
 | wrong | **0.0** | 600(timeout) | 0(parse-fail) | ? | ? |
+
+## G1.2 T_B N=3 results (opaque IDs, valid, block-randomized, seed=42)
+
+| condition | solve_rate | reward | elapsed(s) | in_tok | tools |
+|---|---|---|---|---|---|
+| reset | 3/3 | 1±0 | 190±82 | 23,070±5,324 | 39±12 |
+| correct | 3/3 | 1±0 | 368±51 | 34,322±2,634 | 72±5 |
+| irrelevant | 3/3 | 1±0 | 546±77 | 20,384±15,255 | 73±18 |
+| **wrong** | **0/3** | **0±0** | 332±49 | 25,652±3,361 | 44±12 |
+
+(12 episodes, opaque ep_NNNNNN IDs, condition hidden from agent, prompt-distinctness
+preflight passed, failure taxonomy applied. 2 irrelevant episodes hit timeout but scored
+reward=1 — timeout_solved, counted as solved. cache_read/cache_creation tracked but omitted
+from this table for brevity; they're in results.csv.)
+
+### Go/No-Go verdict (per G1.1.5)
+
+- ✅ **Wrong worse: CONFIRMED.** wrong = 0/3 solve rate; the other three = 3/3. The agent
+  followed the "defer handshake" prior in all 3 wrong episodes → lazy start_tls → verifier
+  NeedHandshakeError. **Negative transfer is real and reproducible at N=3.**
+- ❌ **Correct better than Irrelevant/Reset: NOT confirmed.** correct solve rate = 3/3 (same
+  as reset and irrelevant). correct cost is actually *higher* than reset (368s/34k vs
+  190s/23k). No positive transfer detected on T_B.
+
+### T_B Causal Gate: PARTIAL pass
+Negative transfer (wrong fails) + no positive transfer (correct doesn't help). Per the
+review's decision rule, this is **not a full Causal Gate pass** (no demonstrated beneficial
+edge), but it IS a valid, reproducible negative-transfer finding. The beneficial-not-required
+edge the audit predicted is *not* confirmed on T_B — the contract in the code tree is easy
+enough to re-derive that a correct preamble adds cost (more context to process) without
+cutting re-derivation.
+
+**Decision: stop T_B (no more polishing). Move to T_C** (Update + stale-history), where the
+wrong prior directly contradicts a contract the agent must revise — expected stronger signal.
+The T_B negative-transfer result (wrong 0/3) stands as a finding; the no-positive-transfer is
+also a finding (T_B's edge is too weak to show benefit at this difficulty).
