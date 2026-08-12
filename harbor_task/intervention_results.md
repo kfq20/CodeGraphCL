@@ -213,3 +213,43 @@ The review found that the first 4-arm run was INVALID:
    Executable Gate (base-fail/gold-pass/near-miss via the hermetic verifier) stands.
 
 **All prior N=1 cost numbers are VOIDED.** Rerunning with the fixed harness.
+
+## G1.1 smoke rerun (fixed harness, N=1 each, prompt distinctness verified)
+
+| arm | reward | elapsed | in_tok | tools | turns | prefix_chars | prompt_sha (12) |
+|-----|--------|---------|--------|-------|-------|--------------|-----------------|
+| reset | 1.0 | 182s | 39,547 | 40 | 69 | 0 | 2524e3a065d8 |
+| correct | 1.0 | 323s | 28,887 | ? | ? | 568 | 55dcb512ef9a |
+| irrelevant | running | | | | | 444 | (distinct) |
+| wrong | pending | | | | | 516 | (distinct) |
+
+**Validity restored:** each non-reset arm's manifest shows non-empty prefix_chars (568/444/516)
+and a distinct prompt_sha256 vs reset. The extractor bug is fixed — these episodes actually
+received different prompts. (N=1 numbers are still smoke; N=3 block-randomized batch next.)
+
+### wrong smoke — first valid negative-transfer signal
+
+reward=**0**, elapsed=600s (timeout). The agent FOLLOWED the wrong prior ("defer handshake to
+first read/write; start_tls only wraps") — its trio.py comment literally says "intentionally
+lazy: we only wrap... leave the TLS handshake to happen implicitly on the first read or
+write." The verifier then called `cipher()` on the un-handshaken SSLStream →
+`trio.NeedHandshakeError: call do_handshake() before calling 'cipher'` → reward=0.
+
+This is the first VALID causal signal (prompt distinctness verified via manifest):
+- reset/correct/irrelevant: reward=1 (all solve it; the contract is in the code tree)
+- **wrong: reward=0** (the agent followed the wrong prior instead of reading the asyncio impl
+  that does eager `do_handshake()`)
+
+Per G1.1.5 Go/No-Go, this is the "Wrong worse" direction — but N=1. Needs N=3 to confirm
+wrong stably fails (vs a one-off agent misstep). Then:
+- if wrong reliably drops reward AND correct/irrelevant stay at 1 -> T_B passes Causal Gate
+  (negative transfer demonstrated; positive effect weak since correct≈irrelevant≈reset on
+  pass-rate, only wrong separates).
+
+### smoke summary (N=1, valid prompts)
+| arm | reward | elapsed | in_tok | tools | turns |
+|-----|--------|---------|--------|-------|-------|
+| reset | 1.0 | 182 | 39,547 | 40 | 69 |
+| correct | 1.0 | 323 | 28,887 | 63 | 106 |
+| irrelevant | 1.0 | 289 | 33,364 | 79 | 126 |
+| wrong | **0.0** | 600(timeout) | 0(parse-fail) | ? | ? |
