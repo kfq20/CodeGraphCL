@@ -1,0 +1,38 @@
+schema_version: 1
+edge_id: ripgrep_c3_to_c4
+from: ripgrep_c3
+to: ripgrep_c4
+edge_type: beneficial_update
+
+# c3 established: precise strip (avoid duplication AND over-strip, preserve boundaries).
+# c4 refines: the `.` directory + hidden-file scope (a `.`-dir is a degenerate prefix that
+# mangles hidden-file names). c3's rule is the CORRECT prior for c4 (refines forward);
+# c2's naive strip is STALE for c4 (two revisions back). This is the candidate beneficial edge.
+experience:
+  statement: >
+    When building the match-path for a parent ignore while searching a subdirectory, stripping
+    a common prefix off the search path must be done precisely — avoid both leaving a duplicate
+    directory component AND removing more than intended. Prefix elimination must preserve
+    path-component boundaries. The relative base, the absolute parent, and any leading `./` or
+    `/` each must be handled as distinct cases.
+  type: path_canonicalization_rule
+  scope: crates/ignore/src/dir.rs
+  provenance:
+    repository: ripgrep
+    commit: 14f4957b3d          # c3 (producer)
+  validity: valid_for_c4         # c3's rule transfers forward to c4
+
+conditions:
+  reset: null
+  correct: correct               # c3's precise strip rule (transfers to c4)
+  irrelevant: irrelevant
+  stale: wrong                    # c2's naive strip (stale, two revisions back)
+
+expected_effect:
+  correctness: possible           # c4's .-dir/hidden-file refinement is non-trivial
+  efficiency: possible
+  negative_transfer: possible
+
+status:
+  semantic_audit: passed
+  causal_verification: proposed   # c4 not yet materialized via unified CLI (Day4)

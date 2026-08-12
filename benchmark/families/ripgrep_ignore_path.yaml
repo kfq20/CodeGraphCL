@@ -1,0 +1,38 @@
+family_id: ripgrep_ignore_path
+repository: ripgrep
+
+# The ripgrep ignore-path family. Update chain c2 -> c3 -> c4.
+# c2: naive strip (avoid duplication). c3: precise strip (avoid over-strip too).
+# c4: .-dir/hidden-file scope refinement. c2->c3 = Stale/Update; c3->c4 = candidate
+# beneficial edge (c3 rule transfers forward; c2 is stale two-revisions-back).
+nodes:
+  - ripgrep_c2
+  - ripgrep_c3
+  - ripgrep_c4
+
+edges:
+  - ripgrep_c2_to_c3
+  - ripgrep_c3_to_c4
+
+structure:
+  type: update_chain
+  order:
+    - ripgrep_c2
+    - ripgrep_c3
+    - ripgrep_c4
+
+diagnostic_targets:
+  - target: ripgrep_c3
+    conditions:
+      - reset
+      - correct          # oracle-revision = c3's own revised rule
+      - irrelevant
+      - wrong            # stale-from-c2 (c2's naive strip)
+  - target: ripgrep_c4
+    conditions:
+      - reset
+      - correct          # correct-from-c3 (c3's precise strip)
+      - irrelevant
+      - wrong            # stale-from-c2
+
+rejection_log: []   # none rejected (unlike httpx); all three pass Separability Gate

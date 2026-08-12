@@ -1,0 +1,37 @@
+schema_version: 1
+edge_id: ripgrep_c2_to_c3
+from: ripgrep_c2
+to: ripgrep_c3
+edge_type: beneficial_update
+
+# c2 established: strip common prefix off search path to avoid dir duplication (c2-era ONLY,
+# no over-strip knowledge — that's c3's discovery). c3 revises: strip must be precise,
+# avoid both duplication AND over-strip, preserve component boundaries. c2's rule is STALE
+# for c3 — following it reproduces the bug c3 fixes (the 4 FAIL_TO_PASS tests).
+experience:
+  statement: >
+    When searching a subdirectory, the path passed to a parent ignore must be built by
+    taking the absolute base path and joining it with the search path. To avoid
+    accidentally duplicating directory components, strip any common prefix off the search
+    path before the join. This single strip is the established approach.
+  type: path_canonicalization_rule
+  scope: crates/ignore/src/dir.rs
+  provenance:
+    repository: ripgrep
+    commit: cad1f5fae2          # c2 (producer)
+  validity: stale_for_c3        # c3 found c2's strip over-strips
+
+conditions:
+  reset: null
+  correct: correct              # c3's revised rule (precise strip)
+  irrelevant: irrelevant
+  stale: wrong                   # c2's naive strip (stale for c3)
+
+expected_effect:
+  correctness: none              # pass-rate may saturate (contract in code tree)
+  efficiency: possible
+  negative_transfer: possible    # c2 naive strip may mislead (over-strip)
+
+status:
+  semantic_audit: passed
+  causal_verification: intervention_smoke   # N=1 via unified CLI pending

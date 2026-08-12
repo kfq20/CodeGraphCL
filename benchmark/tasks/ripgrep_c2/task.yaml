@@ -1,0 +1,42 @@
+schema_version: 1
+task_id: ripgrep_c2
+family_id: ripgrep_ignore_path
+
+repository:
+  url: https://github.com/BurntSushi/ripgrep
+  base_commit: 2198bd92fa    # cad1f5fae2^
+  gold_commit: cad1f5fae2
+  language: rust
+
+instruction:
+  path: instruction.md       # producer anchor; not an intervention target
+
+environment:
+  image: codegraphcl-ripgrep:rust
+  workdir: /workspace/repo
+  build_timeout_sec: 900
+
+patches:
+  gold: gold.patch
+
+verifier:
+  command: cargo test --test integration f1757
+  timeout_sec: 300
+  fail_to_pass: []
+  pass_to_pass: []
+  near_miss: []
+
+separability:
+  banned_words: banned_words.txt
+  checklist: separability.checklist.yaml
+
+status:
+  semantic_audit: passed
+  separability_gate: passed
+  executable_gate: pending      # producer anchor; materialize not required for the edge
+  intervention_preflight: pending
+
+notes: >
+  PRODUCER node (establishes the "strip common prefix to avoid dir duplication" rule).
+  Not an intervention target. Its role is to be the stale prior for c3, and the
+  even-staler prior for c4. c2-era knowledge ONLY — no over-strip (c3's discovery).
