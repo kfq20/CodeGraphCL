@@ -42,7 +42,7 @@ status:
   semantic_audit: passed
   separability_gate: passed      # 7/7 (instruction = symptom only; stale=c2 naive strip)
   executable_gate: passed      # core 3 gates VERIFIED via `codegraphcl materialize` (mat_c4_1); near-miss inject script TODO
-  intervention_preflight: pending
+  intervention_preflight: passed  # intervene N=1 reset reward=1 (timeout_solved)
 
 notes: >
   c3->c4 candidate beneficial edge. c4 refines c3's rule for the .-dir/hidden-file scope.

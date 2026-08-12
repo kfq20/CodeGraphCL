@@ -79,7 +79,7 @@ Container is discovered by image (docker inspect) or passed via `--container`.
 | edge | condition | reward | outcome | elapsed | via |
 |---|---|---|---|---|---|
 | httpx_tA_to_tB | reset | 1 | solved | 217s | `codegraphcl intervene` |
-| ripgrep_c3_to_c4 | reset | (running) | | | `codegraphcl intervene` |
+| ripgrep_c3_to_c4 | reset | 1 | timeout_solved | 600s | `codegraphcl intervene` |
 
 httpx_tB reset: agent implemented TrioBackend.start_tls, hermetic verifier (real TLS cipher +
 HTTP 200) → reward=1. The unified intervene pipeline works end-to-end (opaque ep id, manifest,
