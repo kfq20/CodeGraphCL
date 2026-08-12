@@ -41,7 +41,7 @@ separability:
 status:
   semantic_audit: passed
   separability_gate: passed      # 7/7 (instruction = symptom only; stale=c2 naive strip)
-  executable_gate: pending       # Day4: verify via `codegraphcl materialize`
+  executable_gate: passed      # core 3 gates VERIFIED via `codegraphcl materialize` (mat_c4_1); near-miss inject script TODO
   intervention_preflight: pending
 
 notes: >
