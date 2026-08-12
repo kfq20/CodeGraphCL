@@ -1,0 +1,78 @@
+From 14f4957b3d605f14ad58bc67e54197a3084fef5a Mon Sep 17 00:00:00 2001
+From: ChristopherYoung <joundanger@icloud.com>
+Date: Fri, 15 Nov 2024 18:40:27 +0800
+Subject: [PATCH] ignore: fix filtering searching subdir or .ignore in parent
+ dir
+
+The previous code deleted too many parts of the path when constructing
+the absolute path, resulting in a shortened final path. This patch
+creates the correct absolute path by only removing the necessary parts.
+
+Fixes #829, Fixes #2731, Fixes #2747, Fixes #2778, Fixes #2836, Fixes #2933, Fixes #3144
+Closes #2933
+---
+ crates/ignore/src/dir.rs | 41 +++++++++++++++++++++++++---------------
+ 1 file changed, 26 insertions(+), 15 deletions(-)
+
+diff --git a/crates/ignore/src/dir.rs b/crates/ignore/src/dir.rs
+index b302943..01ff8ec 100644
+--- a/crates/ignore/src/dir.rs
++++ b/crates/ignore/src/dir.rs
+@@ -461,21 +461,23 @@ impl Ignore {
+                 // off of `path`. Overall, this seems a little ham-fisted, but
+                 // it does fix a nasty bug. It should do fine until we overhaul
+                 // this crate.
+-                let dirpath = self.0.dir.as_path();
+-                let path_prefix = match strip_prefix("./", dirpath) {
+-                    None => dirpath,
+-                    Some(stripped_dot_slash) => stripped_dot_slash,
+-                };
+-                let path = match strip_prefix(path_prefix, path) {
+-                    None => abs_parent_path.join(path),
+-                    Some(p) => {
+-                        let p = match strip_prefix("/", p) {
+-                            None => p,
+-                            Some(p) => p,
+-                        };
+-                        abs_parent_path.join(p)
+-                    }
+-                };
++                let path = abs_parent_path.join(
++                    self.parents()
++                        .take_while(|ig| !ig.0.is_absolute_parent)
++                        .last()
++                        .map_or(path, |ig| {
++                            strip_if_is_prefix(
++                                "/",
++                                strip_if_is_prefix(
++                                    strip_if_is_prefix(
++                                        "./",
++                                        ig.0.dir.as_path(),
++                                    ),
++                                    path,
++                                ),
++                            )
++                        }),
++                );
+ 
+                 for ig in
+                     self.parents().skip_while(|ig| !ig.0.is_absolute_parent)
+@@ -874,6 +876,15 @@ fn resolve_git_commondir(
+     Ok(commondir_abs)
+ }
+ 
++/// Strips `prefix` from `path` if it's a prefix, otherwise returns `path`
++/// unchanged.
++fn strip_if_is_prefix<'a, P: AsRef<Path> + ?Sized>(
++    prefix: &'a P,
++    path: &'a Path,
++) -> &'a Path {
++    strip_prefix(prefix, path).map_or(path, |p| p)
++}
++
+ #[cfg(test)]
+ mod tests {
+     use std::{io::Write, path::Path};
+-- 
+2.34.1
+

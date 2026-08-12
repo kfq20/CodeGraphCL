@@ -92,7 +92,10 @@ def main():
 
     # S4: each atom cites a provenance sha (content audit is human, recorded in checklist)
     atom_full = atoms
-    sha_cites = re.findall(r"provenance[^0-9a-f]*([0-9a-f]{7,40})", atom_full, re.I)
+    # match "sha: <hex>" or "provenance: ... <hex>" anywhere; hex must be 7-40 chars
+    sha_cites = re.findall(r"(?:sha|provenance)[^a-f0-9\n]*([0-9a-f]{7,40})", atom_full, re.I)
+    # also catch inline "commit <hex>" / "commit: <hex>"
+    sha_cites += re.findall(r"commit[^a-f0-9\n]*([0-9a-f]{7,40})", atom_full, re.I)
     check("S4 atoms cite producer commit sha (automated part)",
           len(sha_cites) >= 1, f"found {len(sha_cites)} sha cites")
     # human checklist must exist + be filled (S3 semantic + S4 content + S5 reset)

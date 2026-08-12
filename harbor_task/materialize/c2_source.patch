@@ -1,0 +1,52 @@
+From cad1f5fae2e4b48d8942add9dc4c950a170b5d2e Mon Sep 17 00:00:00 2001
+From: Thilo Uttendorfer <tlo@sengaya.de>
+Date: Mon, 29 Aug 2022 22:32:29 +0200
+Subject: [PATCH] ignore: fix filtering when searching subdirectories
+
+When searching subdirectories the path was not correctly built and
+included duplicate parts. This fix will remove the duplicate part if
+possible.
+
+Fixes #1757, Closes #2295
+---
+ crates/ignore/src/dir.rs | 24 +++++++++++++++++++++++-
+ 1 file changed, 23 insertions(+), 1 deletion(-)
+
+diff --git a/crates/ignore/src/dir.rs b/crates/ignore/src/dir.rs
+index 2577665..c813eb0 100644
+--- a/crates/ignore/src/dir.rs
++++ b/crates/ignore/src/dir.rs
+@@ -442,7 +442,29 @@ impl Ignore {
+         }
+         if self.0.opts.parents {
+             if let Some(abs_parent_path) = self.absolute_base() {
+-                let path = abs_parent_path.join(path);
++                // What we want to do here is take the absolute base path of
++                // this directory and join it with the path we're searching.
++                // The main issue we want to avoid is accidentally duplicating
++                // directory components, so we try to strip any common prefix
++                // off of `path`. Overall, this seems a little ham-fisted, but
++                // it does fix a nasty bug. It should do fine until we overhaul
++                // this crate.
++                let dirpath = self.0.dir.as_path();
++                let path_prefix = match strip_prefix("./", dirpath) {
++                    None => dirpath,
++                    Some(stripped_dot_slash) => stripped_dot_slash,
++                };
++                let path = match strip_prefix(path_prefix, path) {
++                    None => abs_parent_path.join(path),
++                    Some(p) => {
++                        let p = match strip_prefix("/", p) {
++                            None => p,
++                            Some(p) => p,
++                        };
++                        abs_parent_path.join(p)
++                    }
++                };
++
+                 for ig in
+                     self.parents().skip_while(|ig| !ig.0.is_absolute_parent)
+                 {
+-- 
+2.34.1
+

@@ -1,25 +1,21 @@
 # CodeGraphCL ripgrep task image.
-# Rust toolchain pinned to the newest CI version across the 3 family commits
-# (c2=1.70, c3=1.85, c4=1.88). Rust is backwards-compatible, so 1.88 should compile all
-# three snapshots. If c2 (2022) breaks on 1.88, fall back to per-snapshot toolchain.
+# Rust toolchain pinned to 1.88 (newest CI version across c2=1.70, c3=1.85, c4=1.88; Rust
+# is backwards-compatible so 1.88 should compile all three snapshots).
 #
-# Same fuse-overlayfs pattern as the httpx image: NO node/claude here (agent runs on host);
-# this image only provides the Rust build+test env. CARGO_HOME is a volume so the registry
-# + build cache survive across episodes (first build ~5-10 min, subsequent <2 min).
+# NO apt layer — rust:1.88-slim already ships cargo/rustc/cc/gcc (verified). Adding apt was
+# making the build hang: deb.debian.org is nearly unreachable from this fuse-overlayfs host
+# (~85s per package, 100x slower than normal; builds died silently on apt timeout). ripgrep
+# default features need no OpenSSL/pkg-config, so we skip apt entirely. If a snapshot turns
+# out to need git (e.g. a git-path dep), add ONLY that package later.
+#
+# NO node/claude here (agent runs on host); this image only provides the Rust build+test env.
+# CARGO_HOME + target dir mounted at runtime so the registry + build cache persist across
+# episodes (first build ~5-10 min, subsequent <2 min).
 
 FROM rust:1.88-slim
 
-ENV DEBIAN_FRONTEND=noninteractive \
-    CARGO_TERM_COLOR=never \
-    CARGO_NET_GIT_FETCH_WITH_CLI=true
-
-RUN apt-get update && apt-get install -y --no-install-recommends \
-      bash ca-certificates curl git jq procps ripgrep pkg-config libssl-dev make \
-    && rm -rf /var/lib/apt/lists/*
-
-# CARGO_HOME + a target dir on a mounted volume so the build cache persists across episodes.
-# (mounted at runtime: -v cgcl_cargo:/usr/local/cargo -v cgcl_target:/pool/.target)
-ENV CARGO_HOME=/usr/local/cargo
+ENV CARGO_TERM_COLOR=never \
+    CARGO_NET_GIT_FETCH_WITH_CLI=false
 
 RUN mkdir -p /workspace
 WORKDIR /workspace
