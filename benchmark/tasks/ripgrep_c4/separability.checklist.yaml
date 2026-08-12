@@ -1,0 +1,24 @@
+schema_version: 1
+task_id: ripgrep_c4
+checks:
+  - id: S1_instruction_describes_symptom_only
+    question: "Does the instruction only describe the external symptom (whitelist hidden file not found) without naming the strip/path mechanism?"
+    answer: yes
+    evidence: "instruction states the symptom + repro + acceptance; no strip_prefix/over-strip/boundary words (symptom words like 'hidden file' are legitimate)"
+  - id: S2_correct_not_derivable
+    question: "Can the correct (c3 precise-strip) atom be derived from the instruction alone?"
+    answer: no
+    evidence: "instruction describes symptom; the precise-strip rule is in c3's atom, not the instruction"
+  - id: S3_stale_not_directly_negated
+    question: "Does the instruction directly negate the stale (c2 naive strip) atom?"
+    answer: no
+    evidence: "instruction is silent on strip mechanism; doesn't say 'don't strip naively'"
+  - id: S4_provenance_verified
+    question: "Do atoms cite producer commits with no future-knowledge leakage?"
+    answer: yes
+    evidence: "c2 atom = cad1f5fae2 (c2-era only); c3 atom = 14f4957b3d (c3-era, no .-scope knowledge)"
+  - id: S5_reset_non_saturating
+    question: "Is Reset solvable but non-trivial (the .-dir/hidden-file scope is subtle)?"
+    answer: yes
+    evidence: "the bug is real and non-trivial; reset agent must locate dir.rs path handling"
+edge_strength: beneficial_update

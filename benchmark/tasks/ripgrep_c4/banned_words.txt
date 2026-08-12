@@ -1,0 +1,11 @@
+# banned MECHANISM words for ripgrep_c4 — the solution principle the agent must derive.
+# NOTE: symptom words (hidden file, whitelist, `.`) are NOT banned — the instruction must
+# describe the external symptom. Only the path-handling mechanism is off-limits.
+strip_prefix
+over-strip
+take_while
+is_absolute_parent
+strip_if_is_prefix
+degenerate prefix
+path-component boundary
+relativize

@@ -1,0 +1,57 @@
+From 0407e104f611d623547897ca99d172673b31779f Mon Sep 17 00:00:00 2001
+From: Andrew Gallant <jamslam@gmail.com>
+Date: Wed, 8 Oct 2025 21:09:21 -0400
+Subject: [PATCH] ignore: fix problem with searching whitelisted hidden files
+
+... specifically, when the whitelist comes from a _parent_ gitignore
+file.
+
+Our handling of parent gitignores is pretty ham-fisted and has been a
+source of some unfortunate bugs. The problem is that we need to strip
+the parent path from the path we're searching in order to correctly
+apply the globs. But getting this stripping correct seems to be a subtle
+affair.
+
+Fixes #3173
+---
+ crates/ignore/src/dir.rs | 24 ++++++++++++++----------
+ 1 file changed, 14 insertions(+), 10 deletions(-)
+
+diff --git a/crates/ignore/src/dir.rs b/crates/ignore/src/dir.rs
+index be4a9a3..8c1434a 100644
+--- a/crates/ignore/src/dir.rs
++++ b/crates/ignore/src/dir.rs
+@@ -467,16 +467,20 @@ impl Ignore {
+                         .take_while(|ig| !ig.0.is_absolute_parent)
+                         .last()
+                         .map_or(path, |ig| {
+-                            strip_if_is_prefix(
+-                                "/",
+-                                strip_if_is_prefix(
+-                                    strip_if_is_prefix(
+-                                        "./",
+-                                        ig.0.dir.as_path(),
+-                                    ),
+-                                    path,
+-                                ),
+-                            )
++                            // This is a weird special case when ripgrep users
++                            // search with just a `.`, as some tools do
++                            // automatically (like consult). In this case, if
++                            // we don't bail out now, the code below will strip
++                            // a leading `.` from `path`, which might mangle
++                            // a hidden file name!
++                            if ig.0.dir.as_path() == Path::new(".") {
++                                return path;
++                            }
++                            let without_dot_slash =
++                                strip_if_is_prefix("./", ig.0.dir.as_path());
++                            let relative_base =
++                                strip_if_is_prefix(without_dot_slash, path);
++                            strip_if_is_prefix("/", relative_base)
+                         }),
+                 );
+ 
+-- 
+2.34.1
+

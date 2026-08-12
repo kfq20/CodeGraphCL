@@ -109,9 +109,14 @@ def cmd_prompt_preview(edge_yaml: str) -> int:
     ishas = {c: manifests[c]["instruction_sha256"] for c in conditions}
     if len(set(ishas.values())) != 1:
         print(f"FAIL: instruction hashes differ"); ok = False
-    # 4. condition name not in prompt text
+    # 4. condition name not in prompt text (whole-word match, not substring — 'correctly'
+    #    is not the condition 'correct')
+    import re as _re
     for c in conditions:
-        if c != "reset" and c in prompts[c].lower():
+        if c == "reset":
+            continue
+        # whole-word, case-insensitive
+        if _re.search(r'\b' + _re.escape(c) + r'\b', prompts[c], _re.IGNORECASE):
             print(f"FAIL: condition word '{c}' appears in prompt"); ok = False
     print(f"\nprompt-preview: {'PASS' if ok else 'FAIL'}")
     return 0 if ok else 1
@@ -164,10 +169,14 @@ def cmd_intervene(edge_yaml: str, n: int = 1, seed: int = 42, conditions: list[s
     for epid, cond, block in plan:
         print(f"--- {epid} (block {block}, cond={cond}) ---")
         rc = _run_episode(cfg, td, epid, cond, cname, pool_host)
-        # read the episode's agent_meta + reward
+        # read the episode's agent_meta + reward.
+        # reward.txt lives in work/.logs/verifier/ (HARBOR_LOGS_DIR=container_work/.logs)
         ep_host = pool_host / epid
         reward = "ERR"
-        rfile = ep_host / "logs" / "verifier" / "reward.txt"
+        rfile = ep_host / "work" / ".logs" / "verifier" / "reward.txt"
+        if not rfile.exists():
+            # fallback: also check ep_host/logs/verifier (older layout)
+            rfile = ep_host / "logs" / "verifier" / "reward.txt"
         if rfile.exists():
             reward = rfile.read_text().strip()
         meta = ep_host / "out" / "agent_meta.txt"

@@ -1,0 +1,51 @@
+schema_version: 1
+task_id: ripgrep_c4
+family_id: ripgrep_ignore_path
+
+repository:
+  url: https://github.com/BurntSushi/ripgrep
+  base_commit: bb88a1a       # = 0407e104f6^ ; rust-version 1.85 (compiles on 1.88)
+  gold_commit: 0407e104f6
+  language: rust
+
+instruction:
+  path: instruction.md
+
+environment:
+  image: codegraphcl-ripgrep:rust
+  dockerfile: harbor_task/environment/Dockerfile.ripgrep
+  workdir: /workspace/repo
+  build_timeout_sec: 900
+  extra_mounts:
+    cargo_cache: /tmp/cgcl_cargo_cache
+    target: /tmp/cgcl_target
+
+patches:
+  gold: gold.patch
+  verifier: verifier/c4_verifier.patch
+
+verifier:
+  command: bash verifier/test.sh
+  timeout_sec: 300
+  hermetic: false
+  fail_to_pass:
+    - regression::r3173_hidden_whitelist_only_dot
+  pass_to_pass: []
+  near_miss:
+    - near_miss/nearmiss_c4.py    # TODO: write (Day4)
+
+separability:
+  banned_words: banned_words.txt
+  checklist: separability.checklist.yaml
+
+status:
+  semantic_audit: passed
+  separability_gate: passed      # 7/7 (instruction = symptom only; stale=c2 naive strip)
+  executable_gate: pending       # Day4: verify via `codegraphcl materialize`
+  intervention_preflight: pending
+
+notes: >
+  c3->c4 candidate beneficial edge. c4 refines c3's rule for the .-dir/hidden-file scope.
+  Correct-from-c3 (precise strip) vs Stale-from-c2 (naive strip). The c2 atom is c2-era
+  ONLY (no over-strip); c3 atom = precise strip (no .-scope knowledge — that's c4's).
+  base-fail/gold-pass verified by hand earlier (r3173 fails on base, passes after c4 source).

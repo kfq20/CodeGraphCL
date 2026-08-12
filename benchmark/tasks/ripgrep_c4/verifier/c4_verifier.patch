@@ -1,0 +1,51 @@
+From 0407e104f611d623547897ca99d172673b31779f Mon Sep 17 00:00:00 2001
+From: Andrew Gallant <jamslam@gmail.com>
+Date: Wed, 8 Oct 2025 21:09:21 -0400
+Subject: [PATCH] ignore: fix problem with searching whitelisted hidden files
+
+... specifically, when the whitelist comes from a _parent_ gitignore
+file.
+
+Our handling of parent gitignores is pretty ham-fisted and has been a
+source of some unfortunate bugs. The problem is that we need to strip
+the parent path from the path we're searching in order to correctly
+apply the globs. But getting this stripping correct seems to be a subtle
+affair.
+
+Fixes #3173
+---
+ tests/regression.rs | 21 +++++++++++++++++++++
+ 1 file changed, 21 insertions(+)
+
+diff --git a/tests/regression.rs b/tests/regression.rs
+index 8dd1ba7..7f9818f 100644
+--- a/tests/regression.rs
++++ b/tests/regression.rs
+@@ -1586,3 +1586,24 @@ YYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYY\n   \
+         eqnice!("test\n", got);
+     }
+ );
++
++// See: https://github.com/BurntSushi/ripgrep/issues/3173
++rgtest!(r3173_hidden_whitelist_only_dot, |dir: Dir, _: TestCommand| {
++    dir.create_dir("subdir");
++    dir.create("subdir/.foo.txt", "text");
++    dir.create(".ignore", "!.foo.txt");
++
++    let cmd = || dir.command();
++    eqnice!(cmd().args(&["--files"]).stdout(), "subdir/.foo.txt\n");
++    eqnice!(cmd().args(&["--files", "."]).stdout(), "./subdir/.foo.txt\n");
++    eqnice!(cmd().args(&["--files", "./"]).stdout(), "./subdir/.foo.txt\n");
++
++    let cmd = || {
++        let mut cmd = dir.command();
++        cmd.current_dir(dir.path().join("subdir"));
++        cmd
++    };
++    eqnice!(cmd().args(&["--files"]).stdout(), ".foo.txt\n");
++    eqnice!(cmd().args(&["--files", "."]).stdout(), "./.foo.txt\n");
++    eqnice!(cmd().args(&["--files", "./"]).stdout(), "./.foo.txt\n");
++});
+-- 
+2.34.1
+
