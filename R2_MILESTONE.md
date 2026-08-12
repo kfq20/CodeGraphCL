@@ -8,9 +8,10 @@
 | Gate | Status | Evidence |
 |---|---|---|
 | **Candidate Supply Gate** (R1) | ✅ passed | 2469 co-change commits → 102 motif-grade segments across 5 repos |
-| **Semantic Dependency Gate** (R2 audit) | ✅ passed, 2 families | ripgrep `c2→c3→c4` (Update chain, c3's message explicitly revises c2's code); httpx `T_A→T_B→T_C` (Parity then Update) |
-| **Executable Task Gate** (R2 materialization) | ✅ passed for **httpx T_A** | base-fail / gold-pass / PASS_TO_PASS + near-miss all verified in Docker |
-| **Causal Dependency Gate** | ⏳ in progress | T_A intervention arms (reset/correct/irrelevant/wrong) running |
+| **Semantic Dependency Gate** (R2 audit) | ✅ passed, 2 families | ripgrep `c2→c3→c4` (Update chain); httpx `T_A→T_B→T_C` (Parity→Update). NOT Join (corrected). |
+| **Executable Task Gate** | ✅ passed for **T_A and T_B** | T_A: base-fail/gold-pass/near-miss via gold test. T_B: base-fail(NotImplementedError)/gold-pass(6/6 hermetic)/near-miss. PASS_TO_PASS now real (repo_dir bug fixed) but smoke pending fuse-sync. |
+| **Intervention Wiring** | ✅ fixed (G1.1+G1.2) | build_prompt.py + distinctness test; opaque episode IDs (no condition-name leakage); hermetic verifier; failure taxonomy. |
+| **Causal Dependency Gate** | ❌ not yet | First valid signal: T_B wrong arm reward=0 (agent followed "defer handshake" prior → NeedHandshakeError). N=1, pending opaque-ID N=3 to confirm. No positive-transfer shown (correct≈irrelevant≈reset on pass-rate). |
 
 **Honest headline:** we have gone from "102 metadata candidates" to **one node proven to be a
 behaviorally-reliable, executable task**, plus a running intervention harness. That is the

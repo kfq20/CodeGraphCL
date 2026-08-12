@@ -9,31 +9,34 @@
       "verifier_patch": "tA_verifier.patch",
       "test_selector": "tests/test_concurrency.py::test_start_tls_on_socket_stream",
       "experience_atom": "start_tls is a ConcurrencyBackend method, signature (stream, hostname, ssl_context, timeout) -> stream; wraps transport in SSL; stream reports a cipher afterward.",
-      "notes": "Creates tests/test_concurrency.py from scratch (new file). Base-fail = AsyncioBackend has no start_tls -> AttributeError."
+      "notes": "Anchor (no producer upstream). Instruction LEAKS the contract (signature + loop.start_tls hint + cipher behavior) -> cannot carry CL signal; all arms saturate. Executable Gate passed via gold regression test. Not used for causal inference."
     },
     {
       "id": "T_B",
-      "role": "target-fork",
-      "motif": "Fork",
+      "role": "target-parity",
+      "motif": "Parity (beneficial, not required)",
       "depends_on": ["T_A"],
       "sha": "38a136833f7c7f3a17f362b1223ef7cc7e38253d",
       "source_patch": "tB_source.patch",
-      "verifier_patch": "tB_verifier.patch",
-      "test_selector": "tests/test_concurrency.py::test_start_tls_on_socket_stream",
-      "experience_atom": "Every backend must implement start_tls with the same signature; test must be parametrized across backends to enforce parity.",
-      "notes": "T_B's verifier REWRITES test_start_tls_on_socket_stream into a parametrized cross-backend test. Base-fail = TrioBackend has no start_tls -> the Trio param case fails."
+      "verifier_patch": "hermetic (steps/tB_start_tls_trio/tests/verify.py)",
+      "experience_atom": "T_A's start_tls contract lives in the code tree (base.py abstract stub + asyncio.py impl), not the prompt. Reset can re-derive it by reading; Correct gets it directly. NOT Fork (T_B subsumes/revises T_A, not two independent targets). NOT 'test must be parametrized' (that was a test-shape requirement, dropped per review — verifier checks behavior not test layout).",
+      "notes": "The node with a real edge. Hermetic verifier (trio.run + stdlib TLS server) bypasses the broken uvicorn/pytest-trio fixture. Executable Gate: base-fail NotImplementedError, gold-pass 6/6, near-miss caught. Intervention atoms: see tB_experience_atoms.md (reset/correct/irrelevant/wrong). wrong = 'defer handshake to first read/write' conflicts with gold's eager do_handshake()."
     },
     {
       "id": "T_C",
-      "role": "target-update-join",
-      "motif": "Update/Join",
+      "role": "target-update",
+      "motif": "Update (Stale-history target)",
       "depends_on": ["T_A", "T_B"],
       "sha": "644e8fc5b6",
       "source_patch": "tC_source.patch",
       "verifier_patch": "tC_verifier.patch",
       "test_selector": "tests/test_concurrency.py::test_start_tls_on_socket_stream",
-      "experience_atom": "CONTRACT REVISED: start_tls moved onto the stream object and returns a NEW stream (not mutate-in-place). The T_A/T_B 'mutate in place' atom is now STALE for T_C.",
-      "notes": "Intentional behavior update — flag per TODO §3. base-fail is structural (old start_tls mutates; new test asserts new-stream return)."
+      "experience_atom": "CONTRACT REVISED: start_tls moved onto the stream object and returns a NEW stream (not mutate-in-place). The T_A/T_B 'mutate in place' atom is STALE for T_C -> this is the stale-history intervention target. NOT Join (T_A and T_B are a revision chain, not two independent combinable sources).",
+      "notes": "Strongest CL test: stale-history (feed T_A/T_B atom to T_C). Intentional contract revision — flag per TODO §3. Not yet materialized (next after T_B N=3)."
     }
-  ]
+  ],
+  "motif_corrections": {
+    "not_join": "Neither T_A->T_B nor T_A/T_B->T_C is Join. Join requires two non-includable, non-substitutable experience atoms jointly required by a target. Here T_B subsumes T_A; T_C revises the T_A/T_B contract. Corrected labels: httpx = Parity->Update->Stale; ripgrep = Update chain + Stale/Scoped-Negative.",
+    "edge_strength": "beneficial-not-required (T_B's base contains T_A's code; Reset can re-derive). Signal expected in cost + negative-transfer, not pass-rate (which saturates)."
+  }
 }

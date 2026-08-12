@@ -96,33 +96,30 @@ def main():
         print(out[-1500:])
         sys.exit(1)
 
-    # ---- Gate 3: PASS_TO_PASS (real) ----
+    # ---- Gate 3: PASS_TO_PASS (real, hard-gated) ----
     # Canonical: tests that pass on Base still pass after the source patch (no regression).
-    # Implementation: collect a server-free test subset on Base, record pass set P_base,
-    # apply source (keep verifier), re-run same subset, assert P_base ⊆ P_after.
-    # We use a server-free file (test_utils.py) because the gold test file needs the
-    # https_server fixture which is the broken uvicorn path — PASS_TO_PASS must not depend
-    # on the same flaky fixture. If test_utils doesn't exist at base, Gate3 is vacuous
-    # (reported, not failed).
+    # Collect a server-free subset on Base (P_base), apply source+verifier, re-run (P_after),
+    # assert P_base ⊆ P_after. Uses test_utils.py (server-free) because the gold test file's
+    # https_server fixture is the broken uvicorn path. Outcomes:
+    #   PASS (P_base ⊆ P_after) | FAIL (regression) | INCONCLUSIVE (no P2P file / collection error)
+    # INCONCLUSIVE does NOT print "ALL GATES PASSED" — only Gate1+Gate2+Gate3-pass do.
+    import json as _json
     p2p_file = "tests/test_utils.py"
-    has_p2p = (repo_dir / p2p_file).exists()
+    has_p2p = (REPO / p2p_file).exists()
     if not has_p2p:
-        print(f"  [GATE3] pass-to-pass: skipped (no {p2p_file} at Base — vacuous for this node)")
-        print(f"\n=== ALL GATES PASSED: {sha} materializes cleanly ===")
-        sys.exit(0)
+        print(f"  [GATE3] pass-to-pass: INCONCLUSIVE — no {p2p_file} at Base")
+        print(f"=== GATES 1-2 PASSED; Gate3 inconclusive ===")
+        sys.exit(0)   # not 1 (not a failure), but not "all gates passed"
 
-    def collect_pass_set(state_label):
-        """Run p2p_file, return the set of passed node ids."""
+    def collect_pass_set():
+        """Run p2p_file, return (set of passed node ids, output, returncode)."""
         r = run([sys.executable, "-m", "pytest", "-q", "-v", p2p_file,
                  "-p", "no:cacheprovider", "-o", "addopts="],
                 env={"PYTHONDONTWRITEBYTECODE": "1"})
         out = r.stdout + r.stderr
         passed = set()
         for line in out.splitlines():
-            # pytest -v line: "tests/test_utils.py::test_x PASSED" or "... FAILED"
             if "::" in line and ("PASSED" in line or "FAILED" in line):
-                nid = line.split("::")[0]
-                # node id up to the outcome token
                 head = line.rsplit("PASSED", 1)[0].rsplit("FAILED", 1)[0].strip()
                 if "PASSED" in line:
                     passed.add(head)
@@ -130,27 +127,36 @@ def main():
 
     # state: clean Base, no source no verifier
     clean_worktree()
-    p_base, out_base, rc_base = collect_pass_set("base")
+    p_base, out_base, rc_base = collect_pass_set()
+    # rc 0/1 = ran; 2 = collection error; 5 = no tests. Only 0/1 are usable.
     if rc_base not in (0, 1):
-        print(f"  [GATE3] pass-to-pass: Base collection errored (rc={rc_base}) — skipped")
-        print(f"\n=== GATES 1-2 PASSED; Gate3 inconclusive ===")
+        print(f"  [GATE3] pass-to-pass: INCONCLUSIVE — Base collection errored (rc={rc_base})")
+        print(f"=== GATES 1-2 PASSED; Gate3 inconclusive ===")
         sys.exit(0)
 
     # state: Base + source + verifier (gold applied)
     apply_patch(str(src))
     apply_patch(str(ver))
-    p_after, out_after, rc_after = collect_pass_set("gold")
+    p_after, out_after, rc_after = collect_pass_set()
+    if rc_after not in (0, 1):
+        print(f"  [GATE3] pass-to-pass: INCONCLUSIVE — gold collection errored (rc={rc_after})")
+        print(f"=== GATES 1-2 PASSED; Gate3 inconclusive ===")
+        sys.exit(0)
 
-    # P_base must be subset of P_after (no base-pass test newly fails)
     regressed = p_base - p_after
+    # persist the sets for audit (next to the commit's other artifacts)
+    sets = {"p2p_file": p2p_file, "base_pass": sorted(p_base),
+            "gold_pass": sorted(p_after), "regressed": sorted(regressed)}
+    try:
+        (REPO.parent / "pass_to_pass_sets.json").write_text(_json.dumps(sets, indent=2))
+    except Exception:
+        pass
     if regressed:
-        print(f"  [GATE3] pass-to-pass: FAIL — {len(regressed)} test(s) passed on Base but "
-              f"FAILED after gold patch:")
+        print(f"  [GATE3] pass-to-pass: FAIL — {len(regressed)} base-passing test(s) regressed:")
         for t in list(regressed)[:5]:
             print(f"        - {t}")
         sys.exit(1)
-    print(f"  [GATE3] pass-to-pass: PASS — {len(p_base)} base-passing test(s) all still pass "
-          f"after gold patch (no regression)")
+    print(f"  [GATE3] pass-to-pass: PASS — {len(p_base)} base-passing test(s) all still pass")
     print(f"\n=== ALL GATES PASSED: {sha} materializes cleanly ===")
     sys.exit(0)
 

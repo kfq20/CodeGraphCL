@@ -29,18 +29,25 @@ fi
 PROMPT=$(cat "$OUT/prompt.txt")
 
 export ANTHROPIC_BASE_URL="${ANTHROPIC_BASE_URL:-https://mintcn.macaron.xin}"
+# Model: actually pass to the CLI (not just record in manifest). CGCL_MODEL env selects the
+# checkpoint; default is the macaron venti endpoint's default model.
+CGCL_MODEL="${CGCL_MODEL:-}"
+MODEL_FLAG=""
+[ -n "$CGCL_MODEL" ] && MODEL_FLAG="--model $CGCL_MODEL"
+claude --version > "$OUT/cli_version.txt" 2>&1
 ALLOW="--allowedTools Read,Write,Edit,Bash,Glob,Grep,LS"
 START=$(date +%s)
 ( cd "$WORK" && timeout 600 claude -p "$PROMPT" \
-    --output-format stream-json --verbose $ALLOW \
+    --output-format stream-json --verbose $ALLOW $MODEL_FLAG \
     > "$OUT/agent.jsonl" 2> "$OUT/agent.stderr" )
 RC=$?
 END=$(date +%s); ELAPSED=$((END-START))
 echo "rc=$RC elapsed_sec=$ELAPSED condition=$CONDITION" > "$OUT/agent_meta.txt"
-# real usage is in the final 'result' event (macaron per-assistant usage is all zeros)
+# real usage is in the final 'result' event (macaron per-assistant usage is all zeros).
+# include cache_read + cache_creation (both are real cost).
 python3 - "$OUT/agent.jsonl" "$OUT/agent_meta.txt" <<'PY' 2>/dev/null || true
 import json,sys
-tools=turns=in_t=out_t=cache_read=0
+tools=turns=in_t=out_t=cache_read=cache_create=0
 for l in open(sys.argv[1]).read().splitlines():
     try: ev=json.loads(l)
     except: continue
@@ -53,7 +60,9 @@ for l in open(sys.argv[1]).read().splitlines():
         u=ev.get("usage",{}) or {}
         in_t=u.get("input_tokens",0); out_t=u.get("output_tokens",0)
         cache_read=u.get("cache_read_input_tokens",0)
+        cache_create=u.get("cache_creation_input_tokens",0)
 with open(sys.argv[2],"a") as f:
-    f.write(f"input_tokens={in_t}\noutput_tokens={out_t}\ncache_read_tokens={cache_read}\ntool_uses={tools}\nassistant_turns={turns}\n")
+    f.write(f"input_tokens={in_t}\noutput_tokens={out_t}\ncache_read_tokens={cache_read}\n"
+            f"cache_creation_tokens={cache_create}\ntool_uses={tools}\nassistant_turns={turns}\n")
 PY
 cat "$OUT/agent_meta.txt"
