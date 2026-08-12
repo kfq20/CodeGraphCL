@@ -289,3 +289,51 @@ cutting re-derivation.
 wrong prior directly contradicts a contract the agent must revise — expected stronger signal.
 The T_B negative-transfer result (wrong 0/3) stands as a finding; the no-positive-transfer is
 also a finding (T_B's edge is too weak to show benefit at this difficulty).
+
+## T_C N=3 results (opaque IDs, valid, seed=42)
+
+| condition | solve_rate | reward | elapsed(s) | in_tok | tools |
+|---|---|---|---|---|---|
+| reset | 3/3 | 1±0 | 502±73 | 23,623±17,762 | 73±14 |
+| correct | 3/3 | 1±0 | 491±64 | 37,820±2,116 | 65±8 |
+| irrelevant | 3/3 | 1±0 | 343±142 | 36,821±8,768 | 49±11 |
+| **wrong(stale)** | **3/3** | **1±0** | 568±33 | 38,086±330 | 63±19 |
+
+**Clean negative result: NO separation across all 4 arms.** The stale prior (T_A/T_B's
+"backend owns start_tls, mutate in place, return same") did NOT cause negative transfer on
+T_C — agent solved it 3/3, writing the correct `stream.start_tls` that returns a new stream.
+
+### Root cause: T_C instruction leaks the revision direction
+T_C's `instruction.md` opens with "Move start_tls from the backend to the stream objects...
+returns a new stream." That directly tells the agent to do the OPPOSITE of the stale prior.
+When instruction and stale prior conflict, the agent follows instruction. So the stale arm
+can never fail — the instruction hands it the revised contract. This is the SAME class of
+failure as T_A (instruction leaks the contract). The stale-history intervention is voided
+by instruction leakage.
+
+### Three-task causal summary (honest)
+
+| task | instruction design | intervention outcome |
+|---|---|---|
+| T_A | leaks full contract (signature + loop.start_tls hint + cipher behavior) | all arms saturate — untestable |
+| T_B | minimal (contract in code tree) | **wrong 0/3 (negative transfer real); correct no advantage** — partial |
+| T_C | leaks revision direction ("move to stream, return new") | all 3/3 — stale arm voided by instruction leak |
+
+**The httpx start_tls family cannot cleanly carry the CL causal signal.** All three nodes
+fail for instructive reasons: T_A/T_C leak the contract into the prompt (so experience is
+redundant), T_B is the only one that tested clean — and there only negative transfer
+showed, no positive transfer (the contract is too easy to re-derive from the tree, so a
+correct preamble adds cost without cutting re-derivation).
+
+This is a finding about task design, not a pipeline failure:
+- The harness is valid (opaque IDs, manifest, preflight, hermetic verifier, failure taxonomy).
+- The problem is task difficulty + instruction leakage: httpx's start_tls contract is too
+  legible in the code tree for "experience" to matter once instruction is written clearly
+  enough to be solvable.
+
+### Go/No-Go: T_B/T_C family RETARGET
+Per the decision rule, nothing separates on T_C -> the httpx start_tls family is too weak.
+Retarget to a task where the contract is NOT legible from a single read of the tree:
+- a harder revision where the new contract isn't obvious from instruction
+- or ripgrep's Update chain (c2->c3->c4) once Rust toolchain is available — there the
+  "experience" is a subtle path-canonicalization principle, not a self-announcing contract.
