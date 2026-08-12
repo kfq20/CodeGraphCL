@@ -45,7 +45,7 @@ status:
   semantic_audit: passed
   separability_gate: passed
   executable_gate: passed      # core 3 gates VERIFIED via `codegraphcl materialize` (mat_httpx_tB_v6); near-miss patch format TODO
-  intervention_preflight: pending  # NOT yet run via the unified CLI
+  intervention_preflight: passed  # intervene N=1 reset reward=1 (smoke); full 4-arm pending
 
 notes: >
   T_A -> T_B parity edge. T_A's start_tls contract lives in the code tree
