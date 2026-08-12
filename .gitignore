@@ -1,0 +1,17 @@
+# Cloned upstream repos — large, never tracked. Re-clone with mining/fetch_repos.sh
+repos/
+
+# Mining intermediate output (regenerable); keep reports/ tracked, ignore raw dumps
+mining/out/
+
+# Python
+__pycache__/
+*.pyc
+.venvs/
+
+# Episode run worktrees (created by run_episode.sh in /tmp, but if any land here, ignore)
+**/my_episode/
+**/work/
+
+# Editor / OS
+.DS_Store

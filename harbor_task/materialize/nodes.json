@@ -1,0 +1,39 @@
+{
+  "nodes": [
+    {
+      "id": "T_A",
+      "role": "producer-anchor",
+      "motif": "anchor",
+      "sha": "1872ae873bcf3dd168089902c6809e433e4bd89d",
+      "source_patch": "tA_source.patch",
+      "verifier_patch": "tA_verifier.patch",
+      "test_selector": "tests/test_concurrency.py::test_start_tls_on_socket_stream",
+      "experience_atom": "start_tls is a ConcurrencyBackend method, signature (stream, hostname, ssl_context, timeout) -> stream; wraps transport in SSL; stream reports a cipher afterward.",
+      "notes": "Creates tests/test_concurrency.py from scratch (new file). Base-fail = AsyncioBackend has no start_tls -> AttributeError."
+    },
+    {
+      "id": "T_B",
+      "role": "target-fork",
+      "motif": "Fork",
+      "depends_on": ["T_A"],
+      "sha": "38a136833f7c7f3a17f362b1223ef7cc7e38253d",
+      "source_patch": "tB_source.patch",
+      "verifier_patch": "tB_verifier.patch",
+      "test_selector": "tests/test_concurrency.py::test_start_tls_on_socket_stream",
+      "experience_atom": "Every backend must implement start_tls with the same signature; test must be parametrized across backends to enforce parity.",
+      "notes": "T_B's verifier REWRITES test_start_tls_on_socket_stream into a parametrized cross-backend test. Base-fail = TrioBackend has no start_tls -> the Trio param case fails."
+    },
+    {
+      "id": "T_C",
+      "role": "target-update-join",
+      "motif": "Update/Join",
+      "depends_on": ["T_A", "T_B"],
+      "sha": "644e8fc5b6",
+      "source_patch": "tC_source.patch",
+      "verifier_patch": "tC_verifier.patch",
+      "test_selector": "tests/test_concurrency.py::test_start_tls_on_socket_stream",
+      "experience_atom": "CONTRACT REVISED: start_tls moved onto the stream object and returns a NEW stream (not mutate-in-place). The T_A/T_B 'mutate in place' atom is now STALE for T_C.",
+      "notes": "Intentional behavior update — flag per TODO §3. base-fail is structural (old start_tls mutates; new test asserts new-stream return)."
+    }
+  ]
+}
