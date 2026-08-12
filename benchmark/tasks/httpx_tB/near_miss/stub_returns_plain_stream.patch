@@ -1,0 +1,14 @@
+diff --git a/httpx/concurrency/trio.py b/httpx/concurrency/trio.py
+--- a/httpx/concurrency/trio.py
++++ b/httpx/concurrency/trio.py
+@@
++    async def start_tls(
++        self,
++        stream,
++        hostname,
++        ssl_context,
++        timeout,
++    ):
++        # NEAR-MISS: correct signature, but does NOT upgrade to TLS — returns the
++        # plain stream. A behavioral verifier (real cipher after start_tls) must FAIL.
++        return stream

@@ -1,0 +1,87 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "CodeGraphCL Task",
+  "type": "object",
+  "required": [
+    "schema_version", "task_id", "family_id", "repository",
+    "instruction", "environment", "patches", "verifier", "separability", "status"
+  ],
+  "properties": {
+    "schema_version": {"type": "integer", "const": 1},
+    "task_id": {"type": "string", "pattern": "^[a-z][A-Za-z0-9_]*$"},
+    "family_id": {"type": "string"},
+
+    "repository": {
+      "type": "object",
+      "required": ["url", "base_commit", "gold_commit", "language"],
+      "properties": {
+        "url": {"type": "string"},
+        "base_commit": {"type": "string"},
+        "gold_commit": {"type": "string"},
+        "language": {"type": "string"}
+      }
+    },
+
+    "instruction": {
+      "type": "object",
+      "required": ["path"],
+      "properties": {"path": {"type": "string"}}
+    },
+
+    "environment": {
+      "type": "object",
+      "required": ["image", "workdir"],
+      "properties": {
+        "image": {"type": "string"},
+        "dockerfile": {"type": "string"},
+        "workdir": {"type": "string"},
+        "build_timeout_sec": {"type": "integer", "minimum": 1},
+        "extra_mounts": {"type": "object"}
+      }
+    },
+
+    "patches": {
+      "type": "object",
+      "required": ["gold"],
+      "properties": {
+        "gold": {"type": "string"},
+        "verifier": {"type": "string"}
+      }
+    },
+
+    "verifier": {
+      "type": "object",
+      "required": ["command", "timeout_sec"],
+      "properties": {
+        "command": {"type": "string"},
+        "timeout_sec": {"type": "integer", "minimum": 1},
+        "fail_to_pass": {"type": "array", "items": {"type": "string"}},
+        "pass_to_pass": {"type": "array", "items": {"type": "string"}},
+        "near_miss": {"type": "array", "items": {"type": "string"}},
+        "hermetic": {"type": "boolean", "default": false}
+      }
+    },
+
+    "separability": {
+      "type": "object",
+      "required": ["banned_words", "checklist"],
+      "properties": {
+        "banned_words": {"type": "string"},
+        "checklist": {"type": "string"}
+      }
+    },
+
+    "status": {
+      "type": "object",
+      "required": ["semantic_audit", "separability_gate", "executable_gate", "intervention_preflight"],
+      "properties": {
+        "semantic_audit": {"type": "string", "enum": ["passed", "pending", "failed"]},
+        "separability_gate": {"type": "string", "enum": ["passed", "pending", "failed"]},
+        "executable_gate": {"type": "string", "enum": ["passed", "pending", "failed"]},
+        "intervention_preflight": {"type": "string", "enum": ["passed", "pending", "failed"]}
+      }
+    },
+
+    "notes": {"type": "string"}
+  }
+}

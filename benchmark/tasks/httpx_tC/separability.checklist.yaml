@@ -1,0 +1,14 @@
+# Separability checklist for httpx_tC — FAILED (instruction leaks revision direction)
+schema_version: 1
+task_id: httpx_tC
+checks:
+  - id: S1_instruction_describes_symptom_only
+    question: "Does the instruction only describe the external symptom?"
+    answer: no   # LEAK: instruction states the revision ("Move start_tls from backend to stream")
+    evidence: "instruction.md Goal section: 'Move start_tls from the backend to the stream objects'"
+  - id: S5_stale_atom_not_directly_negated
+    question: "Does the instruction directly negate the stale (backend-owns) atom?"
+    answer: yes   # LEAK: instruction says move TO stream -> directly contradicts stale "belongs to backend"
+    evidence: "instruction's 'Move ... from the backend to the stream' negates the stale prior"
+verdict: failed   # instruction negates the stale prior -> S3 FAIL -> stale arm voided -> task rejected
+# N=3 confirmed: all 4 arms 3/3 (stale arm could not fail). Kept as evidence.

@@ -1,0 +1,49 @@
+schema_version: 1
+task_id: httpx_tC
+family_id: httpx_start_tls
+
+repository:
+  url: https://github.com/encode/httpx
+  base_commit: 644e8fc5b6^
+  gold_commit: 644e8fc5b6
+  language: python
+
+instruction:
+  path: instruction.md
+
+environment:
+  image: codegraphcl-httpx-2019:mat
+  dockerfile: harbor_task/environment/Dockerfile
+  workdir: /workspace/repo
+  build_timeout_sec: 900
+
+patches:
+  gold: gold.patch
+  verifier: verifier.patch
+
+verifier:
+  command: python3 -m pytest -q -p no:cacheprovider -o addopts= tests/test_concurrency.py::test_start_tls_on_socket_stream
+  timeout_sec: 300
+  hermetic: false
+  fail_to_pass: []
+  pass_to_pass: []
+  near_miss: []
+
+separability:
+  banned_words: banned_words.txt
+  checklist: separability.checklist.yaml
+
+status:
+  semantic_audit: passed
+  separability_gate: failed      # INSTRUCTION LEAKS the revision direction ("move to stream, return new")
+  executable_gate: passed         # base-fail/gold-pass/near-miss verified by hand (hermetic verify.py)
+  intervention_preflight: rejected  # N=3: all 4 arms 3/3 (stale arm voided by instruction leak)
+
+notes: >
+  Update node (T_B -> T_C revises the contract: backend.start_tls -> stream.start_tls, returns
+  new stream). REJECTED as a causal task: the instruction states the revision direction
+  ("Move start_tls from the backend to the stream objects... returns a new stream") which
+  directly negates the stale prior ("backend owns start_tls, mutate in place"). So the stale
+  arm can never fail — agent follows instruction, not the stale prior. N=3 showed 3/3 across
+  ALL arms (no separation). Kept as evidence; the second example of instruction-leakage
+  failure. The stale-history intervention is voided by instruction leakage.

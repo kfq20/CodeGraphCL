@@ -1,0 +1,5 @@
+# banned mechanism words for httpx_tC (instruction LEAKS the revision direction)
+move
+backend
+stream
+new stream

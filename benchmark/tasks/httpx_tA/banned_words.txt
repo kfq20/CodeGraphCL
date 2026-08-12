@@ -1,0 +1,4 @@
+# banned mechanism words for httpx_tA (these SHOULD be banned but the instruction LEAKS them)
+start_tls
+loop.start_tls
+cipher

@@ -1,0 +1,9 @@
+# Banned mechanism words for httpx_tB instruction (must NOT appear — they leak the contract).
+# These are implementation hints the agent should derive from the code tree, not be told.
+loop.start_tls
+ssl_context
+cipher
+do_handshake
+SSLContext
+TLS_AES
+wrap_socket

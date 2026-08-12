@@ -1,0 +1,48 @@
+schema_version: 1
+task_id: httpx_tA
+family_id: httpx_start_tls
+
+repository:
+  url: https://github.com/encode/httpx
+  base_commit: a4b93b9          # = 1872ae873b^
+  gold_commit: 1872ae873b
+  language: python
+
+instruction:
+  path: instruction.md
+
+environment:
+  image: codegraphcl-httpx-2019:mat
+  dockerfile: harbor_task/environment/Dockerfile
+  workdir: /workspace/repo
+  build_timeout_sec: 900
+
+patches:
+  gold: gold.patch
+  verifier: verifier.patch
+
+verifier:
+  command: python3 -m pytest -q -p no:cacheprovider -o addopts= tests/test_concurrency.py::test_start_tls_on_socket_stream
+  timeout_sec: 300
+  hermetic: false
+  fail_to_pass: []
+  pass_to_pass: []
+  near_miss: []
+
+separability:
+  banned_words: banned_words.txt
+  checklist: separability.checklist.yaml
+
+status:
+  semantic_audit: passed
+  separability_gate: failed      # INSTRUCTION LEAKS THE CONTRACT (signature + loop.start_tls hint + cipher behavior)
+  executable_gate: passed         # base-fail/gold-pass verified by hand earlier
+  intervention_preflight: rejected  # all arms saturate -> untestable
+
+notes: >
+  ANCHOR task (no producer upstream). REJECTED as a causal task: the instruction leaks the
+  full contract (the start_tls signature, the loop.start_tls hint, the cipher behavior) into
+  the prompt. So a Reset agent passes without any historical experience — the instruction
+  IS the experience. All four intervention arms saturate at reward=1. Kept as evidence of
+  the task-design failure that motivated the Instruction-Experience Separability Gate.
+  This node is NOT counted as an intervention-ready edge.

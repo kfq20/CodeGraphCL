@@ -1,0 +1,56 @@
+schema_version: 1
+task_id: httpx_tB
+family_id: httpx_start_tls
+
+repository:
+  url: https://github.com/encode/httpx
+  base_commit: e5d0ad2
+  gold_commit: 38a136833f
+  language: python
+
+instruction:
+  path: instruction.md
+
+environment:
+  image: codegraphcl-httpx-2019:mat
+  dockerfile: harbor_task/environment/Dockerfile
+  workdir: /workspace/repo
+  build_timeout_sec: 900
+  extra_mounts:
+    wheels: /tmp/cgcl_wheels
+
+patches:
+  gold: gold.patch
+  verifier: verifier/test.sh
+
+verifier:
+  command: bash verifier/test.sh
+  timeout_sec: 300
+  hermetic: true
+  fail_to_pass:
+    - TrioBackend.start_tls raises NotImplementedError on base
+    - real TLS cipher after start_tls
+    - HTTP 200 over upgraded stream
+  pass_to_pass: []
+  near_miss:
+    - near_miss/stub_returns_plain_stream.patch
+
+separability:
+  banned_words: banned_words.txt
+  checklist: separability.checklist.yaml
+
+status:
+  semantic_audit: passed
+  separability_gate: passed
+  executable_gate: pending      # verified by hand earlier; must re-verify via `codegraphcl materialize`
+  intervention_preflight: pending  # NOT yet run via the unified CLI
+
+notes: >
+  T_A -> T_B parity edge. T_A's start_tls contract lives in the code tree
+  (base.py abstract stub + asyncio.py impl), NOT in the prompt — a Reset agent
+  can re-derive it by reading. Edge is beneficial-not-required (signal expected
+  in cost + negative transfer, not pass-rate). Original N=3 result: negative
+  transfer verified (wrong arm reward=0), positive transfer not observed
+  (correct ~= irrelevant ~= reset on pass-rate). Edge status: partial /
+  diagnostic-only. Hermetic verifier (trio.run + stdlib TLS server) bypasses
+  the broken uvicorn/pytest-trio fixture.

@@ -1,0 +1,41 @@
+schema_version: 1
+edge_id: httpx_tA_to_tB
+from: httpx_tA
+to: httpx_tB
+edge_type: beneficial_parity
+
+# T_A established the start_tls contract on ConcurrencyBackend + asyncio impl. T_B propagates
+# it to the Trio backend. The contract lives in the code tree at T_B's base (base.py stub +
+# asyncio.py impl), so a Reset agent can re-derive it — beneficial, NOT required.
+experience:
+  statement: >
+    start_tls is a ConcurrencyBackend method, signature (stream, hostname, ssl_context,
+    timeout) -> stream; it wraps the transport in an SSL layer so the returned stream reports
+    a real cipher. Every concrete backend must provide it with the same signature and
+    observable behavior, so backends stay interchangeable.
+  type: interface_contract
+  scope: httpx/concurrency/{base,asyncio,trio}.py
+  provenance:
+    repository: httpx
+    commit: 1872ae873b            # T_A (producer)
+  validity: valid_for_tB
+
+conditions:
+  reset: null
+  correct: correct               # the real T_A contract (atom name in tasks/httpx_tB/atoms.md)
+  irrelevant: irrelevant         # length-matched unrelated project facts
+  stale: wrong                   # "defer handshake to first read/write" — conflicts with gold's eager do_handshake
+
+expected_effect:
+  correctness: none              # pass-rate saturates (contract is in the tree); not a required edge
+  efficiency: possible          # correct preamble may cut re-derivation cost
+  negative_transfer: possible   # wrong prior may mislead (defer-handshake -> NeedHandshakeError)
+
+status:
+  semantic_audit: passed
+  causal_verification: intervention_smoke   # N=3 run done (old runner): negative transfer verified, positive not observed
+  # prior N=3 result (voided-for-protocol, kept as evidence):
+  #   wrong 0/3 (reward=0, NeedHandshakeError); reset/correct/irrelevant 3/3
+  #   correct did NOT beat reset on cost -> no positive transfer.
+  #   This edge enters the paper as a negative-transfer diagnostic, NOT a beneficial edge.
+  # Must re-run via `codegraphcl intervene` to count under the unified protocol.

@@ -1,0 +1,47 @@
+From 38a136833f7c7f3a17f362b1223ef7cc7e38253d Mon Sep 17 00:00:00 2001
+From: Florimond Manca <florimond.manca@gmail.com>
+Date: Thu, 10 Oct 2019 14:01:23 +0200
+Subject: [PATCH] Add start_tls to Trio backend (#467)
+
+---
+ httpx/concurrency/trio.py | 24 ++++++++++++++++++++++++
+ 1 file changed, 24 insertions(+)
+
+diff --git a/httpx/concurrency/trio.py b/httpx/concurrency/trio.py
+index 2c36f18..3de3d14 100644
+--- a/httpx/concurrency/trio.py
++++ b/httpx/concurrency/trio.py
+@@ -171,6 +171,30 @@ class TrioBackend(ConcurrencyBackend):
+ 
+         return TCPStream(stream=stream, timeout=timeout)
+ 
++    async def start_tls(
++        self,
++        stream: BaseTCPStream,
++        hostname: str,
++        ssl_context: ssl.SSLContext,
++        timeout: TimeoutConfig,
++    ) -> BaseTCPStream:
++        assert isinstance(stream, TCPStream)
++
++        connect_timeout = _or_inf(timeout.connect_timeout)
++        ssl_stream = trio.SSLStream(
++            stream.stream, ssl_context=ssl_context, server_hostname=hostname
++        )
++
++        with trio.move_on_after(connect_timeout) as cancel_scope:
++            await ssl_stream.do_handshake()
++
++        if cancel_scope.cancelled_caught:
++            raise ConnectTimeout()
++
++        stream.stream = ssl_stream
++
++        return stream
++
+     async def run_in_threadpool(
+         self, func: typing.Callable, *args: typing.Any, **kwargs: typing.Any
+     ) -> typing.Any:
+-- 
+2.34.1
+

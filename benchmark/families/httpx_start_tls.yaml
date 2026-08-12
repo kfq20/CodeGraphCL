@@ -1,0 +1,38 @@
+family_id: httpx_start_tls
+repository: httpx
+
+# The httpx start_tls family. Chain T_A -> T_B -> T_C.
+# Per the 6-correction review: NOT Fork/Join. T_A=anchor, T_B=Parity (beneficial-not-required),
+# T_C=Update. T_A and T_C had instruction leakage -> rejected causal tasks. T_B is the only
+# valid node (negative-transfer diagnostic).
+nodes:
+  - httpx_tA
+  - httpx_tB
+  - httpx_tC
+
+edges:
+  - httpx_tA_to_tB
+  - httpx_tB_to_tC
+
+structure:
+  type: parity_then_update
+  order:
+    - httpx_tA
+    - httpx_tB
+    - httpx_tC
+
+diagnostic_targets:
+  - target: httpx_tB
+    conditions:
+      - reset
+      - correct
+      - irrelevant
+      - wrong     # "wrong" = the stale-for-T_B defer-handshake prior
+
+# Rejected nodes (kept as evidence, not deleted per phase1):
+rejection_log:
+  - node: httpx_tA
+    reason: instruction leaks full contract (signature + loop.start_tls hint + cipher behavior) -> all arms saturate -> untestable
+  - node: httpx_tC
+    reason: instruction leaks revision direction ("move start_tls to stream, return new") -> stale arm voided -> 3/3 all arms
+  # httpx_tB: KEPT. wrong arm 0/3 (stable negative transfer); correct did not beat reset (no positive transfer). Diagnostic-only.

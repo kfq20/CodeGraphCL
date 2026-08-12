@@ -1,0 +1,64 @@
+From 644e8fc5b6c5678fc1c1916293c1afab56d60bad Mon Sep 17 00:00:00 2001
+From: Jamie Hewland <jhewland@gmail.com>
+Date: Sun, 20 Oct 2019 12:59:16 +0200
+Subject: [PATCH] Make start_tls a method on streams & return a new stream
+ (#484)
+
+* Move start_tls to stream & return a new stream
+
+* asyncio: Keep a reference to the inner stream when upgrading to TLS
+---
+ tests/dispatch/utils.py   | 16 ++++++----------
+ tests/test_concurrency.py |  2 +-
+ 2 files changed, 7 insertions(+), 11 deletions(-)
+
+diff --git a/tests/dispatch/utils.py b/tests/dispatch/utils.py
+index 0798b31..3b0d534 100644
+--- a/tests/dispatch/utils.py
++++ b/tests/dispatch/utils.py
+@@ -184,16 +184,6 @@ class MockRawSocketBackend:
+         )
+         return self.stream
+ 
+-    async def start_tls(
+-        self,
+-        stream: BaseTCPStream,
+-        hostname: str,
+-        ssl_context: ssl.SSLContext,
+-        timeout: TimeoutConfig,
+-    ) -> BaseTCPStream:
+-        self.received_data.append(b"--- START_TLS(%s) ---" % hostname.encode())
+-        return self.stream
+-
+     # Defer all other attributes and methods to the underlying backend.
+     def __getattr__(self, name: str) -> typing.Any:
+         return getattr(self.backend, name)
+@@ -203,6 +193,12 @@ class MockRawSocketStream(BaseTCPStream):
+     def __init__(self, backend: MockRawSocketBackend):
+         self.backend = backend
+ 
++    async def start_tls(
++        self, hostname: str, ssl_context: ssl.SSLContext, timeout: TimeoutConfig
++    ) -> BaseTCPStream:
++        self.backend.received_data.append(b"--- START_TLS(%s) ---" % hostname.encode())
++        return MockRawSocketStream(self.backend)
++
+     def get_http_version(self) -> str:
+         return "HTTP/1.1"
+ 
+diff --git a/tests/test_concurrency.py b/tests/test_concurrency.py
+index 3f9e826..27bbeaf 100644
+--- a/tests/test_concurrency.py
++++ b/tests/test_concurrency.py
+@@ -45,7 +45,7 @@ async def test_start_tls_on_socket_stream(https_server, backend, get_cipher):
+         assert stream.is_connection_dropped() is False
+         assert get_cipher(stream) is None
+ 
+-        stream = await backend.start_tls(stream, https_server.url.host, ctx, timeout)
++        stream = await stream.start_tls(https_server.url.host, ctx, timeout)
+         assert stream.is_connection_dropped() is False
+         assert get_cipher(stream) is not None
+ 
+-- 
+2.34.1
+

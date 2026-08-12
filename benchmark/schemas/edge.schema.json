@@ -1,0 +1,71 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "CodeGraphCL Edge",
+  "type": "object",
+  "required": [
+    "schema_version", "edge_id", "from", "to", "edge_type",
+    "experience", "conditions", "expected_effect", "status"
+  ],
+  "properties": {
+    "schema_version": {"type": "integer", "const": 1},
+    "edge_id": {"type": "string"},
+    "from": {"type": "string"},
+    "to": {"type": "string"},
+    "edge_type": {
+      "type": "string",
+      "enum": ["beneficial_update", "beneficial_parity", "required_transfer", "delayed_transfer", "distractor"]
+    },
+
+    "experience": {
+      "type": "object",
+      "required": ["statement", "type", "provenance"],
+      "properties": {
+        "statement": {"type": "string"},
+        "type": {"type": "string"},
+        "scope": {"type": "string"},
+        "provenance": {
+          "type": "object",
+          "required": ["repository", "commit"],
+          "properties": {
+            "repository": {"type": "string"},
+            "commit": {"type": "string"}
+          }
+        },
+        "validity": {"type": "string"}
+      }
+    },
+
+    "conditions": {
+      "type": "object",
+      "required": ["reset", "correct", "irrelevant", "stale"],
+      "properties": {
+        "reset": {"type": ["string", "null"]},
+        "correct": {"type": ["string", "null"]},
+        "irrelevant": {"type": ["string", "null"]},
+        "stale": {"type": ["string", "null"]}
+      }
+    },
+
+    "expected_effect": {
+      "type": "object",
+      "properties": {
+        "correctness": {"type": "string", "enum": ["possible", "none"]},
+        "efficiency": {"type": "string", "enum": ["possible", "none"]},
+        "negative_transfer": {"type": "string", "enum": ["possible", "none"]}
+      }
+    },
+
+    "status": {
+      "type": "object",
+      "required": ["semantic_audit", "causal_verification"],
+      "properties": {
+        "semantic_audit": {"type": "string"},
+        "causal_verification": {
+          "type": "string",
+          "enum": ["proposed", "semantically_audited", "executable_verified",
+                   "intervention_smoke", "causally_verified", "rejected"]
+        }
+      }
+    }
+  }
+}

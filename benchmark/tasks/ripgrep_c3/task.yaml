@@ -1,0 +1,61 @@
+schema_version: 1
+task_id: ripgrep_c3
+family_id: ripgrep_ignore_path
+
+repository:
+  url: https://github.com/BurntSushi/ripgrep
+  base_commit: f722268        # = 14f4957b3d^ ; ripgrep 14.1.1, rust-version 1.88
+  gold_commit: 14f4957b3d
+  language: rust
+
+instruction:
+  path: instruction.md
+
+environment:
+  image: codegraphcl-ripgrep:rust
+  dockerfile: harbor_task/environment/Dockerfile.ripgrep
+  workdir: /workspace/repo
+  build_timeout_sec: 900
+  # ripgrep box needs a persistent cargo cache + target dir (NOT under /usr/local/cargo,
+  # which holds the base cargo binary — bind there clobbers cargo). See MATERIALIZATION.md.
+  extra_mounts:
+    cargo_cache: /tmp/cgcl_cargo_cache
+    target: /tmp/cgcl_target
+
+patches:
+  gold: gold.patch
+  verifier: verifier/c3_verifier.patch
+
+verifier:
+  # c3-era Cargo.toml declares [[test]] name=integration path=tests/tests.rs;
+  # regression.rs is a mod INSIDE tests.rs. So the test target is `integration`, NOT `regression`.
+  command: cargo test --test integration r829
+  timeout_sec: 300
+  hermetic: false   # uses the gold rgtest block (real ignore/path behavior); anti-hardcoding proven by near-miss
+  fail_to_pass:
+    - regression::r829_2747
+    - regression::r829_2778
+    - regression::r829_2836
+    - regression::r829_2933
+  pass_to_pass:
+    - regression::r829_original
+    - regression::r829_2731
+  near_miss:
+    - near_miss/nearmiss_c3.py   # script: A=over-strip, B=no-strip
+
+separability:
+  banned_words: banned_words.txt
+  checklist: separability.checklist.yaml
+
+status:
+  semantic_audit: passed
+  separability_gate: passed      # 7/7 (instruction = symptom only; c2 atom = c2-era, no over-strip hindsight)
+  executable_gate: passed        # base-fail(4) + gold-pass(6/6) + near-miss A/B verified
+  intervention_preflight: pending  # NOT yet run via the unified CLI — must not claim passed
+
+notes: >
+  c2->c3 Update/Stale. c3 revises c2's naive strip (which over-strips). c2 atom in atoms.md
+  is c2-era ONLY ("strip common prefix to avoid dir duplication") — NO over-strip knowledge
+  (that's c3's discovery; including it would be hindsight leakage, blocked by Separability S4).
+  Patches applied on HOST (rust:slim has no git), then cp into the container worktree.
+  FAIL_TO_PASS verified by hand: 4 tests fail on base, 6/6 pass after c3 source.

@@ -1,0 +1,12 @@
+# Banned mechanism words for ripgrep_c3 instruction.
+# These leak the c3 fix mechanism (over-strip / path-component ordering) which the agent
+# must derive, not be told. c2's atom (the stale prior) contains only "avoid duplication".
+strip_prefix
+over-strip
+over_strip
+path-component
+path_component
+component boundary
+components().next()
+take_while
+is_absolute_parent

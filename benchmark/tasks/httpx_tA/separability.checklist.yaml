@@ -1,0 +1,18 @@
+# Separability checklist for httpx_tA — FAILED (instruction leaks the contract)
+schema_version: 1
+task_id: httpx_tA
+checks:
+  - id: S1_instruction_does_not_state_signature
+    question: "Does the instruction state the start_tls signature?"
+    answer: yes   # LEAK: instruction gives start_tls(stream, hostname, ssl_context, timeout)
+    evidence: "instruction.md 'Required behavior' section states the signature verbatim"
+  - id: S2_instruction_does_not_hint_loop_start_tls
+    question: "Does the instruction hint at loop.start_tls?"
+    answer: yes   # LEAK: hints section names loop.start_tls explicitly
+    evidence: "Hints section: 'loop.start_tls is available (Python 3.7+)'"
+  - id: S3_instruction_does_not_leak_cipher_behavior
+    question: "Does the instruction mention the cipher-after-upgrade behavior?"
+    answer: yes   # LEAK
+    evidence: "instruction states 'reporting a real TLS cipher'"
+verdict: failed   # instruction leaks contract -> separability gate FAILS -> task rejected
+# This task is the motivating example for the Separability Gate. Kept as evidence.

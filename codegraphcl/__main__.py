@@ -1,0 +1,64 @@
+"""codegraphcl — unified, config-driven CLI for CodeGraphCL task construction & intervention.
+
+Subcommands (phase1):
+  validate <task_dir> [--family <family.yaml>]
+  materialize <task_dir>            (phase1 day2)
+  prompt-preview <edge.yaml>        (phase1 day3)
+  intervene <edge.yaml> --n 1 --seed 42   (phase1 day3)
+
+No task-specific names in this package (no httpx/ripgrep/r829/start_tls/fixed-SHA/fixed
+container). Everything task-specific lives in task dirs as data.
+"""
+from __future__ import annotations
+import argparse
+import sys
+
+
+def main() -> int:
+    ap = argparse.ArgumentParser(prog="python -m codegraphcl", description=__doc__,
+                                 formatter_class=argparse.RawDescriptionHelpFormatter)
+    sub = ap.add_subparsers(dest="cmd", required=True)
+
+    v = sub.add_parser("validate", help="check a task config is complete + self-consistent")
+    v.add_argument("task_dir")
+    v.add_argument("--family", default=None)
+
+    m = sub.add_parser("materialize", help="run base-fail/gold-pass/PASS_TO_PASS/near-miss")
+    m.add_argument("task_dir")
+    m.add_argument("--run-id", default=None)
+
+    pp = sub.add_parser("prompt-preview", help="generate 4 prompts + check distinctness")
+    pp.add_argument("edge_yaml")
+
+    iv = sub.add_parser("intervene", help="run N-agent intervention")
+    iv.add_argument("edge_yaml")
+    iv.add_argument("--n", type=int, default=1)
+    iv.add_argument("--seed", type=int, default=42)
+    iv.add_argument("--conditions", default="reset,correct,irrelevant,wrong")
+
+    sm = sub.add_parser("summarize", help="aggregate a run's results")
+    sm.add_argument("run_dir")
+
+    args = ap.parse_args()
+
+    if args.cmd == "validate":
+        from .validate import cmd_validate
+        return cmd_validate(args.task_dir, family=args.family)
+    elif args.cmd == "materialize":
+        from .materialize import cmd_materialize
+        return cmd_materialize(args.task_dir, run_id=args.run_id)
+    elif args.cmd == "prompt-preview":
+        from .intervene import cmd_prompt_preview
+        return cmd_prompt_preview(args.edge_yaml)
+    elif args.cmd == "intervene":
+        from .intervene import cmd_intervene
+        return cmd_intervene(args.edge_yaml, n=args.n, seed=args.seed,
+                             conditions=args.conditions.split(","))
+    elif args.cmd == "summarize":
+        from .summarize import cmd_summarize
+        return cmd_summarize(args.run_dir)
+    return 2
+
+
+if __name__ == "__main__":
+    sys.exit(main())

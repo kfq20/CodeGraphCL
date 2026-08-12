@@ -1,0 +1,33 @@
+# Separability checklist for ripgrep_c3 (c2 -> c3 Update/Stale edge).
+# Human-audited: c2's atom must contain ONLY c2-era knowledge (avoid duplication),
+# NOT c3's over-strip discovery. The instruction must not leak the fix mechanism.
+schema_version: 1
+task_id: ripgrep_c3
+
+checks:
+  - id: S1_c2_atom_contains_only_c2_knowledge
+    question: "Does the c2 (stale) atom contain only c2-era knowledge (avoid duplication)?"
+    answer: yes
+    evidence: >
+      atoms.md stale atom: 'strip common prefix to avoid duplicate directory components'.
+      No mention of over-strip / path-component boundaries.
+  - id: S2_c2_atom_no_overstrip_knowledge
+    question: "Does the c2 atom avoid mentioning over-strip / preserve-components (c3's discovery)?"
+    answer: yes
+    evidence: "no 'over-strip', 'component boundary', 'preserve' in the stale atom"
+  - id: S3_instruction_no_implementation_hints
+    question: "Does the instruction avoid strip_prefix / over-strip / path-ordering hints?"
+    answer: yes
+    evidence: "instruction.md states symptom + reproduction + acceptance only"
+  - id: S4_stale_not_directly_negated
+    question: "Is the stale-from-c2 atom NOT directly negated by the instruction?"
+    answer: yes
+    evidence: "instruction does not say 'do not strip the common prefix'"
+  - id: S5_correct_atom_is_c3_lesson_not_patch
+    question: "Is the correct atom stated as the lesson (precise strip) not the patch?"
+    answer: yes
+    evidence: "correct atom states the principle, not the diff"
+
+edge_strength: beneficial_update
+# c3 revises c2's rule. c2's strip is STALE for c3 — following it reproduces the bug c3 fixes.
+# Expected effect: negative_transfer possible (stale arm should fail).

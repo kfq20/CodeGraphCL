@@ -1,0 +1,34 @@
+# Separability checklist for httpx_tB (T_A -> T_B parity edge).
+# Human-audited: does the instruction leak the experience the edge is supposed to carry?
+schema_version: 1
+task_id: httpx_tB
+
+# The experience T_A established: start_tls is a ConcurrencyBackend method with a
+# fixed signature, wraps transport in SSL, stream reports a cipher afterward.
+# T_B's instruction must NOT state this; the agent must derive it from the code tree
+# (base.py abstract stub + asyncio.py impl are present at T_B base).
+checks:
+  - id: S1_instruction_does_not_state_signature
+    question: "Does the instruction state the start_tls signature (stream, hostname, ssl_context, timeout)?"
+    answer: no
+    evidence: "instruction.md describes the symptom + acceptance only; no signature"
+  - id: S2_instruction_does_not_hint_loop_start_tls
+    question: "Does the instruction hint at trio's loop.start_tls or do_handshake?"
+    answer: no
+    evidence: "no mechanism words"
+  - id: S3_instruction_does_not_leak_cipher_behavior
+    question: "Does the instruction mention that the stream reports a cipher after upgrade?"
+    answer: no
+    evidence: "only behavioral acceptance, not the observable cipher"
+  - id: S4_contract_recoverable_from_tree
+    question: "Can a Reset agent recover the contract by reading base.py + asyncio.py?"
+    answer: yes
+    evidence: "abstract stub in base.py:122 + asyncio impl present at T_B base"
+  - id: S5_stale_atom_not_directly_negated
+    question: "Does the instruction directly negate the stale (mutate-in-place) atom?"
+    answer: no
+    evidence: "instruction is silent on in-place vs new-stream"
+
+edge_strength: beneficial_not_required
+# T_B base already contains T_A's code; Reset can re-derive. Signal expected in cost
+# + negative transfer, not pass-rate (which saturates).

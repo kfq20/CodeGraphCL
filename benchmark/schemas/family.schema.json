@@ -1,0 +1,40 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "CodeGraphCL Family",
+  "type": "object",
+  "required": ["family_id", "repository", "nodes", "edges", "structure"],
+  "properties": {
+    "family_id": {"type": "string"},
+    "repository": {"type": "string"},
+
+    "nodes": {
+      "type": "array",
+      "items": {"type": "string"}
+    },
+    "edges": {
+      "type": "array",
+      "items": {"type": "string"}
+    },
+
+    "structure": {
+      "type": "object",
+      "required": ["type", "order"],
+      "properties": {
+        "type": {"type": "string"},
+        "order": {"type": "array", "items": {"type": "string"}}
+      }
+    },
+
+    "diagnostic_targets": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["target", "conditions"],
+        "properties": {
+          "target": {"type": "string"},
+          "conditions": {"type": "array", "items": {"type": "string"}}
+        }
+      }
+    }
+  }
+}
