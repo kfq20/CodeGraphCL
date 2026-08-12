@@ -26,6 +26,8 @@ def main() -> int:
     m = sub.add_parser("materialize", help="run base-fail/gold-pass/PASS_TO_PASS/near-miss")
     m.add_argument("task_dir")
     m.add_argument("--run-id", default=None)
+    m.add_argument("--container", default=None,
+                   help="explicit container name to exec into (else discover by image)")
 
     pp = sub.add_parser("prompt-preview", help="generate 4 prompts + check distinctness")
     pp.add_argument("edge_yaml")
@@ -46,7 +48,7 @@ def main() -> int:
         return cmd_validate(args.task_dir, family=args.family)
     elif args.cmd == "materialize":
         from .materialize import cmd_materialize
-        return cmd_materialize(args.task_dir, run_id=args.run_id)
+        return cmd_materialize(args.task_dir, run_id=args.run_id, container=args.container)
     elif args.cmd == "prompt-preview":
         from .intervene import cmd_prompt_preview
         return cmd_prompt_preview(args.edge_yaml)

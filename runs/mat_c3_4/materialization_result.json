@@ -1,0 +1,7 @@
+{
+  "status": "environment_failure",
+  "reason": "verifier patch apply failed: error: can't open patch 'benchmark/tasks/ripgrep_c3/verifier/c3_verifier.patch': No such file or directory\n",
+  "gates": {
+    "base_fail": "verifier_patch_failed"
+  }
+}

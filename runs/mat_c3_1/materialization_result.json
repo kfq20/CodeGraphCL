@@ -1,0 +1,4 @@
+{
+  "status": "environment_failure",
+  "reason": "no long-lived container running image codegraphcl-ripgrep:rust. On this host, start one first with /pool mounted (see ENV_RECIPE.md). materialize does not manage container mounts."
+}
