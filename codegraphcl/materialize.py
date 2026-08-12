@@ -91,22 +91,43 @@ def _ensure_container(image: str, mounts: list[tuple[str, str]], workdir: str) -
 
 def _container_exec(cname: str, cmd: str, mounts: list[tuple[str, str]], workdir: str,
                     timeout: int = 300) -> tuple[int, str]:
-    """Run cmd in the long-lived container `cname` via `docker exec`. Output captured via a
-    log file in the mounted workdir (docker stdout is dropped on this host)."""
+    """Run cmd in the long-lived container `cname`. docker exec does NOT block on this host
+    (Docker-in-Docker: the exec returns immediately without waiting for the child). So we
+    detach (no -d needed; the non-blocking is the host quirk) and POLL a sentinel file the
+    command writes when done. Output goes to a log file in the mounted workdir (stdout pipe
+    is dead here). Returns (rc, output)."""
     if not mounts:
         return 1, "no mounts"
     host_work = Path(mounts[0][0])
     container_work = mounts[0][1]
     container_log = f"{container_work}/.cgcl_mat_out.log"
+    sentinel = f"{container_work}/.cgcl_done.sentinel"
     log_file = host_work / ".cgcl_mat_out.log"
+    sentinel_file = host_work / ".cgcl_done.sentinel"
+    # pre-create empty (fuse bind needs the inode to exist before the container writes)
     log_file.write_text("")
-    full = f'{cmd} > {container_log} 2>&1; echo "RC=$?" >> {container_log}; sync'
+    sentinel_file.write_text("")
+    # command writes output to log, then RC + DONE to sentinel; sync forces fuse flush
+    full = (f'{cmd} > {container_log} 2>&1; '
+            f'echo "RC=$?" >> {container_log}; '
+            f'echo "DONE" > {sentinel}; sync')
     dargs = ["docker", "exec", "-w", workdir, cname, "bash", "-c", full]
-    try:
-        r = subprocess.run(dargs, capture_output=True, text=True, timeout=timeout + 60)
-    except subprocess.TimeoutExpired:
+    # fire and (do not) expect blocking — start it
+    r = subprocess.run(dargs, capture_output=True, text=True, timeout=timeout + 60)
+    # docker exec returned (probably immediately). POLL the sentinel up to `timeout` seconds.
+    deadline = time.time() + timeout
+    while time.time() < deadline:
+        time.sleep(2)
+        try:
+            content = sentinel_file.read_text()
+        except Exception:
+            content = ""
+        if "DONE" in content:
+            break
+    else:
         out = log_file.read_text() if log_file.exists() else ""
-        return 124, f"TIMEOUT\n{out}"
+        return 124, f"TIMEOUT (sentinel never appeared)\n{out}"
+    # sentinel appeared — but give fuse a beat to flush the final log writes
     time.sleep(1.5)
     out = log_file.read_text() if log_file.exists() else ""
     rc = r.returncode
@@ -117,7 +138,7 @@ def _container_exec(cname: str, cmd: str, mounts: list[tuple[str, str]], workdir
                 rc = int(v)
             break
     try:
-        log_file.unlink()
+        log_file.unlink(); sentinel_file.unlink()
     except Exception:
         pass
     return rc, out
