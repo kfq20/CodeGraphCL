@@ -117,3 +117,33 @@ length artifact, not experience.
 - **wrong** (the stale "mutate-in-place, return same object" atom): the real negative-transfer
   test. If the agent follows it, reward should drop (returns un-upgraded stream → no cipher);
   if it catches the conflict against the asyncio impl it can still read, cost should rise.
+
+### irrelevant arm (1 episode, tb_irr_1) — placebo control
+
+| metric | reset | correct | **irrelevant** |
+|---|---|---|---|
+| reward | 1.0 | 1.0 | 1.0 |
+| elapsed | 316 s | 218 s | **160 s** |
+| input_tokens | 62,345 | 21,160 | 37,562 |
+| tool_uses | 100 | 37 | **34** |
+| assistant_turns | 148 | 72 | **65** |
+
+**Honest negative signal.** The irrelevant arm (length-matched, factually-true-but-unrelated
+project context) cuts cost **as much as or more than** the correct arm — 160s vs 218s, 34 tool
+calls vs 37. This means the cost advantage of `correct` over `reset` is **NOT attributable to
+the experience content**. Any session preamble (correct OR irrelevant) makes the agent faster
+than bare reset — likely because a preamble gives a project-structure overview that cuts
+cold-start exploration, independent of whether the content is the right contract.
+
+This is exactly the placebo problem the review and proposal H4 anticipated. **It weakens (does
+not kill) the beneficial-edge claim on T_B:** at N=1, "experience content helps" cannot be
+distinguished from "any preamble helps." The discriminating test is the **wrong** arm — if a
+*scope-plausible-but-wrong* prior also speeds the agent (or at least doesn't hurt), then T_B
+is simply insensitive to experience content, and the CL signal must be sought elsewhere
+(e.g. T_C's stale-history, where the wrong prior directly contradicts the code).
+
+### pending: wrong arm
+The real negative-transfer test. If the agent follows the "mutate-in-place, return same
+object" prior, reward should drop (no cipher → verifier fails). If it catches the conflict
+against the asyncio impl it can read, cost should rise above even reset. Either outcome is
+informative; "wrong also speeds things like a placebo" would mean T_B can't carry the CL signal.
