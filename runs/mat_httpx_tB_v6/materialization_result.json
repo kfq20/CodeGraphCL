@@ -1,0 +1,23 @@
+{
+  "status": "passed",
+  "gates": {
+    "base_fail": "passed",
+    "gold_pass": "passed",
+    "pass_to_pass": "passed",
+    "near_miss": "passed"
+  },
+  "fail_to_pass": [
+    "TrioBackend.start_tls raises NotImplementedError on base",
+    "real TLS cipher after start_tls",
+    "HTTP 200 over upgraded stream"
+  ],
+  "pass_to_pass": [],
+  "near_miss_results": [
+    {
+      "patch": "near_miss/stub_returns_plain_stream.patch",
+      "status": "apply_failed",
+      "rc": -1
+    }
+  ],
+  "run_dir": "/vePFS-Mindverse/user/intern/fanqi/CodeGraphCL/runs/mat_httpx_tB_v6"
+}

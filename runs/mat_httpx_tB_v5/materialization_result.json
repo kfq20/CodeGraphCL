@@ -1,0 +1,7 @@
+{
+  "status": "environment_failure",
+  "reason": "verifier patch apply failed: error: unrecognized input\n",
+  "gates": {
+    "base_fail": "verifier_patch_failed"
+  }
+}

@@ -21,7 +21,9 @@ environment:
 
 patches:
   gold: gold.patch
-  verifier: verifier/test.sh
+  # No verifier patch — httpx_tB uses a hermetic verifier (verifier/test.sh + verify.py
+  # already staged into work/verifier/). The test.sh runs verify.py which stands up its own
+  # stdlib TLS server; no upstream test file is patched in.
 
 verifier:
   command: bash verifier/test.sh
@@ -42,7 +44,7 @@ separability:
 status:
   semantic_audit: passed
   separability_gate: passed
-  executable_gate: pending      # verified by hand earlier; must re-verify via `codegraphcl materialize`
+  executable_gate: passed      # core 3 gates VERIFIED via `codegraphcl materialize` (mat_httpx_tB_v6); near-miss patch format TODO
   intervention_preflight: pending  # NOT yet run via the unified CLI
 
 notes: >

@@ -50,8 +50,8 @@ separability:
 status:
   semantic_audit: passed
   separability_gate: passed      # 7/7 (instruction = symptom only; c2 atom = c2-era, no over-strip hindsight)
-  executable_gate: passed        # base-fail(4) + gold-pass(6/6) + near-miss A/B verified
-  intervention_preflight: pending  # NOT yet run via the unified CLI — must not claim passed
+  executable_gate: passed      # VERIFIED via `codegraphcl materialize` (mat_c3_6)
+  intervention_preflight: pending  # still need `codegraphcl intervene` N=1
 
 notes: >
   c2->c3 Update/Stale. c3 revises c2's naive strip (which over-strips). c2 atom in atoms.md
