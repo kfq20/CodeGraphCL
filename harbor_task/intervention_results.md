@@ -147,3 +147,49 @@ The real negative-transfer test. If the agent follows the "mutate-in-place, retu
 object" prior, reward should drop (no cipher → verifier fails). If it catches the conflict
 against the asyncio impl it can read, cost should rise above even reset. Either outcome is
 informative; "wrong also speeds things like a placebo" would mean T_B can't carry the CL signal.
+
+### wrong arm (1 episode, tb_wrong_1) — negative-transfer test
+
+| metric | reset | correct | irrelevant | **wrong** |
+|---|---|---|---|---|
+| reward | 1.0 | 1.0 | 1.0 | **1.0** |
+| elapsed | 316 s | 218 s | 160 s | **544 s** |
+| input_tokens | 62,345 | 21,160 | 37,562 | 24,606 |
+| tool_uses | 100 | 37 | 34 | **51** |
+| assistant_turns | 148 | 72 | 65 | **87** |
+
+**The discriminating result.** The wrong arm did NOT make the agent fail — reward=1 (real
+TLS_AES_256 cipher + HTTP 200, agent implemented the *correct* upgrade, not the
+"mutate-in-place" the prior suggested). But it was the **slowest arm by far: 544s vs reset's
+316s** (+72%), and slower than both correct (218s) and irrelevant (160s).
+
+This separates content from placebo:
+- correct + irrelevant both *speed* the agent vs reset (≈160–218s) → "any preamble cuts
+  cold-start" (placebo effect, content-independent).
+- **wrong *slows* the agent below even bare reset** → the agent did NOT blindly follow the
+  wrong prior (it wrote the correct impl), but reconciling the "mutate-in-place, return same
+  object" prior against the asyncio impl it could read cost extra work. This is
+  **negative transfer measured as cost, not failure** — exactly proposal RQ4 / H4's
+  predicted direction.
+
+So at N=1, T_B shows the *shape* of a content-sensitive CL signal: correct/irrelevant
+(placebo-speedup) vs wrong (cost-penalty). The signal is real but weak and lives entirely in
+**cost asymmetry**, not pass-rate (which saturated at 1.0 across all four). This is the
+honest beneficial-not-required signature, now with a negative-transfer discriminator.
+
+### Full 4-arm table (N=1 each — SMOKE, not a result)
+
+| arm | reward | elapsed | in_tok | out_tok | tools | turns |
+|---|---|---|---|---|---|---|
+| reset | 1.0 | 316 | 62,345 | 14,077 | 100 | 148 |
+| correct | 1.0 | 218 | 21,160 | 15,617 | 37 | 72 |
+| irrelevant | 1.0 | 160 | 37,562 | 10,659 | 34 | 65 |
+| wrong | 1.0 | 544 | 24,606 | 12,338 | 51 | 87 |
+
+**What this round established:** the full intervention harness runs on a node with a real
+edge (T_B), the hermetic verifier is anti-hardcoding (near-miss caught), and the 4 arms
+produce a content-asymmetric cost profile (wrong slowest, correct/irrelevant fastest, reset
+middle) — the expected shape of a beneficial-not-required edge with negative transfer. **Not
+a claim:** N=1, no variance, single target. To call it a finding: N=3–5 per arm with variance
+bars, + T_C (Update) where the wrong prior directly contradicts the code (stronger signal
+expected), + more targets. Next is T_C, not more T_B episodes.
