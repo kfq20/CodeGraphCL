@@ -1,33 +1,32 @@
 #!/usr/bin/env bash
-# T_B agent phase: claude on HOST, cwd = EP/work. Runs with --allowedTools (root can't use
-# --dangerously-skip-permissions on this host).
+# T_B agent phase: claude on HOST, cwd = host-side EP/work. Uses build_prompt.py (not the
+# broken sed extractor) so non-reset prefixes are guaranteed non-empty, and a manifest is
+# written for audit. Docker path in the prompt uses the CONTAINER path /pool/<ep>/work.
 set -uo pipefail
 EP="$1"; CONDITION="$2"
 ROOT="/vePFS-Mindverse/user/intern/fanqi/CodeGraphCL"
 STEP="$ROOT/harbor_task/steps/tB_start_tls_trio"
 WORK="$EP/work"; OUT="$EP/out"; mkdir -p "$OUT"
 
-INSTR=$(cat "$STEP/instruction.md")
-extract() { sed -n "/^## $1/,/^## /p" "$ROOT/harbor_task/tB_experience_atoms.md" | grep -v '^## ' | sed '/^$/d;1d'; }
-case "$CONDITION" in
-  reset)      PREFIX="" ;;
-  correct)    PREFIX=$(extract correct) ;;
-  irrelevant) PREFIX=$(extract irrelevant) ;;
-  wrong)      PREFIX=$(extract wrong) ;;
-  *) echo "unknown condition $CONDITION" >&2; exit 2 ;;
-esac
+# EP is a host path under /tmp/cgcl_box_pool/<name>. The container sees the same dir as
+# /pool/<name>. Derive the container workdir for the prompt's docker hint.
+EPNAME=$(basename "$EP")
+CONTAINER_WORK="/pool/$EPNAME/work"
 
-PROMPT="${PREFIX}
-
----
-
-${INSTR}
-
----
-You are working in the repository at your current directory. To run Python (3.7 + the
-project's deps, not on the host), use:
-  docker exec cgcl-mat-box bash -c 'cd ${EP}/work && python3 -c \"...\"'
-When done, output a one-line summary of what you implemented."
+# Build prompt + manifest via the tested Python builder (fails hard on empty prefix).
+python3 "$ROOT/harbor_task/build_prompt.py" \
+  "$ROOT/harbor_task/tB_experience_atoms.md" \
+  "$STEP/instruction.md" \
+  "$CONDITION" "$CONTAINER_WORK" "$OUT" > "$OUT/manifest.stdout" 2> "$OUT/manifest.stderr"
+BP_RC=$?
+if [ "$BP_RC" -ne 0 ]; then
+  echo "build_prompt FAILED for condition=$CONDITION (rc=$BP_RC):" >&2
+  cat "$OUT/manifest.stderr" >&2
+  # write a manifest-free failure marker so the episode doesn't silently proceed
+  echo "reward=ERR build_prompt_failed" > "$EP/reward.txt"
+  exit 2
+fi
+PROMPT=$(cat "$OUT/prompt.txt")
 
 export ANTHROPIC_BASE_URL="${ANTHROPIC_BASE_URL:-https://mintcn.macaron.xin}"
 ALLOW="--allowedTools Read,Write,Edit,Bash,Glob,Grep,LS"
@@ -38,8 +37,7 @@ START=$(date +%s)
 RC=$?
 END=$(date +%s); ELAPSED=$((END-START))
 echo "rc=$RC elapsed_sec=$ELAPSED condition=$CONDITION" > "$OUT/agent_meta.txt"
-# macaron stream-json: assistant events have usage=0 (endpoint quirk); the real usage is in
-# the final 'result' event. Count tool_uses from assistant events, but read tokens from result.
+# real usage is in the final 'result' event (macaron per-assistant usage is all zeros)
 python3 - "$OUT/agent.jsonl" "$OUT/agent_meta.txt" <<'PY' 2>/dev/null || true
 import json,sys
 tools=turns=in_t=out_t=cache_read=0

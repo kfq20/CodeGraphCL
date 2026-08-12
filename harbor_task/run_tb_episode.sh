@@ -32,11 +32,14 @@ workrun() {
 
 # ---- phase 1: base snapshot
 cp -a "$SRC/." "$EP/work/" 2>/dev/null
+sync; sleep 2   # fuse-overlayfs: let the host copy land before the box reads it
 workrun "git checkout -q -f $BASE_SHA; git clean -fdxq -- tests/ 2>/dev/null; echo PREP_OK > /pool/$EPNAME/out/prep.log 2>&1"
+sleep 2         # let the box's checkout land before the next exec reads the tree
 
 # ---- phase 2: solver
 if [ "$MODE" = "oracle" ]; then
   workrun "git apply /pool/$EPNAME/gold_source.patch && echo GOLD_APPLIED > /pool/$EPNAME/out/solve.log 2>&1 || echo APPLY_FAIL > /pool/$EPNAME/out/solve.log 2>&1"
+  sleep 2
 else
   bash "$ROOT/harbor_task/run_tb_agent.sh" "$EP" "$CONDITION"
 fi

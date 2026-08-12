@@ -193,3 +193,23 @@ middle) — the expected shape of a beneficial-not-required edge with negative t
 a claim:** N=1, no variance, single target. To call it a finding: N=3–5 per arm with variance
 bars, + T_C (Update) where the wrong prior directly contradicts the code (stronger signal
 expected), + more targets. Next is T_C, not more T_B episodes.
+
+## G1.1 validity fixes (after review caught the 4 bugs)
+
+The review found that the first 4-arm run was INVALID:
+1. atom extractor used `sed /^## X/` but atoms file used `<!-- ATOM:X -->` markers → 3/4 arms
+   got empty prefix (all were Reset). Fixed: `build_prompt.py` reads HTML markers, hard-fails
+   on empty non-reset prefix, writes manifest (prefix_chars/sha256, prompt_sha256). Test
+   `test_prompt_distinct.py` asserts 4 distinct prompts.
+2. "wrong" atom was "mutate-in-place, return same stream" = T_B's GOLD behavior, not wrong.
+   Redesigned: wrong = "defer TLS handshake to first read/write; start_tls only wraps" —
+   directly conflicts with gold's eager `do_handshake()`. irrelevant stripped of
+   SSLConfig/TimeoutConfig (no task-relevant API names).
+3. Docker path in prompt used host `${EP}/work`; fixed to container `/pool/<ep>/work`.
+4. PASS_TO_PASS was fake (one run, count fails). Rewrote Gate3 to: collect base pass-set on a
+   server-free file, apply gold, re-run, assert no new failures. NOTE: full PASS_TO_PASS
+   automation is still partial — the fuse-overlayfs box→host sync is unreliable for new
+   files, so Gate3 is implemented but its smoke run is pending a host-sync fix. The core
+   Executable Gate (base-fail/gold-pass/near-miss via the hermetic verifier) stands.
+
+**All prior N=1 cost numbers are VOIDED.** Rerunning with the fixed harness.

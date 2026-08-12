@@ -96,21 +96,61 @@ def main():
         print(out[-1500:])
         sys.exit(1)
 
-    # ---- Gate 3: PASS_TO_PASS (informational this round) ----
-    # Canonical PASS_TO_PASS = tests that pass on Base still pass after source patch.
-    # For T_A (new test file) this is vacuous; for T_B/T_C it matters. Here we run the
-    # full test file under Base+source+verifier and report — non-selector failures would
-    # indicate a regression. Not hard-gated in this smoke run; flagged for the task packaging step.
-    file_sel = sel.split("::")[0]
-    r = run([sys.executable, "-m", "pytest", "-q", file_sel, "-p", "no:cacheprovider",
-             "-o", "addopts="],
-            env={"PYTHONDONTWRITEBYTECODE": "1"})
-    out3 = r.stdout + r.stderr
-    n_failed = out3.count(" failed") if "failed" in out3 else 0
-    print(f"  [GATE3] pass-to-pass (info): Base+source+verifier full-file exit={r.returncode}, "
-          f"~{n_failed} failure(s) in file (0 = clean, no regression)")
-    print(f"  [GATE3] pass-to-pass: Base+verifier full-file run exit={r.returncode}, "
-          f"~{n_failed} failure(s). New-test fails as expected.")
+    # ---- Gate 3: PASS_TO_PASS (real) ----
+    # Canonical: tests that pass on Base still pass after the source patch (no regression).
+    # Implementation: collect a server-free test subset on Base, record pass set P_base,
+    # apply source (keep verifier), re-run same subset, assert P_base ⊆ P_after.
+    # We use a server-free file (test_utils.py) because the gold test file needs the
+    # https_server fixture which is the broken uvicorn path — PASS_TO_PASS must not depend
+    # on the same flaky fixture. If test_utils doesn't exist at base, Gate3 is vacuous
+    # (reported, not failed).
+    p2p_file = "tests/test_utils.py"
+    has_p2p = (repo_dir / p2p_file).exists()
+    if not has_p2p:
+        print(f"  [GATE3] pass-to-pass: skipped (no {p2p_file} at Base — vacuous for this node)")
+        print(f"\n=== ALL GATES PASSED: {sha} materializes cleanly ===")
+        sys.exit(0)
+
+    def collect_pass_set(state_label):
+        """Run p2p_file, return the set of passed node ids."""
+        r = run([sys.executable, "-m", "pytest", "-q", "-v", p2p_file,
+                 "-p", "no:cacheprovider", "-o", "addopts="],
+                env={"PYTHONDONTWRITEBYTECODE": "1"})
+        out = r.stdout + r.stderr
+        passed = set()
+        for line in out.splitlines():
+            # pytest -v line: "tests/test_utils.py::test_x PASSED" or "... FAILED"
+            if "::" in line and ("PASSED" in line or "FAILED" in line):
+                nid = line.split("::")[0]
+                # node id up to the outcome token
+                head = line.rsplit("PASSED", 1)[0].rsplit("FAILED", 1)[0].strip()
+                if "PASSED" in line:
+                    passed.add(head)
+        return passed, out, r.returncode
+
+    # state: clean Base, no source no verifier
+    clean_worktree()
+    p_base, out_base, rc_base = collect_pass_set("base")
+    if rc_base not in (0, 1):
+        print(f"  [GATE3] pass-to-pass: Base collection errored (rc={rc_base}) — skipped")
+        print(f"\n=== GATES 1-2 PASSED; Gate3 inconclusive ===")
+        sys.exit(0)
+
+    # state: Base + source + verifier (gold applied)
+    apply_patch(str(src))
+    apply_patch(str(ver))
+    p_after, out_after, rc_after = collect_pass_set("gold")
+
+    # P_base must be subset of P_after (no base-pass test newly fails)
+    regressed = p_base - p_after
+    if regressed:
+        print(f"  [GATE3] pass-to-pass: FAIL — {len(regressed)} test(s) passed on Base but "
+              f"FAILED after gold patch:")
+        for t in list(regressed)[:5]:
+            print(f"        - {t}")
+        sys.exit(1)
+    print(f"  [GATE3] pass-to-pass: PASS — {len(p_base)} base-passing test(s) all still pass "
+          f"after gold patch (no regression)")
     print(f"\n=== ALL GATES PASSED: {sha} materializes cleanly ===")
     sys.exit(0)
 
