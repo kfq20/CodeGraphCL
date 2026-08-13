@@ -34,9 +34,18 @@ expected_effect:
 
 status:
   semantic_audit: passed
-  reset_feasibility: infra_fail   # reset-only probe (seed21): reward=ERR infra_fail 600s. Agent DID
-                                  # edit dir.rs (34 matches) and cargo ran (verify.log RC=101, 4 c3
-                                  # tests failed) but reward.txt never landed on the host via the fuse
-                                  # bind (.logs/verifier/ created but empty). Verifier reward-path flake
-                                  # under intervene, not a clean read. See the run SUMMARY.md.
-  causal_verification: intervention_smoke   # N=1 via unified CLI pending
+  reset_feasibility: infra_fail   # reset-only probe (seed21) x2: reward=ERR infra_fail 600s. Agent
+                                  # DID work (91 tool calls) and cargo ran (verify.log RC=101, 4 c3
+                                  # tests fail on the agent's edit), but reward.txt never lands — not
+                                  # on the host, not in the container (/pool/.../work/.logs/verifier
+                                  # does not exist; /logs/verifier also empty). The test.sh binary-
+                                  # reward fix was correct but NOT the root cause: the cargo-based rg
+                                  # test.sh's writes don't propagate under the intervene _container_exec
+                                  # fuse-bind + sentinel-poll wrapper, even though the same mechanism
+                                  # works for the tap-based fastify test.sh. ABANDONED for now per
+                                  # reviewer ("fix or explicitly abandon"): the c3 NODE materializes
+                                  # 4/4 cleanly (mat_c3_reg) via a different reward path, so the node
+                                  # is usable; only this EDGE's causal screening is blocked by the
+                                  # intervene infra bug. See run SUMMARY.md.
+  causal_verification: rejected   # not screenable under the current intervene infra (infra_fail);
+                                  # NOT a causal verdict on the edge itself.
