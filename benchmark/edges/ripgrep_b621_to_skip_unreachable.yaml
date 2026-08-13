@@ -41,12 +41,12 @@ expected_effect:
 
 status:
   semantic_audit: passed
-  reset_calibration: too_hard   # Reset N=2 (seed7): 0/2 solved, BOTH timeout_failed at 600s. Failure mode:
-                                  # only 9-10 tool_uses / 19-21 turns in 600s — cargo compile time
-                                  # (each `cargo test -p ignore` builds the workspace, ~minutes/build)
-                                  # consumes nearly the entire budget; the agent cannot iterate. This is
-                                  # a container-specific compile-time constraint, NOT intrinsic task
-                                  # difficulty. Per phase3 Gate 5: 0/2 at the wall -> too_hard, NO 4-arm.
-  causal_verification: rejected   # Reset calibration rejected (too_hard) — not a causal verdict on the
-                                  # edge; the task/edge design is sound (4/4 gate, 2 caught near-miss),
-                                  # but the intervene infra cannot give it enough compile budget.
+  reset_calibration: non_saturated # Reset N=2 (seed7), WARM cargo cache: 1/2 solved (ep0 timeout_solved,
+                                  # ep1 timeout_failed). The prior 0/2 too_hard verdict was a COLD-COMPILE
+                                  # artifact (cargo rebuilds the workspace per tool call, ~min/build, eating
+                                  # the 600s budget — only 9-10 tool calls). With a persistent warm target
+                                  # cache (CGCL_CARGO_TARGET_DIR, pre-built once -> ~2s warm build), the agent
+                                  # iterates (60 tool calls) and solves 1/2. Per phase3 Gate 5: 1/2, not all
+                                  # at the wall -> NON-saturated -> PROCEED to 4-arm N=1.
+  causal_verification: proposed   # Executable Gate passed (4/4 + 2 near-miss) + Reset calibration
+                                  # non-saturated (1/2 warm); 4-arm N=1 next.

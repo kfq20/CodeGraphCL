@@ -305,8 +305,14 @@ def _run_episode(cfg, td, epid, cond, cname, pool_host) -> int:
     # score via container (sentinel poll)
     vcmd = cfg["verifier"]["command"]
     vtimeout = cfg["verifier"]["timeout_sec"]
+    # CARGO_TARGET_DIR: a persistent, pre-warmed target cache shared across episodes so a cold
+    # cargo build (minutes) becomes a warm incremental (seconds). Without this, ripgrep tasks
+    # burn the entire 600s budget on compilation (Reset calibration 0/2 timeout — the too_hard
+    # verdict was a compile-time artifact, not task difficulty). Set via env if the container has
+    # a warm cache mounted at /pool/.cargo_target; harmless otherwise (cargo falls back to per-workdir target).
+    cargo_target = os.environ.get("CGCL_CARGO_TARGET_DIR", "/pool/.cargo_target")
     env_prefix = (f"HARBOR_WORKDIR={container_work} HARBOR_TESTS_DIR={container_work}/verifier "
-                  f"HARBOR_LOGS_DIR={container_work}/.logs ")
+                  f"HARBOR_LOGS_DIR={container_work}/.logs CARGO_TARGET_DIR={cargo_target} ")
     # clear stale reward
     rf = work / ".logs" / "verifier" / "reward.txt"
     rf.parent.mkdir(parents=True, exist_ok=True)
