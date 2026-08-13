@@ -37,7 +37,7 @@
 - c3 + c4 regression re-confirmed after host ENOSPC cleanup: pool-resolve change did NOT break
   ripgrep (both 4/4, 30s each).
 
-## Executable nodes (executable_gate: passed) — 16 total
+## Executable nodes (executable_gate: passed) — 17 total
 | node | family | repo | gate run | edge |
 |---|---|---|---|---|
 | ripgrep_c3 | ripgrep_ignore_path | ripgrep | mat_c3_reg | c2->c3 Update |
@@ -56,6 +56,7 @@
 | fastify_reply_json_charset | fastify_reply_api | fastify | mat_fs_jc_1 | single-node (JSON+charset content-type clobbered) |
 | fastify_header_case_validation | fastify_validation | fastify | mat_fs_hv_1 | single-node (required-header case-sensitive) |
 | fastify_reply_removeheader | fastify_reply_api | fastify | mat_fs_rh_1 | single-node (no way to remove a header) |
+| fastify_404_unsupported_method | fastify_reply_api | fastify | mat_fs_404m_1 | single-node (unsupported method returns 405 not 404) |
 
 (httpx_tA/tB/tC are rejected causal tasks — kept as negative-transfer/rejected analysis.)
 
@@ -64,7 +65,7 @@
 |---|---|---|
 | repos | >=3 | 3 (ripgrep+fastify+clap) ✓ |
 | families | 6-8 | **8 active** (ripgrep_ignore_path, fastify_decorator, fastify_contenttype, fastify_reply_api, fastify_schemas, fastify_validation, clap_derive_api, +httpx rejected) — **TARGET MET (upper bound)** ✓ |
-| executable nodes | 20-30 | 16 |
+| executable nodes | 20-30 | 17 |
 | semantic edges | 10-15 | 6 (c2->c3, c3->c4, c4->c5, c1->cef, +2 clap single-node) |
 | intervention-ready | >=8 | 4 (c2->c3, c3->c4, c4->c5, c1->cef) |
 | N=1 run | 4-6 sensitive | c4->c5 INCONCLUSIVE (too hard); c3->c4 reset-solvable (cost-metric only) |
