@@ -44,4 +44,10 @@ status:
                                   # partially correct (correct solved, irrelevant failed) but wrong/stale also
                                   # solved (no negative transfer) — placebo-flavored. GO for N=3.
                                   # See runs/intervene_ripgrep_c3_to_c4_seed42_1786608700/SUMMARY.md
-  causal_verification: intervention_smoke  # N=1 ran; N=3 pending (the escalation target)
+  causal_verification: rejected  # N=3 RAN (12 eps, seed42): correct 1/3, reset 1/3, irrelevant
+                                  # 2/3, wrong 2/3 — correct is WORST or tied-worst, no stable
+                                  # ordering. N=1 "sensitivity" (irrelevant fail / correct solve)
+                                  # did NOT reproduce at N=3 — it was a single draw from a variance-
+                                  # dominated wall-band distribution (every ep times out at 600s;
+                                  # success = path-variance, not prior). REJECTED: does not pass the
+                                  # Causal Dependency Gate. See runs/.../SUMMARY.md.
