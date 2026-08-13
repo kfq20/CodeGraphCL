@@ -39,4 +39,5 @@ status:
   semantic_audit: passed
   executable_gate: passed         # ripgrep_c5 materialized 4/4 (mat_c5_3)
   intervention_preflight: passed  # prompt-preview PASS (4 distinct prompts, instr_sha shared, no condition-word leak)
-  causal_verification: proposed   # N=1 then N=3 if sensitive
+  n1_intervention: inconclusive    # N=1 (seed42): 3/4 failed (irrelevant/correct/reset timeout_failed), wrong arm solved (timeout_solved). High variance — wrong success correlated with max effort (105 turns, 63k out_tok), not the stale prior. NOT escalated to N=3 (c5 too hard for clean read — agent times out regardless of prior). See runs/intervene_ripgrep_c4_to_c5_seed42_1786592433/SUMMARY.md
+  causal_verification: inconclusive  # N=1 inconclusive; retarget to an easier revision edge before N=3
