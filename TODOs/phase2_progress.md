@@ -19,17 +19,25 @@
   (parent()-only was NOT caught — test is sensitive to add_child propagation, documented).
   **N=1 intervention run**: INCONCLUSIVE (3/4 timeout_failed, wrong arm fluke-solved at 600s).
   c5 too hard for clean N=1 read; retarget to easier edge. See runs/.../SUMMARY.md.
-- c3 regression confirmed (mat_c3_reg): pool-resolve change did NOT break ripgrep (4/4, 30s).
+- **c3->c4 reset-feasibility probe** (seed7): reset IS solvable on c4 (reward=1 timeout_solved
+  600s, 208 turns) — but AT the 600s wall. c4 sits near feasibility ceiling; correctness will
+  saturate, edge can only be read on COST. (Earlier full 4-arm run was killed by host ENOSPC.)
+- **fastify_contenttype_array**: 4/4 materialized FIRST TRY (mat_fs_ct_1). New fastify_contenttype
+  family (5th). 5-line source patch (commit 7f378355). Two near-miss (firstonly + passthrough)
+  caught, distinct failure footprints. Feasibility-blessed small patch.
+- c3 + c4 regression re-confirmed after host ENOSPC cleanup: pool-resolve change did NOT break
+  ripgrep (both 4/4, 30s each).
 
-## Executable nodes (executable_gate: passed) — 6 total
+## Executable nodes (executable_gate: passed) — 7 total
 | node | family | repo | gate run | edge |
 |---|---|---|---|---|
 | ripgrep_c3 | ripgrep_ignore_path | ripgrep | mat_c3_reg | c2->c3 Update |
-| ripgrep_c4 | ripgrep_ignore_path | ripgrep | mat_c4_ql2 | c3->c4 Update |
-| ripgrep_c5 | ripgrep_ignore_path | ripgrep | mat_c5_3 | c4->43e2f08 Update (real CL edge) |
+| ripgrep_c4 | ripgrep_ignore_path | ripgrep | mat_c4_reg | c3->c4 Update (reset solvable, at 600s wall) |
+| ripgrep_c5 | ripgrep_ignore_path | ripgrep | mat_c5_3 | c4->43e2f08 Update (real CL edge, N=1 INCONCLUSIVE) |
 | fastify_decorator_getter | fastify_decorator | fastify | mat_fs_3 | c1->cef Parity |
 | clap_derive_default_value_os | clap_derive_api | clap | mat_clap_1 | single-node Parity |
 | clap_derive_type_alias | clap_derive_api | clap | mat_clap_ta_2 | single-node consistency |
+| fastify_contenttype_array | fastify_contenttype | fastify | mat_fs_ct_1 | single-node (5-line patch, feasible) |
 
 (httpx_tA/tB/tC are rejected causal tasks — kept as negative-transfer/rejected analysis.)
 
@@ -37,10 +45,11 @@
 | asset | target | current |
 |---|---|---|
 | repos | >=3 | 3 (ripgrep+fastify+clap) ✓ |
-| families | 6-8 | 3 active (ripgrep_ignore_path, fastify_decorator, clap_derive_api) |
-| executable nodes | 20-30 | 6 |
+| families | 6-8 | 5 active (ripgrep_ignore_path, fastify_decorator, fastify_contenttype, clap_derive_api, +httpx rejected) |
+| executable nodes | 20-30 | 7 |
 | semantic edges | 10-15 | 6 (c2->c3, c3->c4, c4->c5, c1->cef, +2 clap single-node) |
 | intervention-ready | >=8 | 4 (c2->c3, c3->c4, c4->c5, c1->cef) |
+| N=1 run | 4-6 sensitive | c4->c5 INCONCLUSIVE (too hard); c3->c4 reset-solvable (cost-metric only) |
 
 ## Candidate families for batch production (remaining)
 1. clap builder-api (129 commits): deprecation/update chain.
