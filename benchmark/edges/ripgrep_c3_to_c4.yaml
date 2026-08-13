@@ -35,4 +35,10 @@ expected_effect:
 
 status:
   semantic_audit: passed
-  causal_verification: proposed   # c4 not yet materialized via unified CLI (Day4)
+  executable_gate: passed         # ripgrep_c4 materialized 4/4 (mat_c4_reg, 2 near-miss caught)
+  intervention_preflight: passed  # prompt-preview PASS (4 distinct prompts, shared instr_sha)
+  reset_feasibility: solvable     # reset-only probe (seed7): reward=1 timeout_solved 600s, 208 turns, 125 tools.
+                                  # c4 IS solvable by reset (unlike c5) but AT the 600s wall -> correctness will
+                                  # saturate; this edge can only be read on COST (turns/tools/tokens/elapsed).
+  causal_verification: proposed   # 4-arm N=1 worth running WITH a cost-metric read (not pass-rate).
+                                  # See runs/intervene_ripgrep_c3_to_c4_seed7_1786595550/SUMMARY.md
