@@ -1,0 +1,40 @@
+# Separability checklist for clap_error_newline (single-node, clap_error family).
+# Instruction states the symptom (error message has no trailing newline); the fix (append \n)
+# must be derived.
+schema_version: 1
+task_id: clap_error_newline
+
+checks:
+  - id: S1_instruction_symptom_only
+    question: "Does the instruction state only the symptom (no trailing newline), not the fix?"
+    answer: yes
+    evidence: >
+      instruction.md: "the resulting error message string does not end with a trailing newline."
+      Acceptance: make it end with a newline, consistent with other clap errors.
+  - id: S2_instruction_no_mechanism_words
+    question: "Does the instruction avoid \\n / wasn't found / errors.rs / ends_with / to_string()?"
+    answer: yes
+    evidence: "banned_words.txt forbids these; instruction says 'trailing newline' generically"
+  - id: S3_instruction_no_file_names
+    question: "Does the instruction avoid naming src/parse/errors.rs?"
+    answer: yes
+    evidence: "instruction says 'the clap error-formatting surface'"
+  - id: S4_near_misses_plausible
+    question: "Are the near-misses plausible-but-wrong, not absurd?"
+    answer: yes
+    evidence: >
+      A = leave it without a newline (real 'caller can add a newline' assumption); B = add the
+      newline at the start (real 'ensure a newline' with wrong position).
+  - id: S5_near_misses_distinct_axes
+    question: "Do the near-misses fail along distinct axes?"
+    answer: yes
+    evidence: >
+      A has no newline anywhere; B has a newline but at the wrong end (starts, doesn't end).
+      Different residual-newline position.
+  - id: S6_base_solvable_and_feasible
+    question: "Is the base solvable and comfortably under the agent time budget?"
+    answer: yes
+    evidence: "2-line source patch. base-fail verified by hand (BF_RC=101). Easiest clap task."
+
+edge_strength: n/a_single_node
+# Single-node bug fix; new clap_error family (9th family).

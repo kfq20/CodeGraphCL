@@ -1,0 +1,54 @@
+schema_version: 1
+task_id: clap_error_newline
+family_id: clap_error
+
+repository:
+  url: https://github.com/clap-rs/clap
+  base_commit: a72e5726f872^      # parent of the fix
+  gold_commit: a72e5726f872
+  language: rust
+
+instruction:
+  path: instruction.md
+
+environment:
+  image: codegraphcl-ripgrep:rust
+  dockerfile: harbor_task/environment/Dockerfile.ripgrep
+  workdir: /workspace/repo
+  build_timeout_sec: 900
+  extra_mounts:
+    cargo_cache: /tmp/cgcl_cargo_cache
+    target: /tmp/cgcl_target
+
+patches:
+  gold: gold.patch                 # src/parse/errors.rs (append \n to the wasn't-found message)
+  verifier: verifier/verifier.patch # tests/builder/error.rs (argument_not_found_auto_has_newline test)
+
+verifier:
+  command: bash verifier/test.sh   # cargo test --test builder argument_not_found_auto_has_newline
+  timeout_sec: 300
+  hermetic: false
+  fail_to_pass:
+    - "test: error::argument_not_found_auto_has_newline"
+  pass_to_pass: []
+  pass_to_pass_not_applicable: true  # the has-newline test is new
+  near_miss_base: gold
+  near_miss:
+    - near_miss/nearmiss_nl_nonewline.py
+    - near_miss/nearmiss_nl_prefix.py
+
+separability:
+  banned_words: banned_words.txt
+  checklist: separability.checklist.yaml
+
+status:
+  semantic_audit: passed
+  separability_gate: passed      # instruction = symptom (error message has no trailing newline); no \n/wasn't-found/errors.rs leakage
+  executable_gate: passed         # base-fail VERIFIED by hand (BF_RC=101); near-miss pending empirical confirm
+  intervention_preflight: pending
+
+notes: >
+  New clap_error family (9th). Single-node bug fix (commit a72e5726f872): the argument-not-found
+  error message lacked a trailing newline (inconsistent with other clap errors). gold appends \n.
+  base-fail VERIFIED (test panics on base, BF_RC=101). Two near-miss (no-newline + newline-at-
+  start) re-fail. 2-line source patch — feasibility-blessed (easiest clap task).

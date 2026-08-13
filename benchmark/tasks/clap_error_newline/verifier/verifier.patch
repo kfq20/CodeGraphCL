@@ -1,0 +1,39 @@
+From a72e5726f87246d5594f2dccec51b78d90153bbb Mon Sep 17 00:00:00 2001
+From: Ed Page <eopage@gmail.com>
+Date: Mon, 13 Dec 2021 13:18:51 -0600
+Subject: [PATCH] fix(error): Ensure newline on value_of_t not found
+
+Found this when auditing for cases related to #2787.
+---
+ tests/builder/error.rs | 18 ++++++++++++++++++
+ 1 file changed, 18 insertions(+)
+
+diff --git a/tests/builder/error.rs b/tests/builder/error.rs
+index 5b732d7c..027fb6e9 100644
+--- a/tests/builder/error.rs
++++ b/tests/builder/error.rs
+@@ -75,3 +75,21 @@ fn value_validation_has_newline() {
+         err.to_string()
+     );
+ }
++
++#[test]
++fn argument_not_found_auto_has_newline() {
++    let m = App::new("test")
++        .arg(arg!([PORT]).help("Network port to use"))
++        .try_get_matches_from(["test"])
++        .unwrap();
++
++    let res = m.value_of_t::<usize>("PORT");
++
++    assert!(res.is_err());
++    let err = res.unwrap_err();
++    assert!(
++        err.to_string().ends_with('\n'),
++        "Errors should have a trailing newline, got {:?}",
++        err.to_string()
++    );
++}
+-- 
+2.34.1
+

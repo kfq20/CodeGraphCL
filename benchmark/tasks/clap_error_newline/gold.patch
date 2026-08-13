@@ -1,0 +1,26 @@
+From a72e5726f87246d5594f2dccec51b78d90153bbb Mon Sep 17 00:00:00 2001
+From: Ed Page <eopage@gmail.com>
+Date: Mon, 13 Dec 2021 13:18:51 -0600
+Subject: [PATCH] fix(error): Ensure newline on value_of_t not found
+
+Found this when auditing for cases related to #2787.
+---
+ src/parse/errors.rs | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/src/parse/errors.rs b/src/parse/errors.rs
+index b7917f37..655b8834 100644
+--- a/src/parse/errors.rs
++++ b/src/parse/errors.rs
+@@ -1066,7 +1066,7 @@ impl Error {
+ 
+         start_error(&mut c, "The argument '");
+         c.warning(arg.clone());
+-        c.none("' wasn't found");
++        c.none("' wasn't found\n");
+ 
+         Self::new(c, ErrorKind::ArgumentNotFound, false).set_info(vec![arg])
+     }
+-- 
+2.34.1
+

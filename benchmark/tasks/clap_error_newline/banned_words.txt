@@ -1,0 +1,10 @@
+# Banned MECHANISM words for clap_error_newline instruction.
+# The fix: append a literal '\n' to the "wasn't found" error message string in src/parse/errors.rs.
+# "newline"/"error message" are symptom-level; the literal-\n-append is the mechanism (banned).
+\\n
+'\\n'
+wasn't found
+src/parse/errors.rs
+errors.rs
+to_string()
+ends_with
