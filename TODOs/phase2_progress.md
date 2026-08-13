@@ -37,7 +37,7 @@
 - c3 + c4 regression re-confirmed after host ENOSPC cleanup: pool-resolve change did NOT break
   ripgrep (both 4/4, 30s each).
 
-## Executable nodes (executable_gate: passed) — 9 total
+## Executable nodes (executable_gate: passed) — 11 total
 | node | family | repo | gate run | edge |
 |---|---|---|---|---|
 | ripgrep_c3 | ripgrep_ignore_path | ripgrep | mat_c3_reg | c2->c3 Update |
@@ -49,6 +49,8 @@
 | fastify_contenttype_array | fastify_contenttype | fastify | mat_fs_ct_1 | single-node (5-line patch, feasible) |
 | fastify_redirect_statuscode | fastify_reply_api | fastify | mat_fs_rd_3 | single-node (redirect clobbers preset code) |
 | fastify_get_shared_schemas | fastify_schemas | fastify | mat_fs_sch_1 | single-node (schemas write-only) |
+| fastify_clean_schema_id | fastify_schemas | fastify | mat_fs_cid_1 | single-node ($id leaks at compile) |
+| fastify_decorate_null | fastify_decorator | fastify | mat_fs_dn_1 | single-node (decorate null crashes) |
 
 (httpx_tA/tB/tC are rejected causal tasks — kept as negative-transfer/rejected analysis.)
 
@@ -57,7 +59,7 @@
 |---|---|---|
 | repos | >=3 | 3 (ripgrep+fastify+clap) ✓ |
 | families | 6-8 | **7 active** (ripgrep_ignore_path, fastify_decorator, fastify_contenttype, fastify_reply_api, fastify_schemas, clap_derive_api, +httpx rejected) — **TARGET MET** ✓ |
-| executable nodes | 20-30 | 9 |
+| executable nodes | 20-30 | 11 |
 | semantic edges | 10-15 | 6 (c2->c3, c3->c4, c4->c5, c1->cef, +2 clap single-node) |
 | intervention-ready | >=8 | 4 (c2->c3, c3->c4, c4->c5, c1->cef) |
 | N=1 run | 4-6 sensitive | c4->c5 INCONCLUSIVE (too hard); c3->c4 reset-solvable (cost-metric only) |
