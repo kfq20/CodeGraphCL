@@ -1,3 +1,3 @@
 edge_id,repo,motif,producer,consumer,ancestry,mechanism_audit,separability,executable_gate,reset_calibration,n1_outcome,n3_status,n3_correct,n3_reset,n3_irrelevant,n3_wrong,verified,stateful_pilot,notes
 fastify_onsend_hook_runner,fastify,scope/ownership,4183c3b5,86519c8b,yes,yes,pending(near-miss-blocked),pending,n/a,n/a,-,-,-,-,rejected_nearmiss_blocked,no,resolve-to-value test single-fail + Node-skip; 3 near-miss all pass under gold
-ripgrep_b621_to_skip_unreachable,ripgrep,lifecycle/cache,b621e65,435f59f,yes,yes,passed(4/4),too_hard(0/2 timeout),n/a,n/a,-,-,-,-,rejected_too_hard,no,cargo compile-time eats budget; 9-10 tool_calls/600s; not a causal verdict
+ripgrep_b621_to_skip_unreachable,ripgrep,lifecycle/cache,b621e65,435f59f,yes,yes,passed(4/4),non_saturated(1/2 warm),reversed(1/4:irrelevant solved,correct failed),n/a,-,-,-,-,rejected_reversed,no,N=1 reversed vs hypothesis; same pattern as Phase 2 edges
