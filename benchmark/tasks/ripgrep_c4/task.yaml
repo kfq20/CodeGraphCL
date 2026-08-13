@@ -31,6 +31,7 @@ verifier:
   fail_to_pass:
     - regression::r3173_hidden_whitelist_only_dot
   pass_to_pass: []
+  pass_to_pass_not_applicable: true  # r3173 is c4's new test; base has no prior r3173 variant to regress
   near_miss:
     - near_miss/nearmiss_c4.py    # TODO: write (Day4)
 
@@ -41,7 +42,7 @@ separability:
 status:
   semantic_audit: passed
   separability_gate: passed      # 7/7 (instruction = symptom only; stale=c2 naive strip)
-  executable_gate: passed      # core 3 gates VERIFIED via `codegraphcl materialize` (mat_c4_1); near-miss inject script TODO
+  executable_gate: pending    # core 3 gates pass but near-miss inject broken (QL2 needs >=2 valid near-miss) — NOT passed
   intervention_preflight: passed  # intervene N=1 reset reward=1 (timeout_solved)
 
 notes: >

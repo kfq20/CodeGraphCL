@@ -33,7 +33,7 @@ separability:
 status:
   semantic_audit: passed
   separability_gate: passed
-  executable_gate: pending      # producer anchor; materialize not required for the edge
+  executable_gate: not_applicable  # producer anchor; not an executable target
   intervention_preflight: pending
 
 notes: >

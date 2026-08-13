@@ -381,17 +381,35 @@ def cmd_materialize(task_dir: str, run_id: str | None = None, container: str | N
                            "status": "caught" if ok else "PASSED (anti-hardcoding FAIL)"})
         print(f"[GATE4 near-miss {i+1}] {nm_rel} rc={rc_nm} -> {'FAIL (caught)' if ok else 'PASS (verifier too weak!)'}")
 
-    nm_bad = [n for n in nm_results if "PASSED" in n.get("status", "")]
+    # A near-miss is "bad" if it PASSED the verifier (anti-hardcoding fail) OR if it could
+    # not be applied/injected (missing/apply_failed/inject_failed/unsupported) — the latter
+    # is INCONCLUSIVE, not caught, and must NOT let the gate pass.
+    NM_FAILURE_STATES = {"PASSED (anti-hardcoding FAIL)", "missing", "apply_failed",
+                         "inject_failed", "unsupported_nearmiss_type"}
+    nm_bad = [n for n in nm_results if n.get("status", "") in NM_FAILURE_STATES]
+    nm_inconclusive = [n for n in nm_results
+                       if n.get("status") in {"missing", "apply_failed",
+                                              "inject_failed", "unsupported_nearmiss_type"}]
+    nm_antihard_fail = [n for n in nm_results if n.get("status") == "PASSED (anti-hardcoding FAIL)"]
     p2p_bad = bool(p2p_regressed)
 
     if nm_bad or p2p_bad:
-        result = {"status": "task_failure",
-                  "reason": ("near-miss passed verifier (anti-hardcoding fail): " +
-                             ", ".join(n["patch"] for n in nm_bad)) if nm_bad else
-                            f"PASS_TO_PASS regressed: {p2p_regressed}",
+        # inconclusive near-miss -> overall inconclusive (NOT passed); anti-hardcoding fail
+        # or p2p regression -> task_failure
+        if nm_antihard_fail or p2p_bad:
+            status = "task_failure"
+            reason = ("near-miss passed verifier (anti-hardcoding fail): " +
+                      ", ".join(n["patch"] for n in nm_antihard_fail)) if nm_antihard_fail else \
+                     f"PASS_TO_PASS regressed: {p2p_regressed}"
+        else:
+            status = "inconclusive"
+            reason = ("near-miss could not be applied/injected (inconclusive): " +
+                      ", ".join(f"{n['patch']} ({n['status']})" for n in nm_inconclusive))
+        result = {"status": status,
+                  "reason": reason,
                   "gates": {"base_fail": "passed", "gold_pass": "passed",
                             "pass_to_pass": "failed" if p2p_bad else "passed",
-                            "near_miss": "failed" if nm_bad else "passed"},
+                            "near_miss": "failed" if nm_antihard_fail else "inconclusive"},
                   "near_miss_results": nm_results}
         (run_dir / "materialization_result.json").write_text(json.dumps(result, indent=2))
         print(json.dumps(result, indent=2)); return 1

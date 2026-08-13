@@ -141,6 +141,28 @@ def cmd_validate(task_dir: str, family: str | None = None) -> int:
             chk("banned_words_not_in_instruction", "pass" if not leaked else "fail",
                 f"leaked: {leaked}" if leaked else "")
 
+    # 6b. near-miss count: executable targets (passed/pending/failed) need >=2;
+    # only not_applicable (producer) is exempt.
+    nm_list = cfg.get("verifier", {}).get("near_miss", [])
+    eg = cfg.get("status", {}).get("executable_gate", "pending")
+    if eg == "not_applicable":
+        chk("near_miss_count", "pass", f"producer (not_applicable) — {len(nm_list)} present")
+    elif len(nm_list) < 2:
+        chk("near_miss_count", "fail", f"executable task needs >=2 near-miss, has {len(nm_list)}")
+    else:
+        chk("near_miss_count", "pass", f"{len(nm_list)} near-miss")
+
+    # 6c. PASS_TO_PASS: empty must be marked not_applicable with reason, not auto-pass
+    p2p = cfg.get("verifier", {}).get("pass_to_pass", [])
+    p2p_na = cfg.get("verifier", {}).get("pass_to_pass_not_applicable", False)
+    if not p2p:
+        if p2p_na:
+            chk("pass_to_pass", "pass", "empty but marked not_applicable (reason in notes)")
+        else:
+            chk("pass_to_pass", "fail", "empty pass_to_pass without pass_to_pass_not_applicable: true")
+    else:
+        chk("pass_to_pass", "pass", f"{len(p2p)} tests declared")
+
     # 7. family refs (if --family given) — family schema + node/edge resolution
     if family:
         fp = Path(family)

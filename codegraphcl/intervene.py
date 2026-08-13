@@ -39,8 +39,10 @@ def _extract_atom(atoms_text: str, name: str) -> str:
     return atoms_text[i:j].strip() if j > 0 else ""
 
 
-def _build_prompt(cfg: dict, td: Path, condition: str, container_workdir: str) -> tuple[str, dict]:
-    """Build the prompt for a condition. Returns (prompt_text, manifest_fields)."""
+def _build_prompt(cfg: dict, td: Path, condition: str, container_workdir: str,
+                  container: str = "<container>") -> tuple[str, dict]:
+    """Build the prompt for a condition. Returns (prompt_text, manifest_fields).
+    `container` is the discovered container name (NOT hardcoded — passed by caller)."""
     instr = (td / cfg["instruction"]["path"]).read_text().strip()
     atoms_path = td / "atoms.md"
     atoms = atoms_path.read_text() if atoms_path.exists() else ""
@@ -51,7 +53,7 @@ def _build_prompt(cfg: dict, td: Path, condition: str, container_workdir: str) -
     docker_hint = (
         "You are working in the repository at your current directory. To run the project's "
         "tests (in the prepared container env, not on the host), use:\n"
-        f"  docker exec cgcl-mat-box bash -c 'cd {container_workdir} && ...'\n"
+        f"  docker exec {container} bash -c 'cd {container_workdir} && ...'\n"
         "Do NOT modify files under tests/ — the verifier applies its own tests after you finish. "
         "When done, output a one-line summary."
     )
@@ -160,7 +162,9 @@ def cmd_intervene(edge_yaml: str, n: int = 1, seed: int = 42, conditions: list[s
         for c in order:
             plan.append((f"ep_{i:06d}", c, b)); i += 1
     pool_host = Path(os.environ.get("CGCL_POOL", "/tmp/cgcl_box_pool"))
-    results_csv = ROOT / "runs" / f"intervene_{Path(edge_yaml).stem}_seed{seed}" / "results.csv"
+    import time as _t
+    run_stamp = f"{Path(edge_yaml).stem}_seed{seed}_{int(_t.time())}"
+    results_csv = ROOT / "runs" / f"intervene_{run_stamp}" / "results.csv"
     results_csv.parent.mkdir(parents=True, exist_ok=True)
     if not results_csv.exists():
         results_csv.write_text("episode_id,condition,block,reward,outcome,elapsed_sec,input_tokens,"
@@ -237,7 +241,7 @@ def _run_episode(cfg, td, epid, cond, cname, pool_host) -> int:
             if f.is_file(): shutil.copy2(f, work / "verifier" / f.name)
     # build prompt + manifest
     try:
-        prompt, mfields = _build_prompt(cfg, td, cond, container_work)
+        prompt, mfields = _build_prompt(cfg, td, cond, container_work, container=cname)
     except ValueError as e:
         print(f"  {e}"); return 1
     mfields.update({"episode_id": epid, "model": os.environ.get("CGCL_MODEL", "macaron-v1-coding-venti"),

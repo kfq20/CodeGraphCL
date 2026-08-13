@@ -34,6 +34,7 @@ verifier:
     - real TLS cipher after start_tls
     - HTTP 200 over upgraded stream
   pass_to_pass: []
+  pass_to_pass_not_applicable: true  # test_concurrency.py created by T_A; no pre-existing tests on T_B base to regress
   near_miss:
     - near_miss/stub_returns_plain_stream.patch
 
@@ -44,7 +45,7 @@ separability:
 status:
   semantic_audit: passed
   separability_gate: passed
-  executable_gate: passed      # core 3 gates VERIFIED via `codegraphcl materialize` (mat_httpx_tB_v6); near-miss patch format TODO
+  executable_gate: pending    # core 3 gates pass but near-miss patch malformed — NOT passed
   intervention_preflight: passed  # intervene N=1 reset reward=1 (smoke); full 4-arm pending
 
 notes: >
