@@ -100,8 +100,29 @@
 - httpx_tB near-miss: patch malformed (hand-written). Needs conversion to .py injector.
 - DinD: npm/apt/pip slow under nested docker. cargo OK (crates.io cache persists).
 
+## N=1 causal-verification funnel (3 edges run, all no-go for N=3)
+| edge | reset-feasibility | N=1 4-arm result | N=3? |
+|---|---|---|---|
+| ripgrep c4->c5 | (not probed — c5 too hard) | 3/4 timeout_failed, wrong fluke-solved | NO-GO (too hard) |
+| fastify hasheader->removeheader | 177s/25t (easy) | all 4 solved (1.0); cost REVERSED (correct slowest) | NO-GO (saturated-easy) |
+| clap help_newline->newline (strongest text evidence) | 185s/42t (easy) | all 4 solved (1.0); cost REVERSED (correct SLOWEST 600s wall, wrong FASTEST 166s) | NO-GO (saturated-easy) |
+
+**CROSS-CUTTING FINDING (3 N=1s converge):** the bank's single-node consistency tasks do NOT
+carry a clean CL causal signal even with the strongest textual provenance. They saturate at
+either end — too-easy (pass-rate 1.0, cost direction reversed: a longer "correct" preamble
+lengthens exploration; a pithy "wrong" preamble solves faster) or too-hard (3/4 timeout). The
+narrow CL-readable band is multi-node revision edges where reset solves AT the wall but doesn't
+time out (the c3->c4 shape: reward=1 timeout_solved 600s 208 turns). The current bank's
+single-node tasks are below that band (too easy) or above it (c5 too hard).
+
+**Phase2 status:** all 4 production targets MET (nodes 20/20-30, families 9/6-8, semantic edges
+10/10-15, intervention-ready 9/8). The causal-verification standard (N=3 on 4-6 sensitive edges)
+CANNOT be met from the current single-node bank — the 3 N=1 preflights show no edge has the
+required sensitivity. Meeting it requires building multi-node revision edges in the c3->c4
+difficulty band (reset solves ~300-500s), which is the next phase's work.
+
 ## Next
-- **c5 N=1 INCONCLUSIVE** (3/4 timeout_failed, wrong arm fluke-solved) — c5 too hard for clean
-  N=1 read (agent times out regardless of prior). NOT escalating to N=3. Retarget to easier
-  revision edge: c3->c4 (smaller `.`-dir refactor) or fastify parity, where reset solves <300s
-  so the edge measures experience COST not feasibility.
+- Build multi-node revision edges in the c3->c4 difficulty band (reset solves AT wall, not <200s,
+  not timing out) — the only band where a clean CL cost-metric signal can be read. The single-node
+  tasks already built serve the construction/anti-hardcoding/Separability-Gate evidence (which is
+  why the production targets are met) but not causal verification.
