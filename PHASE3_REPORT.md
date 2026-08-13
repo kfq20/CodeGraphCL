@@ -78,3 +78,41 @@ conditions. Feasibility verdicts after empirical base-fail/gold-pass checks:
 3. Candidate 10 (ripgrep skip unreachable ignore files) — lifecycle; to build.
 
 Cross-repo: fastify + ripgrep (2 repos). Cross-motif: scope/ownership + precedence + lifecycle (3 motifs).
+
+## 1.1 Screening funnel — actual outcomes (mid-phase)
+
+| stage | built candidates | outcome |
+|---|---|---|
+| new candidates audited | 10 | 6 ranked, 4 viable-non-overlapping identified |
+| passed Semantic Audit | 2 built (cand 7, cand 10) | both ancestry-confirmed, mechanism-audited |
+| passed Mechanism Audit | 2 | both 5-field mechanism_audit written |
+| passed Separability | 2 | both 9/9 validated, prompt-preview PASS |
+| passed Executable Gate | 1 of 2 | cand 10: 4/4 materialized + 2 caught near-miss; cand 7: near-miss BLOCKED (3 variants all pass under gold) |
+| passed Reset Calibration | 0 of 1 | cand 10: too_hard (0/2, both timeout — cargo compile-time eats the 600s budget) |
+| 4-arm N=1 run | 0 | none reached it |
+| N=3 run | 0 | — |
+| causally_verified_v0 | 0 | — |
+
+## 5.0 Verified / Rejected / Blocked classification (so far)
+
+- **causally_verified_v0**: 0 (none yet)
+- **rejected / blocked**:
+  - fastify_onsend_hook_runner: near-miss-blocked (test single-fail-mode + Node-skip; design, not causal)
+  - ripgrep_b621_to_skip_unreachable: too_hard at Reset calibration (cargo compile-time budget; infra, not causal)
+- Audited-but-not-built: cand 6 (ripgrep GIT_CONFIG_GLOBAL, precedence — viable but same cargo-compile risk), cand 1/2/3/5/8/9 rejected per §2.0.
+
+## Infra finding (the real Phase 3 blocker)
+
+Both built candidates failed at the infra/cost layer, NOT the causal layer:
+- ripgrep tasks: `cargo test` recompiles the workspace per tool-call (~minutes/build); the 600s
+  intervene budget is consumed by compilation, leaving 9-10 tool calls total. A persistent
+  cargo target cache (shared across episodes) + a pre-built workspace baseline would be needed
+  to give ripgrep candidates a fair Reset calibration.
+- fastify cand 7: the resolve-to-value verifier test has a single failure mode + a Node-version
+  skip (`process.versions.node[0] >= 8` mis-parses node 20 as "2"<8), so the test-numbering is
+  noisy and 3 near-miss variants all pass under gold.
+
+Phase 3 §4.3 applies: the screening work is complete, but no causally_verified_v0 edge exists
+in the current pass. Project positioning shifts toward "graph-based benchmark construction
+framework + feasibility study" unless a follow-up pass with (a) a warm-cargo ripgrep container
+and (b) better-designed fastify verifiers yields 2 verified edges.
