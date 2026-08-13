@@ -1,0 +1,17 @@
+# Banned MECHANISM words for fastify_clean_schema_id instruction.
+# The fix: a cleanId() that recursively walks the schema object deleting the $id key, called
+# on the route schemas before compilation. "$id"/"identifier" are symptom-level (the thing that
+# leaks); the recursion/ deletion mechanism is banned.
+cleanId
+clean id
+recursive
+recursion
+for (var key
+delete schema[
+typeof schema
+getSchemaAnyway
+oneOf
+allOf
+anyOf
+schemas.js
+Schemas.prototype

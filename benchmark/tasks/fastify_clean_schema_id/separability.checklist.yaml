@@ -1,0 +1,43 @@
+# Separability checklist for fastify_clean_schema_id (single-node, fastify_schemas family).
+# Instruction states the symptom (shared schema $id leaks into route compile); the fix
+# (recursively strip $id from the schema copy used for compilation) must be derived.
+schema_version: 1
+task_id: fastify_clean_schema_id
+
+checks:
+  - id: S1_instruction_symptom_only
+    question: "Does the instruction state only the symptom ($id leaks), not the fix?"
+    answer: yes
+    evidence: >
+      instruction.md: "the shared schema's identifier ($id) is left in place... the compiler
+      then sees a nested identifier where it does not belong." Acceptance: strip the identifier
+      (and nested ones) on the copy used for compilation, not the stored original.
+  - id: S2_instruction_no_mechanism_words
+    question: "Does the instruction avoid cleanId / recursive / delete schema[ / oneOf / getSchemaAnyway?"
+    answer: yes
+    evidence: "banned_words.txt forbids these; validate confirms no leak"
+  - id: S3_instruction_no_file_names
+    question: "Does the instruction avoid naming schemas.js / Schemas.prototype?"
+    answer: yes
+    evidence: "instruction says 'the schema resolver / shared-schema surface'"
+  - id: S4_near_misses_plausible
+    question: "Are the near-misses plausible-but-wrong, not absurd?"
+    answer: yes
+    evidence: >
+      A = strip only top-level $id (real 'I'll strip it from this schema' omission of recursion);
+      B = recurse but strip the wrong key 'id' not '$id' (real field-name confusion).
+  - id: S5_near_misses_distinct_axes
+    question: "Do the near-misses fail along distinct axes?"
+    answer: yes
+    evidence: >
+      A leaves NESTED $id (top-level stripped, recursion skipped); B leaves ALL $id (recursion
+      runs but targets the wrong key). Different residual-$id footprints.
+  - id: S6_base_solvable_and_feasible
+    question: "Is the base solvable and comfortably under the agent time budget?"
+    answer: yes
+    evidence: "11-line source patch. base-fail + gold-pass verified by hand (RC=1 -> RC=0)."
+
+edge_strength: n/a_single_node
+# Single-node bug fix; contributes an executable node + anti-hardcoding evidence.
+# Same family as fastify_get_shared_schemas but a separate snapshot (different bug, not a
+# revision pair — not a multi-node CL edge).
