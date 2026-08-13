@@ -33,7 +33,8 @@ verifier:
   pass_to_pass: []
   pass_to_pass_not_applicable: true  # r3173 is c4's new test; base has no prior r3173 variant to regress
   near_miss:
-    - near_miss/nearmiss_c4.py    # TODO: write (Day4)
+    - near_miss/nearmiss_c4.py
+    - near_miss/nearmiss_c4_noguard.py
 
 separability:
   banned_words: banned_words.txt
