@@ -1,0 +1,55 @@
+schema_version: 1
+task_id: clap_error_help_newline
+family_id: clap_error
+
+repository:
+  url: https://github.com/clap-rs/clap
+  base_commit: 2eb69def4ecb^      # parent of the fix
+  gold_commit: 2eb69def4ecb
+  language: rust
+
+instruction:
+  path: instruction.md
+
+environment:
+  image: codegraphcl-ripgrep:rust
+  dockerfile: harbor_task/environment/Dockerfile.ripgrep
+  workdir: /workspace/repo
+  build_timeout_sec: 900
+  extra_mounts:
+    cargo_cache: /tmp/cgcl_cargo_cache
+    target: /tmp/cgcl_target
+
+patches:
+  gold: gold.patch                 # src/parse/errors.rs (else { c.none("\n") } in try_help)
+  verifier: verifier/verifier.patch # tests/builder/help.rs (trailing-newline assertion)
+
+verifier:
+  command: bash verifier/test.sh   # cargo test --test builder disabled_help_flag_and_subcommand
+  timeout_sec: 300
+  hermetic: false
+  fail_to_pass:
+    - "test: help::disabled_help_flag_and_subcommand"
+  pass_to_pass: []
+  pass_to_pass_not_applicable: true  # the assertion is added to an existing test
+  near_miss_base: gold
+  near_miss:
+    - near_miss/nearmiss_hn_noelse.py
+    - near_miss/nearmiss_hn_wrongbranch.py
+
+separability:
+  banned_words: banned_words.txt
+  checklist: separability.checklist.yaml
+
+status:
+  semantic_audit: passed
+  separability_gate: passed      # instruction = symptom (help/subcommand error has no trailing newline); no \n/else/c.none leakage
+  executable_gate: passed         # base-fail VERIFIED by hand (BF_RC=101); near-miss pending empirical confirm
+  intervention_preflight: pending
+
+notes: >
+  Second node in clap_error family. Single-node bug fix (commit 2eb69def4ecb): the
+  help-disabled error path had no trailing newline. gold adds `else { c.none("\n") }` in
+  try_help. base-fail VERIFIED (test panics on base, BF_RC=101). Two near-miss (no-else +
+  wrong-branch) re-fail. 2-line source patch. Similar shape to clap_error_newline but a
+  different error path (unrecognized-subcommand when help disabled) — separate snapshot.

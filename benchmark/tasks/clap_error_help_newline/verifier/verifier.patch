@@ -1,0 +1,29 @@
+From 2eb69def4ecbd2bf2de89c7258a4e99c9ad3f09c Mon Sep 17 00:00:00 2001
+From: Ed Page <eopage@gmail.com>
+Date: Mon, 13 Dec 2021 13:09:46 -0600
+Subject: [PATCH] fix(error): Ensure trailing newline without help
+
+Fixes #2787
+---
+ tests/builder/help.rs | 5 +++++
+ 1 file changed, 5 insertions(+)
+
+diff --git a/tests/builder/help.rs b/tests/builder/help.rs
+index c613bfed..78ab8394 100644
+--- a/tests/builder/help.rs
++++ b/tests/builder/help.rs
+@@ -2643,6 +2643,11 @@ fn disabled_help_flag_and_subcommand() {
+     let err = res.unwrap_err();
+     assert_eq!(err.kind, ErrorKind::UnrecognizedSubcommand);
+     assert_eq!(err.info, &["help"]);
++    assert!(
++        err.to_string().ends_with('\n'),
++        "Errors should have a trailing newline, got {:?}",
++        err.to_string()
++    );
+ }
+ 
+ #[test]
+-- 
+2.34.1
+

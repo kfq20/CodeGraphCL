@@ -1,0 +1,11 @@
+# Banned MECHANISM words for clap_error_help_newline instruction.
+# The fix: add an `else { c.none("\n") }` branch in src/parse/errors.rs so the help/subcommand
+# error path ends with a newline. "newline"/"error message" are symptom-level.
+\\n
+'\\n'
+c.none(
+else {
+src/parse/errors.rs
+errors.rs
+to_string()
+ends_with

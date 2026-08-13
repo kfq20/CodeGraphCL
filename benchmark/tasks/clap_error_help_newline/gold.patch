@@ -1,0 +1,26 @@
+From 2eb69def4ecbd2bf2de89c7258a4e99c9ad3f09c Mon Sep 17 00:00:00 2001
+From: Ed Page <eopage@gmail.com>
+Date: Mon, 13 Dec 2021 13:09:46 -0600
+Subject: [PATCH] fix(error): Ensure trailing newline without help
+
+Fixes #2787
+---
+ src/parse/errors.rs | 2 ++
+ 1 file changed, 2 insertions(+)
+
+diff --git a/src/parse/errors.rs b/src/parse/errors.rs
+index e5b607be..b7917f37 100644
+--- a/src/parse/errors.rs
++++ b/src/parse/errors.rs
+@@ -1133,6 +1133,8 @@ fn try_help(app: &App, c: &mut Colorizer) {
+         c.none("\n\nFor more information try ");
+         c.good("help");
+         c.none("\n");
++    } else {
++        c.none("\n");
+     }
+ }
+ 
+-- 
+2.34.1
+
