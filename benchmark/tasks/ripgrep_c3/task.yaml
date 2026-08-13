@@ -41,7 +41,8 @@ verifier:
     - regression::r829_original
     - regression::r829_2731
   near_miss:
-    - near_miss/nearmiss_c3.py   # script: A=over-strip, B=no-strip
+    - near_miss/nearmiss_c3_overstrip.py
+    - near_miss/nearmiss_c3_nostrip.py
 
 separability:
   banned_words: banned_words.txt

@@ -1,0 +1,16 @@
+   Compiling ripgrep v14.1.1 (/pool/mat_c3_ql/work)
+   Compiling ignore v0.4.23 (/pool/mat_c3_ql/work/crates/ignore)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 4.01s
+     Running tests/tests.rs (/target/debug/deps/integration-363d9da47f7e0442)
+
+running 6 tests
+test regression::r829_2933 ... ok
+test regression::r829_2836 ... ok
+test regression::r829_2778 ... ok
+test regression::r829_2747 ... ok
+test regression::r829_original ... ok
+test regression::r829_2731 ... ok
+
+test result: ok. 6 passed; 0 failed; 0 ignored; 0 measured; 299 filtered out; finished in 0.08s
+
+RC=0
