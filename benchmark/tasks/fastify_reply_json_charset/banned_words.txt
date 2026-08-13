@@ -1,0 +1,11 @@
+# Banned MECHANISM words for fastify_reply_json_charset instruction.
+# The fix: change `contentType === 'application/json'` to `contentType.indexOf('application/json') > -1`
+# AND add a nested `contentType.indexOf('charset') === -1` guard before setting the default.
+# "charset"/"content type"/"JSON" are symptom-level vocabulary.
+indexOf
+application/json
+hasContentType
+this._headers
+reply.js
+=== 'application/json'
+serialize

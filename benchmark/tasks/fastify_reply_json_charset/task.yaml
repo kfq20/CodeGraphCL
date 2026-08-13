@@ -1,0 +1,53 @@
+schema_version: 1
+task_id: fastify_reply_json_charset
+family_id: fastify_reply_api
+
+repository:
+  url: https://github.com/fastify/fastify
+  base_commit: 2f4a84317885^      # parent of the fix
+  gold_commit: 2f4a84317885
+  language: javascript
+
+instruction:
+  path: instruction.md
+
+environment:
+  image: codegraphcl-fastify:node
+  dockerfile: harbor_task/environment/Dockerfile.fastify
+  workdir: /workspace/repo
+  build_timeout_sec: 900
+  extra_mounts: {}
+
+patches:
+  gold: gold.patch                 # lib/reply.js (substring-match JSON + charset guard)
+  verifier: verifier/verifier.patch # test/internals/reply.test.js (JSON+charset test)
+
+verifier:
+  command: bash verifier/test.sh   # tap test/internals/reply.test.js --grep 'JSON content type with a charset'
+  timeout_sec: 300
+  hermetic: false
+  fail_to_pass:
+    - "test: Reply should handle JSON content type with a charset"
+  pass_to_pass: []
+  pass_to_pass_not_applicable: true  # the JSON+charset test is new
+  near_miss_base: gold
+  near_miss:
+    - near_miss/nearmiss_jc_noguard.py
+    - near_miss/nearmiss_jc_exact.py
+
+separability:
+  banned_words: banned_words.txt
+  checklist: separability.checklist.yaml
+
+status:
+  semantic_audit: passed
+  separability_gate: passed      # instruction = symptom (JSON+charset not recognized / charset clobbered); no indexOf/application-json/hasContentType leakage
+  executable_gate: passed         # base-fail VERIFIED by hand (BF_RC=1); pending full materialize-confirm
+  intervention_preflight: pending
+
+notes: >
+  Third node in fastify_reply_api family. Single-node bug fix (commit 2f4a84317885): the JSON
+  content-type check was exact-match (missed charset-suffixed forms), and the default-set
+  clobbered an existing charset. gold substring-matches the JSON media type AND adds a charset
+  guard. base-fail VERIFIED (JSON-with-charset test fails on base, BF_RC=1). Two near-miss
+  (no-charset-guard + keep-exact-match) re-fail opposite assertions. 6-line source patch.

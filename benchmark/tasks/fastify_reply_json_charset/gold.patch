@@ -1,0 +1,32 @@
+From 2f4a8431788563f12876c167454785fd7ae0c35a Mon Sep 17 00:00:00 2001
+From: Tomas Della Vedova <delvedor@users.noreply.github.com>
+Date: Wed, 9 May 2018 22:27:54 +0200
+Subject: [PATCH] Fix 928 (#929)
+
+* Fixes #928
+
+* Updated test
+---
+ lib/reply.js | 6 ++++--
+ 1 file changed, 4 insertions(+), 2 deletions(-)
+
+diff --git a/lib/reply.js b/lib/reply.js
+index 574ae1e5..1144a2da 100644
+--- a/lib/reply.js
++++ b/lib/reply.js
+@@ -71,8 +71,10 @@ Reply.prototype.send = function (payload) {
+ 
+   if (this._serializer) {
+     payload = this._serializer(payload)
+-  } else if (hasContentType === false || contentType === 'application/json') {
+-    this._headers['content-type'] = 'application/json; charset=utf-8'
++  } else if (hasContentType === false || contentType.indexOf('application/json') > -1) {
++    if (hasContentType === false || contentType.indexOf('charset') === -1) {
++      this._headers['content-type'] = 'application/json; charset=utf-8'
++    }
+     payload = serialize(this.context, payload, this.res.statusCode)
+     flatstr(payload)
+   }
+-- 
+2.34.1
+

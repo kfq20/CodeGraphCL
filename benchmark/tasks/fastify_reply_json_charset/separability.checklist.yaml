@@ -1,0 +1,43 @@
+# Separability checklist for fastify_reply_json_charset (single-node, fastify_reply_api family).
+# Instruction states the symptom (JSON+charset not recognized + charset clobbered); the fix
+# (substring-match the JSON media type + guard against clobbering an existing charset) must be derived.
+schema_version: 1
+task_id: fastify_reply_json_charset
+
+checks:
+  - id: S1_instruction_symptom_only
+    question: "Does the instruction state only the symptom, not the fix?"
+    answer: yes
+    evidence: >
+      instruction.md describes two symptoms (charset-suffixed JSON not recognized; existing
+      charset clobbered). Acceptance: recognize JSON when bare type appears anywhere; don't
+      clobber an existing charset.
+  - id: S2_instruction_no_mechanism_words
+    question: "Does the instruction avoid indexOf / application/json / hasContentType / this._headers?"
+    answer: yes
+    evidence: "banned_words.txt forbids these; instruction says 'the bare JSON media type appears anywhere in the content-type string'"
+  - id: S3_instruction_no_file_names
+    question: "Does the instruction avoid naming reply.js?"
+    answer: yes
+    evidence: "instruction says 'the reply's content-type / serialization handling'"
+  - id: S4_near_misses_plausible
+    question: "Are the near-misses plausible-but-wrong, not absurd?"
+    answer: yes
+    evidence: >
+      A = do part (1) only, skip the charset guard (real 'I relaxed the match, default-set is
+      fine' incomplete fix); B = keep exact-match but add the guard (real 'recognize bare only'
+      half-measure).
+  - id: S5_near_misses_distinct_axes
+    question: "Do the near-misses fail along distinct axes?"
+    answer: yes
+    evidence: >
+      A fails charset-PRESERVATION (recognition works, charset clobbered); B fails RECOGNITION
+      (charset-suffixed JSON not treated as JSON). Different assertion.
+  - id: S6_base_solvable_and_feasible
+    question: "Is the base solvable and comfortably under the agent time budget?"
+    answer: yes
+    evidence: "6-line source patch. base-fail verified by hand (BF_RC=1)."
+
+edge_strength: n/a_single_node
+# Single-node bug fix; third node in fastify_reply_api family (separate snapshot from
+# redirect_statuscode and reply_headerssent — different bug, not a revision pair).
