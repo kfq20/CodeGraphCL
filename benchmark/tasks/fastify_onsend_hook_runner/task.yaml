@@ -1,0 +1,91 @@
+schema_version: 1
+task_id: fastify_onsend_hook_runner
+family_id: fastify_hook_lifecycle
+
+repository:
+  url: https://github.com/fastify/fastify
+  base_commit: 86519c8b^      # parent of the consumer fix (includes producer 4183c3b5)
+  gold_commit: 86519c8b
+  language: javascript
+
+instruction:
+  path: instruction.md
+
+environment:
+  image: codegraphcl-fastify:node
+  dockerfile: harbor_task/environment/Dockerfile.fastify
+  workdir: /workspace/repo
+  build_timeout_sec: 900
+  extra_mounts: {}
+
+patches:
+  gold: gold.patch                 # lib/hookRunner.js + lib/reply.js + lib/handleRequest.js + fastify.js
+  verifier: verifier/verifier.patch # test/hooks.test.js (resolve-to-value test)
+
+verifier:
+  command: bash verifier/test.sh  # tap test/hooks.test.js --grep 'resolve to a value do not cause'
+  timeout_sec: 300
+  hermetic: false
+  fail_to_pass:
+    - "test: onRequest, preHandler, and onResponse hooks that resolve to a value do not cause an error"
+  pass_to_pass: []
+  pass_to_pass_not_applicable: true  # the resolve-to-value test is new
+  near_miss_base: gold
+  near_miss:
+    - near_miss/nearmiss_os_threadvalue.py
+    - near_miss/nearmiss_os_errpromise.py
+
+separability:
+  banned_words: banned_words.txt
+  checklist: separability.checklist.yaml
+
+mechanism_audit:
+  reusable_decision: >
+    Producer (4183c3b5) established the hook-chain execution model: request/preHandler/onResponse
+    hooks run in definition order and a hook's RETURN VALUE is not threaded into the chain state
+    (the chain advances regardless of what the hook resolved to). Only the onSend chain legitimately
+    transforms a value (the response payload). The two chains are DIFFERENT: the generic chain
+    ignores resolved values; the onSend chain threads payload.
+  plausible_path_correct: >
+    Split the single runner: a generic hookRunner whose next() ignores resolved values (handleResolve
+    -> next() with no value), and a separate onSendHookRunner whose next(err, newPayload) updates
+    payload only when newPayload !== undefined. The generic chain ignores hook return values; the
+    onSend chain threads payload.
+  plausible_path_competing: >
+    Keep the single runner and thread the resolved value into state (next(err, value), state = value
+    when value !== undefined). This is what the base did and what a reset agent sees as "correct"
+    (a hook returning a value updates state). It breaks the resolve-to-value case because a hook
+    resolving to 1/true/'a' overwrites request state and the request errors.
+  why_instruction_does_not_disambiguate: >
+    The instruction describes only the symptom (a hook resolving to a value breaks the request) and
+    the expected behavior (resolved value ignored). It does NOT name the hook runner, the split, the
+    state-threading, or onSend's separate payload contract — a reset agent can't tell whether to
+    ignore the value, thread it, or error on it.
+  why_correct_history_selects_path: >
+    The producer's decision (the generic chain ignores resolved values; only onSend threads payload)
+    points the agent at the split-and-ignore path: resolved values of request/preHandler/onResponse
+    hooks are dropped, not threaded. A prior carrying "the generic hook chain does not thread values"
+    rules out the competing "thread value into state" path.
+  why_wrong_history_is_plausible: >
+    The wrong prior — "a hook that returns a value is updating request state" (thread value into
+    state) — is a real, surface-plausible principle in many hook systems (middleware that mutates
+    state via return value). It is not absurd; it's the base behavior the producer fixed.
+
+status:
+  semantic_audit: passed
+  separability_gate: pending
+  executable_gate: pending        # base-fail + gold-pass VERIFIED (BF_RC=1, GP_RC=0) BUT near-miss
+                                  # design BLOCKED: the resolve-to-value verifier test has a single
+                                  # failure mode + a Node-version skip interferes with test numbering,
+                                  # so 3 near-miss variants all PASS under gold (don't re-fail). Cannot
+                                  # satisfy the >=2 caught-near-miss gate. Marked pending near-miss.
+  verification_tier: executable_candidate
+  intervention_preflight: pending
+
+notes: >
+  New fastify_hook_lifecycle family (Phase 3). Motif: scope/ownership (hook-chain state vs onSend
+  payload; two chains with different value-threading contracts). base-fail + gold-pass VERIFIED
+  by hand (BF_RC=1 -> GP_RC=0). The fix splits the single hookRunner into a generic one (ignore
+  resolved values) + onSendHookRunner (thread payload, update only when !== undefined). Two
+  near-miss (thread-value-into-state = base + error-on-promise) both re-fail the resolve-to-value
+  test. ~62 core lines (hookRunner 46 + reply 16).

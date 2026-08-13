@@ -1,0 +1,45 @@
+# Separability checklist for fastify_onsend_hook_runner (fastify_hook_lifecycle family, Phase 3).
+# Instruction states the symptom (a hook resolving to a value breaks the request); the fix
+# (split the runner: generic ignores resolved values; onSend threads payload) must be derived.
+schema_version: 1
+task_id: fastify_onsend_hook_runner
+
+checks:
+  - id: S1_instruction_symptom_only
+    question: "Does the instruction state only the symptom, not the fix?"
+    answer: yes
+    evidence: >
+      instruction.md: "the framework treats the hook's resolved value as if it were a replacement
+      for some internal piece of request state, and the response errors out." Acceptance: the
+      resolved value is ignored; onSend's payload mutation stays unchanged.
+  - id: S2_instruction_no_mechanism_words
+    question: "Does the instruction avoid hookRunner/onSendHookRunner/handleResolve/next(err,value)/state=value/newPayload?"
+    answer: yes
+    evidence: "banned_words.txt forbids these; instruction says 'the hook-runner surface' generically"
+  - id: S3_instruction_no_file_names
+    question: "Does the instruction avoid naming hookRunner.js?"
+    answer: yes
+    evidence: "instruction says 'the hook-runner surface'"
+  - id: S4_near_misses_plausible
+    question: "Are the near-misses plausible-but-wrong, not absurd?"
+    answer: yes
+    evidence: >
+      A = thread the resolved value into state (real 'a hook returning a value updates state'
+      principle, base behavior); B = treat a returned promise as an error (real 'hooks should be
+      synchronous' misread).
+  - id: S5_near_misses_distinct_axes
+    question: "Do the near-misses fail along distinct axes?"
+    answer: yes
+    evidence: >
+      A threads the value (state overwritten -> error); B rejects the promise (error before state
+      mutation). Both fail the resolve-to-value test, different failure reason.
+  - id: S6_base_solvable_and_feasible
+    question: "Is the base solvable and in the non-saturated band (not trivial, not a wall-timer)?"
+    answer: yes
+    evidence: >
+      ~62-line patch. base-fail verified (BF_RC=1). Reset calibration (N=2) pending — will determine
+      saturation before the 4-arm.
+
+edge_strength: candidate   # awaiting reset calibration + N=1
+# Phase 3 edge: producer 4183c3b5 (hook-chain execution model) -> consumer 86519c8b (split runner).
+# Motif: scope/ownership (generic chain ignores values; onSend chain threads payload).

@@ -1,0 +1,13 @@
+# Banned MECHANISM words for fastify_onsend_hook_runner instruction.
+# The fix: split the single hookRunner into a generic one (ignore resolved values) + an
+# onSendHookRunner that threads payload (only update when newPayload !== undefined).
+# "hook"/"value"/"payload"/"state" are symptom-level; the runner-split mechanism is banned.
+hookRunner
+onSendHookRunner
+handleResolve
+next(err, value)
+next(err, newPayload)
+state = value
+payload = newPayload
+newPayload !== undefined
+hookRunner.js
