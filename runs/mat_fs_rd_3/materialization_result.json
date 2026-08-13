@@ -1,0 +1,35 @@
+{
+  "status": "passed",
+  "gates": {
+    "base_fail": "passed",
+    "gold_pass": "passed",
+    "pass_to_pass": "passed",
+    "near_miss": "passed"
+  },
+  "fail_to_pass": [
+    "test: redirect to `/` - 6 (preset 307 preserved)",
+    "test: redirect to `/` - 7",
+    "test: redirect to `/` - 8",
+    "test: redirect to `/` - 9 (explicit code still wins)"
+  ],
+  "pass_to_pass": [
+    "test: redirect to `/` - 1",
+    "test: redirect to `/` - 2",
+    "test: redirect to `/` - 3",
+    "test: redirect to `/` - 4",
+    "test: redirect to `/` - 5"
+  ],
+  "near_miss_results": [
+    {
+      "patch": "near_miss/nearmiss_rd_useset.py",
+      "rc": 1,
+      "status": "caught"
+    },
+    {
+      "patch": "near_miss/nearmiss_rd_always302.py",
+      "rc": 1,
+      "status": "caught"
+    }
+  ],
+  "run_dir": "/vePFS-Mindverse/user/intern/fanqi/CodeGraphCL/runs/mat_fs_rd_3"
+}

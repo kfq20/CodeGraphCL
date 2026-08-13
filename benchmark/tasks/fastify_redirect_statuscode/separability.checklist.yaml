@@ -1,0 +1,46 @@
+# Separability checklist for fastify_redirect_statuscode (single-node, fastify_reply_api family).
+# Instruction states only the symptom (redirect clobbers a preset status code); the fix
+# (track whether code() was called, reuse the stored statusCode when redirect has no explicit
+# code, let an explicit numeric code win) must be derived.
+schema_version: 1
+task_id: fastify_redirect_statuscode
+
+checks:
+  - id: S1_instruction_symptom_only
+    question: "Does the instruction state only the symptom (preset code clobbered), not the fix?"
+    answer: yes
+    evidence: >
+      instruction.md: "the redirect overwrites that status code with its own default (302)
+      instead of honoring the code the caller already chose." Acceptance describes the contract
+      (no-explicit -> reuse preset; explicit -> wins), not the implementation.
+  - id: S2_instruction_no_mechanism_words
+    question: "Does the instruction avoid _hasStatusCode / flag / reply.js / res.statusCode?"
+    answer: yes
+    evidence: "banned_words.txt forbids the implementation tokens; validate confirms no leak"
+  - id: S3_instruction_no_file_names
+    question: "Does the instruction avoid naming reply.js?"
+    answer: yes
+    evidence: "instruction says 'the reply's redirect implementation'"
+  - id: S4_near_misses_plausible
+    question: "Are the near-misses plausible-but-wrong, not absurd?"
+    answer: yes
+    evidence: >
+      A = over-apply 'honor preset' to the explicit-code branch too (real over-correction);
+      B = track the flag but hardcode 302 in the ternary (real 'tracking added, not wired' smell).
+  - id: S5_near_misses_distinct_axes
+    question: "Do the near-misses fail along distinct axes?"
+    answer: yes
+    evidence: >
+      A breaks the explicit-override test (302 expected, 307 got); B breaks the preset test
+      (307 expected, 302 got). Opposite directions, opposite failing assertion.
+  - id: S6_base_solvable_and_feasible
+    question: "Is the base solvable and comfortably under the agent time budget?"
+    answer: yes
+    evidence: >
+      4-line source patch. Smaller than the ripgrep refactors that hit the 600s wall; a reset
+      agent should solve well under 600s, leaving headroom for a cost-metric CL read if a
+      revision pair is found in this family.
+
+edge_strength: n/a_single_node
+# Single-node consistency task; contributes an executable node + anti-hardcoding evidence.
+# Not a CL edge (no audited producer->reviser pair in this family yet).

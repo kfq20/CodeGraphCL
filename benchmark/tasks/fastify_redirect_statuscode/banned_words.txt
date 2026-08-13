@@ -1,0 +1,13 @@
+# Banned MECHANISM words for fastify_redirect_statuscode instruction.
+# The fix: track whether a status code was explicitly set (a flag set in reply.code()),
+# and in redirect use the stored statusCode when set, else default 302.
+# "status code" / "302" / "redirect" are symptom-level vocabulary the instruction needs;
+# only the implementation tokens are banned.
+_hasStatusCode
+hasStatusCode
+_hasStatus
+flag
+reply.js
+res.statusCode
+this.code
+this.res.statusCode

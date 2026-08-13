@@ -1,0 +1,41 @@
+From 92f474ea8c981bca64f46427383ed56d50d40998 Mon Sep 17 00:00:00 2001
+From: Shraddheya Shendre <shendreshraddheya@gmail.com>
+Date: Tue, 24 Jul 2018 13:14:47 +0530
+Subject: [PATCH] Fixed the bug in redirect exposed in #1049 (#1051)
+
+---
+ lib/reply.js | 4 +++-
+ 1 file changed, 3 insertions(+), 1 deletion(-)
+
+diff --git a/lib/reply.js b/lib/reply.js
+index 33e6a099..a93e9917 100644
+--- a/lib/reply.js
++++ b/lib/reply.js
+@@ -30,6 +30,7 @@ function Reply (res, context, request) {
+   this._isError = false
+   this.request = request
+   this._headers = {}
++  this._hasStatusCode = false
+ }
+ 
+ Reply.prototype.send = function (payload) {
+@@ -122,6 +123,7 @@ Reply.prototype.headers = function (headers) {
+ 
+ Reply.prototype.code = function (code) {
+   this.res.statusCode = code
++  this._hasStatusCode = true
+   return this
+ }
+ 
+@@ -144,7 +146,7 @@ Reply.prototype.type = function (type) {
+ Reply.prototype.redirect = function (code, url) {
+   if (typeof code === 'string') {
+     url = code
+-    code = 302
++    code = this._hasStatusCode ? this.res.statusCode : 302
+   }
+ 
+   this.header('location', url).code(code).send()
+-- 
+2.34.1
+

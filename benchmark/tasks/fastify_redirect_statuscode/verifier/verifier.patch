@@ -1,0 +1,80 @@
+From 92f474ea8c981bca64f46427383ed56d50d40998 Mon Sep 17 00:00:00 2001
+From: Shraddheya Shendre <shendreshraddheya@gmail.com>
+Date: Tue, 24 Jul 2018 13:14:47 +0530
+Subject: [PATCH] Fixed the bug in redirect exposed in #1049 (#1051)
+
+---
+ test/internals/reply.test.js | 50 ++++++++++++++++++++++++++++++++++++
+ 1 file changed, 50 insertions(+)
+
+diff --git a/test/internals/reply.test.js b/test/internals/reply.test.js
+index 3ec537fa..f25279ef 100644
+--- a/test/internals/reply.test.js
++++ b/test/internals/reply.test.js
+@@ -115,6 +115,14 @@ test('within an instance', t => {
+     reply.redirect(301, '/')
+   })
+ 
++  fastify.get('/redirect-code-before-call', function (req, reply) {
++    reply.code(307).redirect('/')
++  })
++
++  fastify.get('/redirect-code-before-call-overwrite', function (req, reply) {
++    reply.code(307).redirect(302, '/')
++  })
++
+   fastify.get('/custom-serializer', function (req, reply) {
+     reply.code(200)
+     reply.type('text/plain')
+@@ -240,6 +248,48 @@ test('within an instance', t => {
+       })
+     })
+ 
++    test('redirect to `/` - 6', t => {
++      t.plan(4)
++      sget({
++        method: 'GET',
++        url: 'http://localhost:' + fastify.server.address().port + '/redirect-code-before-call'
++      }, (err, response, body) => {
++        t.error(err)
++        t.strictEqual(response.statusCode, 200)
++        t.strictEqual(response.headers['content-type'], 'text/plain')
++        t.deepEqual(body.toString(), 'hello world!')
++      })
++    })
++
++    test('redirect to `/` - 7', t => {
++      t.plan(4)
++      sget({
++        method: 'GET',
++        url: 'http://localhost:' + fastify.server.address().port + '/redirect-code-before-call-overwrite'
++      }, (err, response, body) => {
++        t.error(err)
++        t.strictEqual(response.statusCode, 200)
++        t.strictEqual(response.headers['content-type'], 'text/plain')
++        t.deepEqual(body.toString(), 'hello world!')
++      })
++    })
++
++    test('redirect to `/` - 8', t => {
++      t.plan(1)
++
++      http.get('http://localhost:' + fastify.server.address().port + '/redirect-code-before-call', function (response) {
++        t.strictEqual(response.statusCode, 307)
++      })
++    })
++
++    test('redirect to `/` - 9', t => {
++      t.plan(1)
++
++      http.get('http://localhost:' + fastify.server.address().port + '/redirect-code-before-call-overwrite', function (response) {
++        t.strictEqual(response.statusCode, 302)
++      })
++    })
++
+     t.end()
+   })
+ })
+-- 
+2.34.1
+
