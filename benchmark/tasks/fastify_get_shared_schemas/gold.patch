@@ -1,0 +1,38 @@
+From c9141a071d0f4b762387e8373e86117cd6f61034 Mon Sep 17 00:00:00 2001
+From: Alexander Kureniov <SkeLLLa@users.noreply.github.com>
+Date: Tue, 17 Jul 2018 17:08:46 +0300
+Subject: [PATCH] Add method to get all shared schemas (#1046)
+
+---
+ fastify.js     | 1 +
+ lib/schemas.js | 4 ++++
+ 2 files changed, 5 insertions(+)
+
+diff --git a/fastify.js b/fastify.js
+index b3cc9b2f..5c2b33b8 100644
+--- a/fastify.js
++++ b/fastify.js
+@@ -164,6 +164,7 @@ function build (options) {
+   // schemas
+   fastify.addSchema = addSchema
+   fastify._schemas = new Schemas()
++  fastify.getSchemas = fastify._schemas.getSchemas.bind(fastify._schemas)
+ 
+   const onRouteHooks = []
+ 
+diff --git a/lib/schemas.js b/lib/schemas.js
+index 50f72985..f5967881 100644
+--- a/lib/schemas.js
++++ b/lib/schemas.js
+@@ -78,4 +78,8 @@ Schemas.prototype.getSchemaAnyway = function (schema) {
+   return schema
+ }
+ 
++Schemas.prototype.getSchemas = function () {
++  return Object.assign({}, this.store)
++}
++
+ module.exports = Schemas
+-- 
+2.34.1
+

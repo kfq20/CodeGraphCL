@@ -1,0 +1,41 @@
+# Separability checklist for fastify_get_shared_schemas (single-node, fastify_schemas family).
+# Instruction states the symptom (shared schemas are write-only, no read accessor); the fix
+# (a getSchemas accessor returning a shallow copy of the store map) must be derived.
+schema_version: 1
+task_id: fastify_get_shared_schemas
+
+checks:
+  - id: S1_instruction_symptom_only
+    question: "Does the instruction state only the symptom (write-only schemas), not the fix?"
+    answer: yes
+    evidence: >
+      instruction.md: "the schemas are stored internally but unreachable from the public API."
+      Acceptance describes the contract (a snapshot map keyed by id, mutation-isolated), not impl.
+  - id: S2_instruction_no_mechanism_words
+    question: "Does the instruction avoid Object.assign / this.store / getSchemas / schemas.js?"
+    answer: yes
+    evidence: "banned_words.txt forbids these; instruction uses 'accessor' and 'snapshot map' generically"
+  - id: S3_instruction_no_file_names
+    question: "Does the instruction avoid naming schemas.js / Schemas.prototype?"
+    answer: yes
+    evidence: "instruction says 'the fastify instance's schema surface'"
+  - id: S4_near_misses_plausible
+    question: "Are the near-misses plausible-but-wrong, not absurd?"
+    answer: yes
+    evidence: >
+      A = return the schema ids (plausible 'give me the names to look up'); B = return a named
+      wrapper (plausible 'expose under a namespace for forward-compat').
+  - id: S5_near_misses_distinct_axes
+    question: "Do the near-misses fail along distinct axes?"
+    answer: yes
+    evidence: >
+      A returns the wrong representation (array of ids vs map); B returns the right data under
+      the wrong keying (wrapper vs bare). Both fail deepEqual but the returned objects differ in
+      kind.
+  - id: S6_base_solvable_and_feasible
+    question: "Is the base solvable and comfortably under the agent time budget?"
+    answer: yes
+    evidence: "5-line source patch. Feasibility-blessed (smaller than the ripgrep refactors at the 600s wall)."
+
+edge_strength: n/a_single_node
+# Single-node feature-add; contributes an executable node + anti-hardcoding evidence.

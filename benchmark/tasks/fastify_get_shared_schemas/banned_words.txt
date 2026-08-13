@@ -1,0 +1,10 @@
+# Banned MECHANISM words for fastify_get_shared_schemas instruction.
+# The fix: Schemas.prototype.getSchemas = function () { return Object.assign({}, this.store) }
+# (a shallow copy of the store map). "schemas"/"map"/"snapshot" are symptom-level vocabulary.
+Object.assign
+this.store
+getSchemas
+schemas.js
+Schemas.prototype
+shallow copy
+Object.keys

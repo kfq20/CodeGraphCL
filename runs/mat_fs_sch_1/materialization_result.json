@@ -1,0 +1,27 @@
+{
+  "status": "passed",
+  "gates": {
+    "base_fail": "passed",
+    "gold_pass": "passed",
+    "pass_to_pass": "passed",
+    "near_miss": "passed"
+  },
+  "fail_to_pass": [
+    "test: Should expose getSchemas function",
+    "test: The schemas should be accessible via getSchemas"
+  ],
+  "pass_to_pass": [],
+  "near_miss_results": [
+    {
+      "patch": "near_miss/nearmiss_sch_keys.py",
+      "rc": 1,
+      "status": "caught"
+    },
+    {
+      "patch": "near_miss/nearmiss_sch_wrapper.py",
+      "rc": 1,
+      "status": "caught"
+    }
+  ],
+  "run_dir": "/vePFS-Mindverse/user/intern/fanqi/CodeGraphCL/runs/mat_fs_sch_1"
+}

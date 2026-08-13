@@ -1,0 +1,53 @@
+schema_version: 1
+task_id: fastify_get_shared_schemas
+family_id: fastify_schemas
+
+repository:
+  url: https://github.com/fastify/fastify
+  base_commit: c9141a071d0f^      # parent of the fix
+  gold_commit: c9141a071d0f
+  language: javascript
+
+instruction:
+  path: instruction.md
+
+environment:
+  image: codegraphcl-fastify:node
+  dockerfile: harbor_task/environment/Dockerfile.fastify
+  workdir: /workspace/repo
+  build_timeout_sec: 900
+  extra_mounts: {}
+
+patches:
+  gold: gold.patch                 # lib/schemas.js (getSchemas accessor) + fastify.js wiring
+  verifier: verifier/verifier.patch # test/shared-schemas.test.js (expose + access tests)
+
+verifier:
+  command: bash verifier/test.sh   # tap test/shared-schemas.test.js --grep getSchemas
+  timeout_sec: 300
+  hermetic: false
+  fail_to_pass:
+    - "test: Should expose getSchemas function"
+    - "test: The schemas should be accessible via getSchemas"
+  pass_to_pass: []
+  pass_to_pass_not_applicable: true  # the getSchemas tests are new; no prior accessor tests
+  near_miss_base: gold
+  near_miss:
+    - near_miss/nearmiss_sch_keys.py
+    - near_miss/nearmiss_sch_wrapper.py
+
+separability:
+  banned_words: banned_words.txt
+  checklist: separability.checklist.yaml
+
+status:
+  semantic_audit: passed
+  separability_gate: passed      # instruction = symptom (shared schemas are write-only); no Object.assign/store/getSchemas leakage
+  executable_gate: passed        # mat_fs_sch_1: 4/4 gates, 2 near-miss caught (keys + wrapper)
+  intervention_preflight: pending
+
+notes: >
+  New fastify_schemas family (7th). Single-node feature-add: shared schemas were write-only;
+  gold adds getSchemas() returning a shallow copy of the store map. base-fail = getSchemas
+  undefined -> typeof check fails + deepEqual throws. gold-pass = both tests pass. Two near-miss
+  (keys + named-wrapper) both fail the deepEqual shape. Small 5-line patch — feasibility-blessed.

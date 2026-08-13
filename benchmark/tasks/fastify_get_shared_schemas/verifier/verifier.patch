@@ -1,0 +1,53 @@
+From c9141a071d0f4b762387e8373e86117cd6f61034 Mon Sep 17 00:00:00 2001
+From: Alexander Kureniov <SkeLLLa@users.noreply.github.com>
+Date: Tue, 17 Jul 2018 17:08:46 +0300
+Subject: [PATCH] Add method to get all shared schemas (#1046)
+
+---
+ test/shared-schemas.test.js | 23 +++++++++++++++++++++++
+ 1 file changed, 23 insertions(+)
+
+diff --git a/test/shared-schemas.test.js b/test/shared-schemas.test.js
+index 96276a9f..1d1fc8f8 100644
+--- a/test/shared-schemas.test.js
++++ b/test/shared-schemas.test.js
+@@ -10,6 +10,12 @@ test('Should expose addSchema function', t => {
+   t.is(typeof fastify.addSchema, 'function')
+ })
+ 
++test('Should expose getSchemas function', t => {
++  t.plan(1)
++  const fastify = Fastify()
++  t.is(typeof fastify.getSchemas, 'function')
++})
++
+ test('The schemas should be added to an internal store', t => {
+   t.plan(1)
+   const fastify = Fastify()
+@@ -19,6 +25,23 @@ test('The schemas should be added to an internal store', t => {
+   t.deepEqual(fastify._schemas.store, { id: schema })
+ })
+ 
++test('The schemas should be accessible via getSchemas', t => {
++  t.plan(1)
++  const fastify = Fastify()
++
++  const schemas = [
++    { $id: 'id', my: 'schema' },
++    { $id: 'abc', my: 'schema' },
++    { $id: 'bcd', my: 'schema', properties: {a: 'a', b: 1} }
++  ]
++  const expected = {}
++  schemas.forEach(function (schema) {
++    expected[schema.$id] = schema
++    fastify.addSchema(schema)
++  })
++  t.deepEqual(fastify.getSchemas(), expected)
++})
++
+ test('Should throw if the $id property is missing', t => {
+   t.plan(1)
+   const fastify = Fastify()
+-- 
+2.34.1
+
