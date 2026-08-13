@@ -1,0 +1,41 @@
+# Separability checklist for fastify_404_unsupported_method (single-node, fastify_reply_api family).
+# Instruction states the symptom (unsupported method returns 405 not 404); the fix (swap 405->404)
+# must be derived.
+schema_version: 1
+task_id: fastify_404_unsupported_method
+
+checks:
+  - id: S1_instruction_symptom_only
+    question: "Does the instruction state only the symptom (405 instead of 404), not the fix?"
+    answer: yes
+    evidence: >
+      instruction.md: "responds with a 'method not allowed' status (405)... should instead return
+      a generic 'not found' status (404)." Acceptance: respond 404, not the method-not-allowed code.
+  - id: S2_instruction_no_mechanism_words
+    question: "Does the instruction avoid 405 / code(40 / Method Not Allowed / handleRequest.js?"
+    answer: yes
+    evidence: "banned_words.txt forbids these; instruction uses the symptom-level codes (which are the symptom here)"
+  - id: S3_instruction_no_file_names
+    question: "Does the instruction avoid naming handleRequest.js?"
+    answer: yes
+    evidence: "instruction says 'the request-handling path'"
+  - id: S4_near_misses_plausible
+    question: "Are the near-misses plausible-but-wrong, not absurd?"
+    answer: yes
+    evidence: >
+      A = keep 405 (real '405 is spec-correct for method-not-allowed' argument); B = use 500 (real
+      'unsupported method = error' assumption).
+  - id: S5_near_misses_distinct_axes
+    question: "Do the near-misses fail along distinct axes?"
+    answer: yes
+    evidence: >
+      A keeps the original wrong code (405); B picks a different wrong code (500, semantically
+      wrong — 5xx is server-fault). Different wrong code, same failing statusCode assertion.
+  - id: S6_base_solvable_and_feasible
+    question: "Is the base solvable and comfortably under the agent time budget?"
+    answer: yes
+    evidence: "3-line source patch. base-fail verified by hand (BF_RC=1)."
+
+edge_strength: n/a_single_node
+# Single-node behavior fix; fifth node in fastify_reply_api family (separate snapshot — not a
+# revision pair).

@@ -1,0 +1,10 @@
+# Banned MECHANISM words for fastify_404_unsupported_method instruction.
+# The fix: change reply.code(405).send('Method Not Allowed: ' + method) to reply.code(404).send('Not Found').
+# The status CODES (404/405) and the status NAMES (not-found / method-not-allowed) ARE the
+# symptom here (the bug is literally about which status is returned), so they appear in the
+# instruction as descriptive phrases. Only the literal code-swap tokens are banned.
+code(40
+code(405)
+code(404)
+reply.code(
+handleRequest.js

@@ -1,0 +1,26 @@
+From fa5e591b7ab375a75e04eac246adebe7b561ce65 Mon Sep 17 00:00:00 2001
+From: Tomas Della Vedova <delvedor@users.noreply.github.com>
+Date: Mon, 26 Mar 2018 10:08:02 +0200
+Subject: [PATCH] Better handling of 404 routes (#862)
+
+---
+ lib/handleRequest.js | 3 ++-
+ 1 file changed, 2 insertions(+), 1 deletion(-)
+
+diff --git a/lib/handleRequest.js b/lib/handleRequest.js
+index 894c3034..03ff479b 100644
+--- a/lib/handleRequest.js
++++ b/lib/handleRequest.js
+@@ -46,7 +46,8 @@ function handleRequest (req, res, params, context) {
+     return
+   }
+ 
+-  reply.code(405).send(new Error('Method Not Allowed: ' + method))
++  // Return 404 instead of 405 see https://github.com/fastify/fastify/pull/862 for discussion
++  reply.code(404).send(new Error('Not Found'))
+ }
+ 
+ function handler (reply) {
+-- 
+2.34.1
+

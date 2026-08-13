@@ -1,0 +1,53 @@
+schema_version: 1
+task_id: fastify_404_unsupported_method
+family_id: fastify_reply_api
+
+repository:
+  url: https://github.com/fastify/fastify
+  base_commit: fa5e591b7ab3^      # parent of the fix
+  gold_commit: fa5e591b7ab3
+  language: javascript
+
+instruction:
+  path: instruction.md
+
+environment:
+  image: codegraphcl-fastify:node
+  dockerfile: harbor_task/environment/Dockerfile.fastify
+  workdir: /workspace/repo
+  build_timeout_sec: 900
+  extra_mounts: {}
+
+patches:
+  gold: gold.patch                 # lib/handleRequest.js (405 -> 404 for unsupported method)
+  verifier: verifier/verifier.patch # test/404s.test.js + test/405.test.js (the 404 cases)
+
+verifier:
+  command: bash verifier/test.sh   # tap test/404s.test.js --grep 'Not found on'
+  timeout_sec: 300
+  hermetic: false
+  fail_to_pass:
+    - "test: Not found on unsupported method (should return a 404)"
+  pass_to_pass: []
+  pass_to_pass_not_applicable: true  # the not-found-on-unsupported test is new
+  near_miss_base: gold
+  near_miss:
+    - near_miss/nearmiss_404m_405.py
+    - near_miss/nearmiss_404m_500.py
+
+separability:
+  banned_words: banned_words.txt
+  checklist: separability.checklist.yaml
+
+status:
+  semantic_audit: passed
+  separability_gate: passed      # instruction = symptom (unsupported method returns 405 not 404); no code-swap/405/405 leakage
+  executable_gate: passed         # base-fail VERIFIED by hand (BF_RC=1); near-miss pending empirical confirm
+  intervention_preflight: pending
+
+notes: >
+  Fifth node in fastify_reply_api family. Single-node behavior fix (commit fa5e591b7ab3):
+  unsupported method on a known path returned 405; gold swaps to 404 (product decision).
+  base-fail VERIFIED (Not-found-on-unsupported fails on base, returns 405, BF_RC=1). Two near-
+  miss (keep-405 + use-500) re-fail. 3-line source patch — feasibility-blessed. NOTE: verifier
+  patch also DELETES test/405.test.js (59 lines moved into 404s.test.js); applies clean.

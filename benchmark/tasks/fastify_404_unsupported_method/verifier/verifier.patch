@@ -1,0 +1,152 @@
+From fa5e591b7ab375a75e04eac246adebe7b561ce65 Mon Sep 17 00:00:00 2001
+From: Tomas Della Vedova <delvedor@users.noreply.github.com>
+Date: Mon, 26 Mar 2018 10:08:02 +0200
+Subject: [PATCH] Better handling of 404 routes (#862)
+
+---
+ test/404s.test.js | 65 +++++++++++++++++++++++++++++++++++++++++++++++
+ test/405.test.js  | 59 ------------------------------------------
+ 2 files changed, 65 insertions(+), 59 deletions(-)
+ delete mode 100644 test/405.test.js
+
+diff --git a/test/404s.test.js b/test/404s.test.js
+index 785b0722..1929179e 100644
+--- a/test/404s.test.js
++++ b/test/404s.test.js
+@@ -1098,3 +1098,68 @@ test('404 inside onSend', t => {
+     })
+   })
+ })
++
++test('Not found on supported method (should return a 404)', t => {
++  t.plan(5)
++
++  const fastify = Fastify()
++
++  fastify.get('/', function (req, reply) {
++    reply.send({ hello: 'world' })
++  })
++
++  t.tearDown(fastify.close.bind(fastify))
++
++  fastify.listen(0, err => {
++    t.error(err)
++
++    fastify.inject({
++      method: 'POST',
++      url: '/'
++    }, (err, res) => {
++      t.error(err)
++      t.strictEqual(res.statusCode, 404)
++
++      sget({
++        method: 'POST',
++        url: 'http://localhost:' + fastify.server.address().port
++      }, (err, response, body) => {
++        t.error(err)
++        t.strictEqual(response.statusCode, 404)
++      })
++    })
++  })
++})
++
++// Return 404 instead of 405 see https://github.com/fastify/fastify/pull/862 for discussion
++test('Not found on unsupported method (should return a 404)', t => {
++  t.plan(5)
++
++  const fastify = Fastify()
++
++  fastify.all('/', function (req, reply) {
++    reply.send({ hello: 'world' })
++  })
++
++  t.tearDown(fastify.close.bind(fastify))
++
++  fastify.listen(0, err => {
++    t.error(err)
++
++    fastify.inject({
++      method: 'PROPFIND',
++      url: '/'
++    }, (err, res) => {
++      t.error(err)
++      t.strictEqual(res.statusCode, 404)
++
++      sget({
++        method: 'PROPFIND',
++        url: 'http://localhost:' + fastify.server.address().port
++      }, (err, response, body) => {
++        t.error(err)
++        t.strictEqual(response.statusCode, 404)
++      })
++    })
++  })
++})
+diff --git a/test/405.test.js b/test/405.test.js
+deleted file mode 100644
+index 90838ebc..00000000
+--- a/test/405.test.js
++++ /dev/null
+@@ -1,59 +0,0 @@
+-'use strict'
+-
+-const t = require('tap')
+-const test = t.test
+-const Fastify = require('..')
+-const sget = require('simple-get').concat
+-
+-test('405', t => {
+-  t.plan(1)
+-
+-  const fastify = Fastify()
+-
+-  fastify.get('/', function (req, reply) {
+-    reply.send({ hello: 'world' })
+-  })
+-
+-  const injectOptions = {
+-    method: 'TRACE',
+-    url: '/',
+-    payload: '{}'
+-  }
+-  fastify.inject(injectOptions)
+-    .then(response => {
+-      t.strictEqual(response.statusCode, 405)
+-    })
+-    .catch(t.fail)
+-})
+-
+-test('Unsupported method', t => {
+-  t.plan(5)
+-
+-  const fastify = Fastify()
+-
+-  fastify.get('/', function (req, reply) {
+-    reply.send({ hello: 'world' })
+-  })
+-
+-  t.tearDown(fastify.close.bind(fastify))
+-
+-  fastify.listen(0, err => {
+-    t.error(err)
+-
+-    fastify.inject({
+-      method: 'PROPFIND',
+-      url: '/'
+-    }, (err, res) => {
+-      t.error(err)
+-      t.strictEqual(res.statusCode, 405)
+-
+-      sget({
+-        method: 'PROPFIND',
+-        url: 'http://localhost:' + fastify.server.address().port
+-      }, (err, response, body) => {
+-        t.error(err)
+-        t.strictEqual(response.statusCode, 405)
+-      })
+-    })
+-  })
+-})
+-- 
+2.34.1
+
