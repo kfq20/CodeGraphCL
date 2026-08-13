@@ -23,7 +23,7 @@ patches:
   verifier: verifier/verifier.patch
 
 verifier:
-  command: bash verifier/test.sh
+  command: bash verifier/test.sh  # test.sh handles npm install + tap
   timeout_sec: 300
   hermetic: false
   fail_to_pass:
