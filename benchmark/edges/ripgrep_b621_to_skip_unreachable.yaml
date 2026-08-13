@@ -1,0 +1,52 @@
+schema_version: 1
+edge_id: ripgrep_b621_to_skip_unreachable
+from: ripgrep_skip_unreachable_ignore   # the consumer task carries the atoms; producer b621e65 is
+                                       # the architecture-establishing commit (not a separate node —
+                                       # it predates the bank's c2/c3/c4/c5 nodes).
+to: ripgrep_skip_unreachable_ignore
+edge_type: beneficial_update
+
+# Producer b621e65 (ignore: add incremental checking) established the per-directory matcher cache
+# architecture: add_child loads a dir's ignore files into a cached child matcher; the Walk iterator
+# pushes/pops Ignore instances to keep the chain consistent. Consumer 435f59f (skip unreachable
+# ignore files) applies the loading/visited distinction: at the depth boundary or a skipped dir,
+# build the stack entry WITHOUT loading (empty matcher), so an unreachable dir's malformed ignore
+# file doesn't surface a parse error on an unvisited entry.
+experience:
+  statement: >
+    The ignore matcher chain caches per-directory matchers and keeps the descent/exit stack
+    balanced by giving every yielded directory a child matcher — but building a child matcher
+    normally loads that directory's ignore file, which is only meaningful for directories whose
+    contents will be visited. For a directory the walk will not descend into (depth boundary, or
+    skipped), the stack entry should still be created but the ignore file should not be loaded,
+    so an unreachable malformed ignore file cannot pollute the cache or surface a parse error on an
+    unvisited entry.
+  type: matcher_cache_loading_vs_visited
+  scope: crates/ignore/src/walk.rs
+  provenance:
+    repository: ripgrep
+    commit: b621e65          # producer (the cache architecture)
+  validity: valid_for_consumer  # the loading/visited distinction transfers directly
+
+conditions:
+  reset: null
+  correct: correct            # the cache architecture + loading-only-for-visited distinction
+  irrelevant: irrelevant
+  stale: wrong                # "add_child uniformly for every dir" = the producer's own pattern = the base bug
+
+expected_effect:
+  correctness: possible       # an agent following the stale atom loads every dir's ignore file (base bug)
+  efficiency: possible        # the correct atom may avoid the unreachable-load detour
+  negative_transfer: possible
+
+status:
+  semantic_audit: passed
+  reset_calibration: too_hard   # Reset N=2 (seed7): 0/2 solved, BOTH timeout_failed at 600s. Failure mode:
+                                  # only 9-10 tool_uses / 19-21 turns in 600s — cargo compile time
+                                  # (each `cargo test -p ignore` builds the workspace, ~minutes/build)
+                                  # consumes nearly the entire budget; the agent cannot iterate. This is
+                                  # a container-specific compile-time constraint, NOT intrinsic task
+                                  # difficulty. Per phase3 Gate 5: 0/2 at the wall -> too_hard, NO 4-arm.
+  causal_verification: rejected   # Reset calibration rejected (too_hard) — not a causal verdict on the
+                                  # edge; the task/edge design is sound (4/4 gate, 2 caught near-miss),
+                                  # but the intervene infra cannot give it enough compile budget.
