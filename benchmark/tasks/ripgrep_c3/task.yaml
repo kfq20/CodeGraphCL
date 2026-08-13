@@ -51,7 +51,7 @@ separability:
 status:
   semantic_audit: passed
   separability_gate: passed      # 7/7 (instruction = symptom only; c2 atom = c2-era, no over-strip hindsight)
-  executable_gate: passed      # VERIFIED via `codegraphcl materialize` (mat_c3_6)
+  executable_gate: passed      # VERIFIED via `codegraphcl materialize` (mat_c3_ql, 4/4 gates, 2 near-miss caught)
   intervention_preflight: passed  # prompt-preview PASS; intervene N=1 pending
 
 notes: >
