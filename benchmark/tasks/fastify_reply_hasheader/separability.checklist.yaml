@@ -1,0 +1,42 @@
+# Separability checklist for fastify_reply_hasheader (single-node, fastify_reply_api family).
+# Instruction states the symptom (no way to check if a header is set); the fix (hasHeader returning
+# _headers[lower] !== undefined) must be derived.
+schema_version: 1
+task_id: fastify_reply_hasheader
+
+checks:
+  - id: S1_instruction_symptom_only
+    question: "Does the instruction state only the symptom (can't check header presence), not the fix?"
+    answer: yes
+    evidence: >
+      instruction.md: "the headers are write-only from the reply's public surface." Acceptance:
+      a boolean hasHeader, case-insensitive, false for never-set.
+  - id: S2_instruction_no_mechanism_words
+    question: "Does the instruction avoid hasHeader / _headers / toLowerCase / !== undefined / res.getHeader?"
+    answer: yes
+    evidence: "banned_words.txt forbids these; instruction says 'check whether a header is set' generically"
+  - id: S3_instruction_no_file_names
+    question: "Does the instruction avoid naming reply.js / Reply.prototype?"
+    answer: yes
+    evidence: "instruction says 'the reply's header surface'"
+  - id: S4_near_misses_plausible
+    question: "Are the near-misses plausible-but-wrong, not absurd?"
+    answer: yes
+    evidence: >
+      A = invert the membership check (real 'hasHeader = is the slot empty?' misread); B = delegate
+      to res.getHeader (real 'the response knows its headers' assumption, but headers are buffered
+      until send).
+  - id: S5_near_misses_distinct_axes
+    question: "Do the near-misses fail along distinct axes?"
+    answer: yes
+    evidence: >
+      A reads the right store but inverts the comparison; B reads the wrong store (the unflushed
+      res). Different mistake axis.
+  - id: S6_base_solvable_and_feasible
+    question: "Is the base solvable and comfortably under the agent time budget?"
+    answer: yes
+    evidence: "16-line feature-add. base-fail verified by hand (BF_RC=1)."
+
+edge_strength: n/a_single_node
+# Single-node feature-add; sixth node in fastify_reply_api family (separate snapshot — not a
+# revision pair).

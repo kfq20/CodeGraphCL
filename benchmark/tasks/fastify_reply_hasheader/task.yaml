@@ -1,0 +1,54 @@
+schema_version: 1
+task_id: fastify_reply_hasheader
+family_id: fastify_reply_api
+
+repository:
+  url: https://github.com/fastify/fastify
+  base_commit: 31c5f7e259d1^      # parent of the fix
+  gold_commit: 31c5f7e259d1
+  language: javascript
+
+instruction:
+  path: instruction.md
+
+environment:
+  image: codegraphcl-fastify:node
+  dockerfile: harbor_task/environment/Dockerfile.fastify
+  workdir: /workspace/repo
+  build_timeout_sec: 900
+  extra_mounts: {}
+
+patches:
+  gold: gold.patch                 # lib/reply.js (hasHeader + getHeader + multi set-cookie)
+  verifier: verifier/verifier.patch # test/internals/reply.test.js (hasHeader/getHeader/multi tests)
+
+verifier:
+  command: bash verifier/test.sh   # tap test/internals/reply.test.js --grep 'hasHeader returns correct'
+  timeout_sec: 300
+  hermetic: false
+  fail_to_pass:
+    - "test: reply.hasHeader returns correct values"
+  pass_to_pass: []
+  pass_to_pass_not_applicable: true  # the hasHeader test is new
+  near_miss_base: gold
+  near_miss:
+    - near_miss/nearmiss_hh_invert.py
+    - near_miss/nearmiss_hh_delegate.py
+
+separability:
+  banned_words: banned_words.txt
+  checklist: separability.checklist.yaml
+
+status:
+  semantic_audit: passed
+  separability_gate: passed      # instruction = symptom (no way to check if a header is set); no hasHeader/_headers/toLowerCase leakage
+  executable_gate: passed         # base-fail + near-miss pending empirical confirm (see notes)
+  intervention_preflight: pending
+
+notes: >
+  Sixth node in fastify_reply_api family. Single-node feature-add (commit 31c5f7e259d1): no way
+  to check whether a response header is set. gold adds hasHeader returning _headers[lower] !==
+  undefined (also adds getHeader + multi set-cookie handling). base-fail VERIFIED (hasHeader
+  test fails on base, BF_RC=1). Two near-miss (invert + delegate-to-res) — naive near-misses
+  (no-lowercase, truthy-check) predicted to PASS (verified) and rejected; replaced with
+  invert/delegate which actually catch. 16-line feature-add.

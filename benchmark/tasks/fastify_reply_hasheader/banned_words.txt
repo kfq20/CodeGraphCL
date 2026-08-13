@@ -1,0 +1,11 @@
+# Banned MECHANISM words for fastify_reply_hasheader instruction.
+# The fix: Reply.prototype.hasHeader = function(key) { return this._headers[key.toLowerCase()] !== undefined }
+# "header"/"set"/"present" are symptom-level; the _headers/toLowerCase/undefined mechanism is banned.
+hasHeader
+_headers
+toLowerCase
+!== undefined
+=== undefined
+reply.js
+Reply.prototype
+res.getHeader
