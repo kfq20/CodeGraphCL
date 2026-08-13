@@ -1,0 +1,17 @@
+# Banned mechanism words for clap_derive_type_alias instruction.
+# The fix is to fully qualify Result and Option in the generated quote_spanned code
+# (::std::result::Result, ::std::option::Option) so user aliases can't shadow them.
+# The agent must derive the qualification; the instruction may only describe the symptom
+# (generated code breaks when common type aliases are in scope).
+qualify
+qualified
+::std::result
+::std::option
+::std::
+Result
+Option
+shadow
+shad
+args.rs
+gen_parsers
+map::

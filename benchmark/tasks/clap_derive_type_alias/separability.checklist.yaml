@@ -1,0 +1,38 @@
+# Separability checklist for clap_derive_type_alias (single-node, clap_derive_api family).
+# Instruction must state only the symptom (derive codegen breaks when common type aliases
+# are in scope); the fix (fully-qualify the stdlib result type with leading ::) must be derived.
+schema_version: 1
+task_id: clap_derive_type_alias
+
+checks:
+  - id: S1_instruction_symptom_only
+    question: "Does the instruction state only the symptom (compile failure under aliases), not the fix?"
+    answer: yes
+    evidence: >
+      instruction.md: "the generated code refers to a type by its unqualified single-word name,
+      which now resolves to the user's alias". Frames as symptom + acceptance (robust to aliases).
+  - id: S2_instruction_no_mechanism_words
+    question: "Does the instruction avoid qualify/::std::result/Result/Option/shadow?"
+    answer: yes
+    evidence: "banned_words.txt forbids these; instruction uses 'refer to stdlib types unambiguously'"
+  - id: S3_instruction_no_file_names
+    question: "Does the instruction avoid naming args.rs / gen_parsers?"
+    answer: yes
+    evidence: "instruction says 'derive crate's code generation', names no source files"
+  - id: S4_near_misses_plausible
+    question: "Are the near-misses plausible-but-incomplete, not absurd?"
+    answer: yes
+    evidence: >
+      A = qualified only one of two identical sites (real incomplete-fix mistake); B = qualified
+      via relative std:: path missing leading :: (canonical 'qualified wrong' mistake).
+  - id: S5_base_solvable_but_not_trivial
+    question: "Is the base solvable but not trivially saturated?"
+    answer: yes
+    evidence: >
+      fix requires recognizing the generated code emits a bare symbol resolvable to a user alias
+      and choosing absolute-path qualification — not a one-liner blind change.
+
+edge_strength: n/a_single_node
+# Same family as clap_derive_default_value_os but a separate snapshot (1285c0f8 is an ancestor
+# of 7c10b5a9b4 — different bugs, not a revision pair). Contributes an executable node +
+# anti-hardcoding evidence; not a multi-node CL edge.

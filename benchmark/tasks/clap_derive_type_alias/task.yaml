@@ -1,0 +1,62 @@
+schema_version: 1
+task_id: clap_derive_type_alias
+family_id: clap_derive_api
+
+repository:
+  url: https://github.com/clap-rs/clap
+  base_commit: 1285c0f8^      # parent of the fix; clap 3.0.0-rc.4
+  gold_commit: 1285c0f8
+  language: rust
+
+instruction:
+  path: instruction.md
+
+environment:
+  image: codegraphcl-ripgrep:rust   # reuse rust toolchain image
+  dockerfile: harbor_task/environment/Dockerfile.ripgrep
+  workdir: /workspace/repo
+  build_timeout_sec: 900
+  extra_mounts:
+    cargo_cache: /tmp/cgcl_cargo_cache
+    target: /tmp/cgcl_target
+
+patches:
+  gold: gold.patch                 # clap_derive/src/derives/args.rs (qualify Result)
+  verifier: verifier/verifier.patch # tests/derive/type_alias_regressions.rs + main.rs mod line
+
+verifier:
+  command: bash verifier/test.sh   # cargo test --test derive --features derive type_alias_regressions
+  timeout_sec: 600
+  hermetic: false
+  fail_to_pass:
+    - "compile+test: derive::type_alias_regressions"
+  pass_to_pass: []
+  pass_to_pass_not_applicable: true  # new test file; no prior alias tests to keep stable
+  near_miss_base: gold
+  near_miss:
+    - near_miss/nearmiss_clap_ta_onesite.py
+    - near_miss/nearmiss_clap_ta_maponly.py
+
+separability:
+  banned_words: banned_words.txt
+  checklist: separability.checklist.yaml
+
+status:
+  semantic_audit: passed
+  separability_gate: passed      # instruction = symptom (codegen breaks under user aliases); no qualify/::std leakage
+  executable_gate: passed        # mat_clap_ta_2: 4/4 gates, 2 near-miss caught (onesite + maponly)
+  intervention_preflight: pending
+
+notes: >
+  Second node in clap_derive_api family. Single-node consistency task: the derive codegen
+  referred to the stdlib result type by its bare name, which a user's single-word alias
+  shadows -> 8 compile errors. gold fully-qualifies (absolute path) at both parser arms.
+  base-fail = compile error (RC=101); gold-pass = compiles + test passes. Two near-misses
+  (one-arm-revert + collect-only) re-fail by leaving a bare reference the alias still shadows.
+
+  REJECTED near-miss (kept as evidence, not in the near_miss list): nearmiss_clap_ta_localpath.py
+  rewrote the absolute path to a relative one. It PASSED the verifier (mat_clap_ta_1) because
+  this test declares no alias shadowing the crate-root segment, so the relative path still
+  resolves. Recorded as a real limit of this verifier: it catches bare-symbol shadowing, not
+  absolute-vs-relative path hygiene. The Quality-Lock near-miss gate correctly refused to let
+  it through as "caught".

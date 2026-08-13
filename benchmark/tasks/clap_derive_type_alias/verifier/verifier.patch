@@ -1,0 +1,63 @@
+From 1285c0f8859edc611944b84056427d877764b17c Mon Sep 17 00:00:00 2001
+From: Frankie Foston <frankie.foston@spire.com>
+Date: Fri, 10 Dec 2021 11:50:07 +0000
+Subject: [PATCH] fix: unqualified result types causing compilation failures
+ with derive implementations
+
+---
+ tests/derive/main.rs                   |  1 +
+ tests/derive/type_alias_regressions.rs | 31 ++++++++++++++++++++++++++
+ 2 files changed, 32 insertions(+)
+ create mode 100644 tests/derive/type_alias_regressions.rs
+
+diff --git a/tests/derive/main.rs b/tests/derive/main.rs
+index 0ef1ee45..33ce6715 100644
+--- a/tests/derive/main.rs
++++ b/tests/derive/main.rs
+@@ -28,5 +28,6 @@ mod rename_all_env;
+ mod skip;
+ mod structopt;
+ mod subcommands;
++mod type_alias_regressions;
+ mod utf8;
+ mod utils;
+diff --git a/tests/derive/type_alias_regressions.rs b/tests/derive/type_alias_regressions.rs
+new file mode 100644
+index 00000000..16670587
+--- /dev/null
++++ b/tests/derive/type_alias_regressions.rs
+@@ -0,0 +1,31 @@
++/// Regression test to ensure that type aliases do not cause compilation failures.
++use clap::Parser;
++use std::str::FromStr;
++
++// Result type alias
++#[allow(dead_code)]
++type Result<T> = std::result::Result<T, Box<dyn std::error::Error>>;
++
++// Wrapper to use for Option type alias
++struct Wrapper<T>(T);
++
++impl<T: FromStr> FromStr for Wrapper<T> {
++    type Err = <T as FromStr>::Err;
++
++    fn from_str(s: &str) -> std::result::Result<Self, Self::Err> {
++        T::from_str(s).map(Wrapper)
++    }
++}
++
++type Option<T> = std::option::Option<Wrapper<T>>;
++
++#[derive(Parser)]
++pub struct Opts {
++    another_string: Option<String>,
++    strings: Vec<String>,
++}
++
++#[test]
++fn type_alias_regressions() {
++    Opts::parse();
++}
+-- 
+2.34.1
+

@@ -1,0 +1,35 @@
+From 1285c0f8859edc611944b84056427d877764b17c Mon Sep 17 00:00:00 2001
+From: Frankie Foston <frankie.foston@spire.com>
+Date: Fri, 10 Dec 2021 11:50:07 +0000
+Subject: [PATCH] fix: unqualified result types causing compilation failures
+ with derive implementations
+
+---
+ clap_derive/src/derives/args.rs | 4 ++--
+ 1 file changed, 2 insertions(+), 2 deletions(-)
+
+diff --git a/clap_derive/src/derives/args.rs b/clap_derive/src/derives/args.rs
+index 016a3d8f..2842b9ba 100644
+--- a/clap_derive/src/derives/args.rs
++++ b/clap_derive/src/derives/args.rs
+@@ -602,7 +602,7 @@ fn gen_parsers(
+         Ty::OptionVec => quote_spanned! { ty.span()=>
+             if #arg_matches.is_present(#name) {
+                 Some(#arg_matches.#values_of(#name)
+-                    .map(|v| v.map::<Result<#convert_type, clap::Error>, _>(#parse).collect::<Result<Vec<_>, clap::Error>>())
++                    .map(|v| v.map::<::std::result::Result<#convert_type, clap::Error>, _>(#parse).collect::<::std::result::Result<Vec<_>, clap::Error>>())
+                     .transpose()?
+                     .unwrap_or_else(Vec::new))
+             } else {
+@@ -613,7 +613,7 @@ fn gen_parsers(
+         Ty::Vec => {
+             quote_spanned! { ty.span()=>
+                 #arg_matches.#values_of(#name)
+-                    .map(|v| v.map::<Result<#convert_type, clap::Error>, _>(#parse).collect::<Result<Vec<_>, clap::Error>>())
++                    .map(|v| v.map::<::std::result::Result<#convert_type, clap::Error>, _>(#parse).collect::<::std::result::Result<Vec<_>, clap::Error>>())
+                     .transpose()?
+                     .unwrap_or_else(Vec::new)
+             }
+-- 
+2.34.1
+
