@@ -1,0 +1,9 @@
+# Banned MECHANISM words for fastify_header_case_validation instruction.
+# The fix: lowercase the required header names array via .map(h => h.toLowerCase()).
+# "case-insensitive"/"lowercase" are symptom-level (the desired behavior); the .map mechanism is banned.
+toLowerCase
+.map(
+map(h
+required instanceof
+headersSchemaLowerCase
+validation.js

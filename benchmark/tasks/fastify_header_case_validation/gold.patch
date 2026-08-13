@@ -1,0 +1,32 @@
+From 2907be7c5352926eda073c5a4be7701f7de39006 Mon Sep 17 00:00:00 2001
+From: Jimmy Hurrah <JimmyHurrah@users.noreply.github.com>
+Date: Fri, 27 Apr 2018 11:43:42 +0200
+Subject: [PATCH] makes input schema required headers validation case
+ insensitive (#910)
+
+* makes input schema header validation case insensitive
+
+* convert async/await test to callback
+
+* use map instead of join to lowercase required headers
+---
+ lib/validation.js | 3 +++
+ 1 file changed, 3 insertions(+)
+
+diff --git a/lib/validation.js b/lib/validation.js
+index 0b03bc2c..97ff895e 100644
+--- a/lib/validation.js
++++ b/lib/validation.js
+@@ -37,6 +37,9 @@ function build (context, compile, schemas) {
+       if (headers.hasOwnProperty(k) !== true) continue
+       headersSchemaLowerCase[k] = headers[k]
+     }
++    if (headersSchemaLowerCase.required instanceof Array) {
++      headersSchemaLowerCase.required = headersSchemaLowerCase.required.map(h => h.toLowerCase())
++    }
+     if (headers.properties) {
+       const properties = headers.properties
+       for (const k in properties) {
+-- 
+2.34.1
+

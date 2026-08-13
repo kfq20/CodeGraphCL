@@ -1,0 +1,60 @@
+From 2907be7c5352926eda073c5a4be7701f7de39006 Mon Sep 17 00:00:00 2001
+From: Jimmy Hurrah <JimmyHurrah@users.noreply.github.com>
+Date: Fri, 27 Apr 2018 11:43:42 +0200
+Subject: [PATCH] makes input schema required headers validation case
+ insensitive (#910)
+
+* makes input schema header validation case insensitive
+
+* convert async/await test to callback
+
+* use map instead of join to lowercase required headers
+---
+ test/input-validation.test.js | 35 +++++++++++++++++++++++++++++++++++
+ 1 file changed, 35 insertions(+)
+ create mode 100644 test/input-validation.test.js
+
+diff --git a/test/input-validation.test.js b/test/input-validation.test.js
+new file mode 100644
+index 00000000..4071f785
+--- /dev/null
++++ b/test/input-validation.test.js
+@@ -0,0 +1,35 @@
++'use strict'
++
++const t = require('tap')
++const test = t.test
++const fastify = require('..')()
++
++test('case insensitive header validation', t => {
++  t.plan(2)
++  fastify.route({
++    method: 'GET',
++    url: '/',
++    handler: (req, reply) => {
++      reply.code(200).send(req.headers.foobar)
++    },
++    schema: {
++      headers: {
++        type: 'object',
++        required: ['FooBar'],
++        properties: {
++          FooBar: { type: 'string' }
++        }
++      }
++    }
++  })
++  fastify.inject({
++    method: 'GET',
++    url: '/',
++    headers: {
++      'FooBar': 'Baz'
++    }
++  }, (err, res) => {
++    t.error(err)
++    t.equal(res.payload, 'Baz')
++  })
++})
+-- 
+2.34.1
+

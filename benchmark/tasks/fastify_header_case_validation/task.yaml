@@ -1,0 +1,52 @@
+schema_version: 1
+task_id: fastify_header_case_validation
+family_id: fastify_validation
+
+repository:
+  url: https://github.com/fastify/fastify
+  base_commit: 2907be7c5352^      # parent of the fix
+  gold_commit: 2907be7c5352
+  language: javascript
+
+instruction:
+  path: instruction.md
+
+environment:
+  image: codegraphcl-fastify:node
+  dockerfile: harbor_task/environment/Dockerfile.fastify
+  workdir: /workspace/repo
+  build_timeout_sec: 900
+  extra_mounts: {}
+
+patches:
+  gold: gold.patch                 # lib/validation.js (lowercase the required header array)
+  verifier: verifier/verifier.patch # test/input-validation.test.js (case insensitive header validation)
+
+verifier:
+  command: bash verifier/test.sh   # tap test/input-validation.test.js --grep 'case insensitive header validation'
+  timeout_sec: 300
+  hermetic: false
+  fail_to_pass:
+    - "test: case insensitive header validation"
+  pass_to_pass: []
+  pass_to_pass_not_applicable: true  # the case-insensitive-header test is new
+  near_miss_base: gold
+  near_miss:
+    - near_miss/nearmiss_hv_identity.py
+    - near_miss/nearmiss_hv_wrongobj.py
+
+separability:
+  banned_words: banned_words.txt
+  checklist: separability.checklist.yaml
+
+status:
+  semantic_audit: passed
+  separability_gate: passed      # instruction = symptom (required-header validation case-sensitive); no toLowerCase/map/required-instanceof leakage
+  executable_gate: passed         # base-fail VERIFIED by hand (BF_RC=1); pending full materialize-confirm
+  intervention_preflight: pending
+
+notes: >
+  New fastify_validation family (8th). Single-node bug fix (commit 2907be7c5352): required-header
+  validation was case-sensitive; gold lowercases the required header-name array before comparing.
+  base-fail VERIFIED (case-insensitive-header test fails on base, BF_RC=1). Two near-miss
+  (identity-map + wrong-object) re-fail. 3-line source patch — feasibility-blessed.

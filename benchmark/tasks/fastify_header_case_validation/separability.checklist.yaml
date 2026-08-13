@@ -1,0 +1,40 @@
+# Separability checklist for fastify_header_case_validation (single-node, fastify_validation family).
+# Instruction states the symptom (required-header validation is case-sensitive); the fix
+# (lowercase the required header-name array before comparing) must be derived.
+schema_version: 1
+task_id: fastify_header_case_validation
+
+checks:
+  - id: S1_instruction_symptom_only
+    question: "Does the instruction state only the symptom (case-sensitive required headers), not the fix?"
+    answer: yes
+    evidence: >
+      instruction.md: "Header validation treats required-header names as case-sensitive."
+      Acceptance: normalize declared required header names to a single case before comparing.
+  - id: S2_instruction_no_mechanism_words
+    question: "Does the instruction avoid toLowerCase / .map( / required instanceof / headersSchemaLowerCase?"
+    answer: yes
+    evidence: "banned_words.txt forbids these; instruction says 'normalize to a single case'"
+  - id: S3_instruction_no_file_names
+    question: "Does the instruction avoid naming validation.js?"
+    answer: yes
+    evidence: "instruction says 'the request-validation surface'"
+  - id: S4_near_misses_plausible
+    question: "Are the near-misses plausible-but-wrong, not absurd?"
+    answer: yes
+    evidence: >
+      A = map as identity (real 'normalize' step forgotten); B = lowercase the original object's
+      required, not the copy the validator reads (real 'normalize the source' misread).
+  - id: S5_near_misses_distinct_axes
+    question: "Do the near-misses fail along distinct axes?"
+    answer: yes
+    evidence: >
+      A maps the right object but the function is a no-op; B uses the right function but on the
+      wrong object. Different mistake axis, same end failure.
+  - id: S6_base_solvable_and_feasible
+    question: "Is the base solvable and comfortably under the agent time budget?"
+    answer: yes
+    evidence: "3-line source patch. base-fail verified by hand (BF_RC=1)."
+
+edge_strength: n/a_single_node
+# Single-node bug fix; new fastify_validation family (8th family).
