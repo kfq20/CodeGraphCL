@@ -13,16 +13,21 @@
   family (commit 1285c0f8, ancestor of 7c10). Two near-miss (onesite + maponly) caught.
   REJECTED near-miss (localpath, relative std:: path) recorded as evidence — verifier catches
   bare-symbol shadowing, not absolute-vs-relative hygiene.
+- **ripgrep_c5**: 4/4 materialized (mat_c5_3). c4->43e2f08 Update edge — the first NEW real CL
+  edge built this session (cached parent matcher path leaks across search roots). Two near-miss
+  (parentdir/add_child-drop + cachehit-wrong-source) caught after iterating on near-miss A
+  (parent()-only was NOT caught — test is sensitive to add_child propagation, documented).
 - c3 regression confirmed (mat_c3_reg): pool-resolve change did NOT break ripgrep (4/4, 30s).
 
-## Executable nodes (executable_gate: passed) — 5 total
-| node | family | repo | gate run |
-|---|---|---|---|
-| ripgrep_c3 | ripgrep_ignore_path | ripgrep | mat_c3_reg |
-| ripgrep_c4 | ripgrep_ignore_path | ripgrep | mat_c4_ql2 |
-| fastify_decorator_getter | fastify_decorator | fastify | mat_fs_3 |
-| clap_derive_default_value_os | clap_derive_api | clap | mat_clap_1 |
-| clap_derive_type_alias | clap_derive_api | clap | mat_clap_ta_2 |
+## Executable nodes (executable_gate: passed) — 6 total
+| node | family | repo | gate run | edge |
+|---|---|---|---|---|
+| ripgrep_c3 | ripgrep_ignore_path | ripgrep | mat_c3_reg | c2->c3 Update |
+| ripgrep_c4 | ripgrep_ignore_path | ripgrep | mat_c4_ql2 | c3->c4 Update |
+| ripgrep_c5 | ripgrep_ignore_path | ripgrep | mat_c5_3 | c4->43e2f08 Update (real CL edge) |
+| fastify_decorator_getter | fastify_decorator | fastify | mat_fs_3 | c1->cef Parity |
+| clap_derive_default_value_os | clap_derive_api | clap | mat_clap_1 | single-node Parity |
+| clap_derive_type_alias | clap_derive_api | clap | mat_clap_ta_2 | single-node consistency |
 
 (httpx_tA/tB/tC are rejected causal tasks — kept as negative-transfer/rejected analysis.)
 
@@ -31,9 +36,9 @@
 |---|---|---|
 | repos | >=3 | 3 (ripgrep+fastify+clap) ✓ |
 | families | 6-8 | 3 active (ripgrep_ignore_path, fastify_decorator, clap_derive_api) |
-| executable nodes | 20-30 | 5 |
-| semantic edges | 10-15 | 5 |
-| intervention-ready | >=8 | 3 |
+| executable nodes | 20-30 | 6 |
+| semantic edges | 10-15 | 6 (c2->c3, c3->c4, c4->c5, c1->cef, +2 clap single-node) |
+| intervention-ready | >=8 | 4 (c2->c3, c3->c4, c4->c5, c1->cef) |
 
 ## Candidate families for batch production (remaining)
 1. clap builder-api (129 commits): deprecation/update chain.
