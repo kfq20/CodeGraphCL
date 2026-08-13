@@ -38,4 +38,4 @@ expected_effect:
 
 status:
   semantic_audit: passed
-  causal_verification: proposed   # both nodes executable_verified (mat_fs_sch_1, mat_fs_cid_1); intervention pending
+  causal_verification: intervention_smoke  # N=1 RAN (seed42): 2/4 solved (irrelevant+reset solve, correct+wrong fail). Direction REVERSED vs beneficial hypothesis (correct should help; correct FAILED). No-go for N=3.

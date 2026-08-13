@@ -31,4 +31,5 @@ diagnostic_targets:
 
 screening_log:
   - edge: fastify_getschemas_to_cleanid
-    stage: pending      # N=1 not yet run (one of the 3 untested fastify edges this round)
+    stage: n1
+    result: reversed   # 2/4 solved (irrelevant+reset solve, correct+wrong fail). No-go N=3.

@@ -29,15 +29,29 @@ patch that ALSO passes the verifier), to rule out that the verifier only accepts
 
 ## What phase2 does NOT deliver (not accepted)
 
-**Causal screening is incomplete.** Of the 8 protocol-ready edges:
+**Causal screening is now at full coverage on 7 of 8 ready edges** (1 abandoned to an infra
+bug). Of the 8 protocol-ready edges:
 
 | coverage | count | edges |
 |---|---|---|
-| full 4-arm N=1 | 4 | c4->c5, hasheader->removeheader, clap newline, c3->c4 |
-| reset-only probe | 1 | c2->c3 (infra-failed; reward-path bug — now fixed, re-run in flight) |
-| not run | 3 | getschemas->cleanid, emptybody->array, c1->cef (runs in flight) |
+| full 4-arm N=1 | 7 | c4->c5, hasheader->removeheader, clap newline, c3->c4, getschemas->cleanid, emptybody->array, c1->cef |
+| reset-only probe, ABANDONED (infra) | 1 | c2->c3 (intervene/fuse-sync infra bug; the test.sh reward-path fix was correct but not the root cause) |
 
 N=3 was run on exactly 1 edge (c3->c4), which correctly **did not escalate**.
+
+### N=1 results across the 7 screened edges
+| edge | reset-feasibility | N=1 (solved/N per condition) | shape | N=3? |
+|---|---|---|---|---|
+| ripgrep c4->c5 | too hard | 3/4 timeout, reset FAILED | too-hard | no |
+| fastify hasheader->removeheader | 177s easy | 4/4 solved, cost REVERSED | saturated-easy | no |
+| clap help_newline->newline (strongest text evidence) | 185s easy | 4/4 solved, cost REVERSED | saturated-easy | no |
+| **ripgrep c3->c4** | 600s (at wall) | 3/4 solved, irrelevant FAILED | mixed | **N=3 — did not reproduce ordering, rejected** |
+| fastify getschemas->cleanid | — | 2/4 solved (irrelevant+reset solve, correct+wrong fail) | reversed | no |
+| fastify emptybody->array | — | 4/4 solved | saturated-easy | no |
+| fastify c1->cef | — | 3/4 solved (reset FAILED, all armed solved) | reversed | no |
+
+In every screened edge, the direction is either saturated, reversed, or mixed — none shows the
+predicted beneficial ordering (correct > reset > irrelevant).
 
 ## How the negative result must be stated
 

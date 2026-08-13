@@ -31,4 +31,5 @@ diagnostic_targets:
 
 screening_log:
   - edge: fastify_emptybody_to_array
-    stage: pending      # N=1 not yet run (one of the 3 untested fastify edges this round)
+    stage: n1
+    result: saturated_easy   # 4/4 solved. No-go N=3.
