@@ -1,0 +1,2 @@
+episode_id,condition,block,reward,outcome,elapsed_sec,input_tokens,output_tokens,cache_read_tokens,tool_uses,assistant_turns,prefix_chars,prompt_sha256
+ep_000000,reset,0,1,solved,177,19323,13826,674432,25,52,0,081a992a47ba

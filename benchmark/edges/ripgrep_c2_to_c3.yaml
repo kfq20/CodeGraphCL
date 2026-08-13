@@ -34,4 +34,9 @@ expected_effect:
 
 status:
   semantic_audit: passed
+  reset_feasibility: infra_fail   # reset-only probe (seed21): reward=ERR infra_fail 600s. Agent DID
+                                  # edit dir.rs (34 matches) and cargo ran (verify.log RC=101, 4 c3
+                                  # tests failed) but reward.txt never landed on the host via the fuse
+                                  # bind (.logs/verifier/ created but empty). Verifier reward-path flake
+                                  # under intervene, not a clean read. See the run SUMMARY.md.
   causal_verification: intervention_smoke   # N=1 via unified CLI pending

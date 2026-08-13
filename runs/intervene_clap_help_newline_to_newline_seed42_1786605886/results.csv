@@ -1,0 +1,5 @@
+episode_id,condition,block,reward,outcome,elapsed_sec,input_tokens,output_tokens,cache_read_tokens,tool_uses,assistant_turns,prefix_chars,prompt_sha256
+ep_000000,irrelevant,0,1,solved,295,34764,11492,2163786,51,95,368,17bf5ba5a2c4
+ep_000001,correct,0,1,timeout_solved,600,26993,17957,2184427,69,137,658,d3bef0486e22
+ep_000002,wrong,0,1,solved,166,21086,8449,770048,33,60,502,0083926a6c2b
+ep_000003,reset,0,1,solved,421,42364,14665,2943568,76,133,0,a1c262d97672

@@ -1,0 +1,2 @@
+episode_id,condition,block,reward,outcome,elapsed_sec,input_tokens,output_tokens,cache_read_tokens,tool_uses,assistant_turns,prefix_chars,prompt_sha256
+ep_000000,reset,0,ERR,infra_fail,600,30300,11702,2183409,71,102,0,49ec78cbb75c
