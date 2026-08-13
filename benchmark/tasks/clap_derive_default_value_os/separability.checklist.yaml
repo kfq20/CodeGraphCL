@@ -1,0 +1,47 @@
+# Separability checklist for clap_derive_default_value_os (single-node Parity task).
+# Instruction must describe only the symptom (os-string default still treated as required);
+# the fix mechanism (consolidate lookup to match BOTH default forms, applied at the three
+# default_value call sites) must be derived by the agent, not told.
+schema_version: 1
+task_id: clap_derive_default_value_os
+
+checks:
+  - id: S1_instruction_symptom_only
+    question: "Does the instruction state only the external symptom (os-string form still required), not the fix?"
+    answer: yes
+    evidence: >
+      instruction.md: "the OS-string form does not have the effect the user expects: the
+      derived argument still ends up marked as required". No mechanism.
+  - id: S2_instruction_no_mechanism_words
+    question: "Does the instruction avoid find_default_method / has_method / consolidate / single-lookup?"
+    answer: yes
+    evidence: "banned_words.txt forbids these; instruction.md uses only 'behave consistently' framing"
+  - id: S3_instruction_no_file_names
+    question: "Does the instruction avoid naming attrs.rs / args.rs / gen_augment?"
+    answer: yes
+    evidence: "instruction says 'the derive crate's attribute handling', names no source files"
+  - id: S4_near_misses_are_plausible
+    question: "Are the two near-misses plausible-but-incomplete, not absurd?"
+    answer: yes
+    evidence: >
+      A = helper kept but required-path reverted (missed one of three sites — a real
+      incomplete-fix mistake); B = helper matches default_value_t instead of _os (genuine
+      _t/_os confusion — clap has three default forms).
+  - id: S5_near_misses_not_trivially_wrong
+    question: "Do the near-misses fail because the required-path can't match default_value_os, not because of a typo?"
+    answer: yes
+    evidence: >
+      A: has_method("default_value") misses _os by name. B: helper matches _t not _os. Both
+      leave the detect_os_variant arg required -> same panic as base.
+  - id: S6_base_is_solvable_but_not_trivial
+    question: "Is the base solvable (a careful agent can derive the fix) but not trivially saturated?"
+    answer: yes
+    evidence: >
+      fix requires noticing THREE call sites (bool guard, Option guard, required computation)
+      all ask only for default_value and consolidating them — non-trivial aggregation, not a
+      one-line change.
+
+edge_strength: n/a_single_node
+# This is a single-node Parity/consistency task, not a multi-node CL edge (no audited producer
+# node with a later revision). It contributes an executable node + anti-hardcoding evidence
+# to the task bank; CL-edge status (beneficial/required) is n/a until paired into a stream.

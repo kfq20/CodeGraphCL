@@ -1,0 +1,16 @@
+# Banned mechanism words for clap_derive_default_value_os instruction.
+# The fix mechanism is: introduce a single lookup that matches EITHER default_value or
+# default_value_os, and use it at every site that previously asked only for "default_value"
+# (the bool guard, the Option guard, and the `required` computation in gen_augment).
+# The agent must derive that consolidation itself; the instruction may only describe the
+# symptom (OS-string default still treated as required) and the consistency requirement.
+find_default_method
+has_method
+find_method
+gen_augment
+attrs.rs
+args.rs
+helper method
+consolidat
+single lookup
+either default

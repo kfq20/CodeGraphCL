@@ -1,0 +1,57 @@
+schema_version: 1
+task_id: clap_derive_default_value_os
+family_id: clap_derive_api
+
+repository:
+  url: https://github.com/clap-rs/clap
+  base_commit: 7c10b5a9b4^      # parent of the fix; 8eb55381 (clap 3.0.0-rc.4)
+  gold_commit: 7c10b5a9b4
+  language: rust
+
+instruction:
+  path: instruction.md
+
+environment:
+  image: codegraphcl-ripgrep:rust   # reuse the rust toolchain image (clap 3.x builds on it)
+  dockerfile: harbor_task/environment/Dockerfile.ripgrep
+  workdir: /workspace/repo
+  build_timeout_sec: 900
+  extra_mounts:
+    cargo_cache: /tmp/cgcl_cargo_cache
+    target: /tmp/cgcl_target
+
+patches:
+  gold: gold.patch                 # attrs.rs + args.rs (the find_default_method consolidation)
+  verifier: verifier/verifier.patch # tests/derive/default_value.rs (detect_os_variant test)
+
+verifier:
+  command: bash verifier/test.sh    # test.sh runs cargo test --test derive --features derive detect_os_variant
+  timeout_sec: 600                  # clap workspace compiles many crates first time
+  hermetic: false
+  fail_to_pass:
+    - "test: derive::default_value::detect_os_variant"
+  pass_to_pass: []
+  pass_to_pass_not_applicable: true  # only one test added; no prior default_value_os tests to keep stable
+  near_miss_base: gold               # near-miss corrupts gold-added find_default_method / call sites
+  near_miss:
+    - near_miss/nearmiss_clap_guardonly.py
+    - near_miss/nearmiss_clap_tvariant.py
+
+separability:
+  banned_words: banned_words.txt
+  checklist: separability.checklist.yaml
+
+status:
+  semantic_audit: passed
+  separability_gate: passed      # instruction = symptom (os-string default still treated as required); no mechanism words
+  executable_gate: passed        # mat_clap_1: 4/4 gates, 2 near-miss caught (guardonly + tvariant)
+  intervention_preflight: pending
+
+notes: >
+  Single-node Parity task. clap derive treated `default_value_os` differently from `default_value`
+  when deciding whether an arg is required (and in the bool/Option diagnostic guards). The fix
+  consolidates the lookup into `find_default_method` matching both forms, at three sites.
+  base-fail = detect_os_variant panics on base (arg stays required -> debug_assert "required and
+  can't have a default value" at debug_asserts.rs:39). gold-pass = the lookup matches _os -> not
+  required -> debug_assert passes. Two near-misses (guard-only-revert + wrong-sibling-_t) both
+  re-fail by leaving the required-path unable to match default_value_os.

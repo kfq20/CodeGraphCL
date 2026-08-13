@@ -1,0 +1,41 @@
+From 7c10b5a9b42596ddb90723f68b9d0bc6c856627d Mon Sep 17 00:00:00 2001
+From: Ed Page <eopage@gmail.com>
+Date: Mon, 13 Dec 2021 16:19:12 -0600
+Subject: [PATCH] fix(derive): Treat `default_value_os` like `default_value`
+
+The test went from panicing to not-panicing
+
+Fixes #3031
+---
+ tests/derive/default_value.rs | 14 +++++++++++++-
+ 1 file changed, 13 insertions(+), 1 deletion(-)
+
+diff --git a/tests/derive/default_value.rs b/tests/derive/default_value.rs
+index b3a47099..94dbdaf1 100644
+--- a/tests/derive/default_value.rs
++++ b/tests/derive/default_value.rs
+@@ -1,4 +1,4 @@
+-use clap::Parser;
++use clap::{IntoApp, Parser};
+ 
+ use crate::utils;
+ 
+@@ -43,3 +43,15 @@ fn auto_default_value_t() {
+     let help = utils::get_long_help::<Opt>();
+     assert!(help.contains("[default: 0]"));
+ }
++
++#[test]
++fn detect_os_variant() {
++    #![allow(unused_parens)] // needed for `as_ref` call
++
++    #[derive(clap::Parser)]
++    pub struct Options {
++        #[clap(default_value_os = ("123".as_ref()))]
++        x: String,
++    }
++    Options::into_app().debug_assert();
++}
+-- 
+2.34.1
+
