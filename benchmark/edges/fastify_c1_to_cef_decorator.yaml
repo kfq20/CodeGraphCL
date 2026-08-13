@@ -1,0 +1,42 @@
+schema_version: 1
+edge_id: fastify_c1_to_cef_decorator
+from: fastify_decorate_null      # NOTE: the producer commit c1aac3cd85 is NOT a node in the bank;
+                                # c1's getter/setter rule is carried via the consumer's atoms.md.
+                                # This edge documents the c1->cef dependency; a dedicated c1 node
+                                # would be not_applicable (c1 adds the feature, no base-fail).
+to: fastify_decorator_getter
+edge_type: beneficial_parity
+
+# c1 (c1aac3cd85, "Add support for decorating with a getter/setter object") established the
+# getter/setter accessor convention on `decorate`. cef (cef8814ea1, "Fix decorate{Request,Reply}
+# not recognizing getter/setter") propagates that SAME convention to decorateRequest/decorateReply.
+# c1's rule is the CORRECT prior for cef — it transfers directly forward. This is a Parity edge:
+# the consumer mirrors an established convention to a sibling surface.
+experience:
+  statement: >
+    The decorate method supports decorating with a getter/setter object — when the config object
+    has getter and/or setter functions, the property is defined with those accessors rather than as
+    a plain value. Every decoration method that accepts a config object should recognize the same
+    getter/setter configuration so decorators behave consistently across decorate,
+    decorateRequest, and decorateReply.
+  type: decorate_getter_setter_convention
+  scope: lib/decorate.js
+  provenance:
+    repository: fastify
+    commit: c1aac3cd85          # producer (c1) — not a bank node (feature-add, not base-fail)
+  validity: valid_for_consumer  # the getter/setter convention transfers to Request/Reply
+
+conditions:
+  reset: null
+  correct: correct              # the getter/setter convention (mirror to sibling surfaces)
+  irrelevant: irrelevant
+  stale: wrong                  # "Request/Reply deliberately don't support getter/setter"
+
+expected_effect:
+  correctness: possible         # an agent following the stale atom leaves Request/Reply without accessor support
+  efficiency: possible
+  negative_transfer: possible
+
+status:
+  semantic_audit: passed
+  causal_verification: proposed  # consumer executable_verified (mat_fs_3); intervention pending

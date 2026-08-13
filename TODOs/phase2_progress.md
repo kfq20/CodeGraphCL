@@ -69,9 +69,23 @@
 | repos | >=3 | 3 (ripgrep+fastify+clap) ✓ |
 | families | 6-8 | **9 active** (ripgrep_ignore_path, fastify_decorator, fastify_contenttype, fastify_reply_api, fastify_schemas, fastify_validation, clap_derive_api, clap_error, +httpx rejected) — **TARGET EXCEEDED** ✓ |
 | executable nodes | 20-30 | **20** (LOWER-BOUND MET) ✓ |
-| semantic edges | 10-15 | 6 (c2->c3, c3->c4, c4->c5, c1->cef, +2 clap single-node) |
-| intervention-ready | >=8 | 4 (c2->c3, c3->c4, c4->c5, c1->cef) |
+| semantic edges | 10-15 | **10** (LOWER-BOUND MET) ✓ |
+| intervention-ready | >=8 | **9** (TARGET EXCEEDED) ✓ |
 | N=1 run | 4-6 sensitive | c4->c5 INCONCLUSIVE (too hard); c3->c4 reset-solvable (cost-metric only) |
+
+## Semantic edges (10 total, 9 intervention-ready)
+| edge | type | producer -> consumer | evidence |
+|---|---|---|---|
+| ripgrep_c2_to_c3 | beneficial_update | c2 -> c3 | c3 msg: "previous code deleted too many parts" |
+| ripgrep_c3_to_c4 | beneficial_update | c3 -> c4 | reset-feasibility probed: solvable AT 600s wall (cost-metric only) |
+| ripgrep_c4_to_c5 | beneficial_update | c4 -> 43e2f08 | N=1 RAN, INCONCLUSIVE (c5 too hard) |
+| clap_help_newline_to_newline | beneficial_update | 2eb69def -> a72e572 | **consumer msg: "Found this when auditing for cases related to #2787"** (producer fixed #2787) |
+| fastify_getschemas_to_cleanid | beneficial_update | c9141a07 -> 5ffb131e | consumer acceptance asserts producer's snapshot/original distinction |
+| fastify_hasheader_to_removeheader | beneficial_update | 31c5f7e2 -> cfa760cb | consumer's 2 near-misses ARE the 2 halves of the carried convention |
+| fastify_emptybody_to_array | beneficial_update | 8c5e732f -> 7f378355 | consumer near-misses = the "treat collection as one" failure producer warns against |
+| fastify_c1_to_cef_decorator | beneficial_parity | c1aac3cd -> cef8814e | getter/setter convention mirrored to Request/Reply |
+| httpx_tA_to_tB | (rejected family) | tA -> tB | negative-transfer diagnostic (wrong 0/3) |
+| httpx_tB_to_tC | (rejected target) | tB -> tC | NOT intervention-ready by design — tC rejected (instruction leak) |
 
 ## Candidate families for batch production (remaining)
 1. clap builder-api (129 commits): deprecation/update chain.

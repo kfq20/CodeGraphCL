@@ -1,0 +1,41 @@
+schema_version: 1
+edge_id: fastify_getschemas_to_cleanid
+from: fastify_get_shared_schemas
+to: fastify_clean_schema_id
+edge_type: beneficial_update
+
+# The producer (c9141a071d0f) established that shared schemas live in an internal store and are
+# read back via a SNAPSHOT copy — the stored originals are never handed out. The consumer
+# (5ffb131e40b9) fixes the cross-use case: when a shared schema is pulled into a route's schema
+# tree for compilation, its $id must be stripped from the COPY, not the stored original. The
+# consumer's own acceptance test asserts "the stored original must still be retrievable after
+# the strip" — directly invoking the producer's snapshot/original distinction.
+experience:
+  statement: >
+    Shared schemas live in an internal store and are read back through an accessor that returns
+    a SNAPSHOT copy — the map given to the caller is a fresh copy, not the internal store, so
+    mutating it does not affect the instance and the instance's later mutations do not leak into a
+    previously-returned snapshot. The internal store is never handed out directly. When a shared
+    schema is reused or transformed for a different purpose, work on the snapshot, not the stored
+    original — the stored original must stay intact and retrievable.
+  type: schema_store_snapshot_contract
+  scope: lib/schemas.js
+  provenance:
+    repository: fastify
+    commit: c9141a071d0f          # producer
+  validity: valid_for_consumer    # the snapshot/original distinction transfers directly
+
+conditions:
+  reset: null
+  correct: correct                # the snapshot-copy contract + "don't hand out the internal store"
+  irrelevant: irrelevant
+  stale: wrong                    # "internal store is passed by reference, trust callers not to mutate"
+
+expected_effect:
+  correctness: possible           # an agent following the stale atom mutates the stored original in place
+  efficiency: possible
+  negative_transfer: possible
+
+status:
+  semantic_audit: passed
+  causal_verification: proposed   # both nodes executable_verified (mat_fs_sch_1, mat_fs_cid_1); intervention pending

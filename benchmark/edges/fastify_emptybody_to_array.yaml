@@ -1,0 +1,42 @@
+schema_version: 1
+edge_id: fastify_emptybody_to_array
+from: fastify_contenttype_emptybody
+to: fastify_contenttype_array
+edge_type: beneficial_update
+
+# The producer (8c5e732f2e9b) removed the zero-length-body early-reject, establishing that the
+# content-type parser must HAND OFF non-canonical inputs to the custom parser rather than
+# pre-rejecting based on a built-in assumption. The consumer (7f378355, array-syntax support)
+# extends the registration surface: a single add call may receive a COLLECTION of content types,
+# and the parser must be registered under EACH rather than treating the collection as one (broken)
+# type. The consumer's near-miss injectors (passthrough-whole-array, firstonly) are exactly the
+# "treat the collection as a single value" failure the producer's discipline warns against.
+experience:
+  statement: >
+    The content-type parser's body-reading and registration path must HAND OFF non-canonical
+    inputs to the registered custom parser / to each registered entry, rather than pre-rejecting
+    or treating a collection as a single value based on built-in assumptions. A registered custom
+    parser is the authority on what its content type accepts; when the surface encounters input
+    that doesn't fit the default expectation (an empty body, a collection of types), fan out to
+    the parser / per element.
+  type: contenttype_parser_fanout_discipline
+  scope: lib/ContentTypeParser.js
+  provenance:
+    repository: fastify
+    commit: 8c5e732f2e9b          # producer
+  validity: valid_for_consumer    # the "don't pre-reject / fan out" discipline transfers to the collection case
+
+conditions:
+  reset: null
+  correct: correct                # the fanout / don't-pre-reject discipline
+  irrelevant: irrelevant
+  stale: wrong                    # "pre-validate and reject; collections are an error / treated as one"
+
+expected_effect:
+  correctness: possible           # an agent following the stale atom treats the array as a single type
+  efficiency: possible
+  negative_transfer: possible
+
+status:
+  semantic_audit: passed
+  causal_verification: proposed   # both nodes executable_verified (mat_fs_eb_1, mat_fs_ct_1); intervention pending

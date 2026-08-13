@@ -1,0 +1,40 @@
+schema_version: 1
+edge_id: clap_help_newline_to_newline
+from: clap_error_help_newline
+to: clap_error_newline
+edge_type: beneficial_update
+
+# The producer (2eb69def4ecb) established the invariant "every error message terminates with a
+# trailing newline" and fixed the help/subcommand branch that omitted it. The consumer
+# (a72e5726f872) is the AUDIT FOLLOW-UP: its commit message reads "Found this when auditing for
+# cases related to #2787" — #2787 is the issue the producer fixed. Strongest textual evidence of
+# a real experience dependency in the bank.
+experience:
+  statement: >
+    Every error message this library produces must terminate with a trailing newline — downstream
+    code prints errors directly and relies on line termination. The error-formatting code has
+    several independent branches; one was found falling through without emitting the terminating
+    newline. When touching error formatting, each branch that produces a finished message must
+    terminate it itself, and the sibling branches are worth auditing for the same omission.
+  type: error_message_termination_invariant
+  scope: src/parse/errors.rs
+  provenance:
+    repository: clap
+    commit: 2eb69def4ecb          # producer
+  validity: valid_for_consumer    # the invariant transfers directly to the second site
+
+conditions:
+  reset: null
+  correct: correct                # the termination invariant + audit-the-branches habit
+  irrelevant: irrelevant
+  stale: wrong                    # "library returns bare messages, caller terminates lines"
+
+expected_effect:
+  correctness: possible           # a credulous agent following the stale atom declines to append
+  efficiency: possible            # the correct atom points straight at the missing terminator
+  negative_transfer: possible
+
+status:
+  semantic_audit: passed
+  causal_verification: proposed   # both nodes executable_verified (mat_clap_hn_1, mat_clap_nl_1); intervention pending
+
