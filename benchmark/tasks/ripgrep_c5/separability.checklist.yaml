@@ -1,0 +1,48 @@
+# Separability checklist for ripgrep_c5 (c4 -> 43e2f08 Update edge).
+# Instruction must state only the symptom (wrong root context leaks across multi-root search);
+# the fix mechanism (move the walk-relative base off the shared cached struct onto the per-walk
+# value) must be derived by the agent.
+schema_version: 1
+task_id: ripgrep_c5
+
+checks:
+  - id: S1_instruction_symptom_only
+    question: "Does the instruction state only the symptom (parent ignore applied to wrong dir across roots), not the fix?"
+    answer: yes
+    evidence: >
+      instruction.md: "the parent-ignore state established while walking the first root carries
+      the first root's directory context into the later root when it is reused". Symptom framing.
+  - id: S2_instruction_no_mechanism_words
+    question: "Does the instruction avoid absolute_base / IgnoreInner / cache / prebuilt / parent()?"
+    answer: yes
+    evidence: "banned_words.txt forbids these; instruction uses 'parent-ignore state' + 'directory context'"
+  - id: S3_instruction_no_file_names
+    question: "Does the instruction avoid naming dir.rs / add_parents?"
+    answer: yes
+    evidence: "instruction says 'ignore crate's directory-walking / parent-matcher handling'"
+  - id: S4_near_misses_plausible
+    question: "Are the two near-misses plausible-but-wrong, not absurd?"
+    answer: yes
+    evidence: >
+      A = parent() reconstructs child with base from matcher's own dir (plausible 'base = this
+      matcher's dir'); B = cache-hit stamps prebuilt matcher's dir (plausible 'cached matcher
+      knows its own dir'). Both are genuine 'wrong source for the base' mistakes.
+  - id: S5_near_misses_distinct_axes
+    question: "Do the near-misses fail along distinct axes?"
+    answer: yes
+    evidence: >
+      A corrupts the runtime parent() accessor (traversal); B corrupts the add_parents cache-HIT
+      construction (the caching itself). Different code paths, same symptom.
+  - id: S6_base_solvable_but_not_trivial
+    question: "Is the base solvable but not trivially saturated?"
+    answer: yes
+    evidence: >
+      fix is a structural refactor (move a field between two structs, rewire constructors AND
+      the accessor AND the read site) — not a one-line patch; a careless agent can break compilation.
+
+edge_strength: candidate_beneficial_update
+# c4 -> 43e2f08 is a real revision: c4 introduced the caching whose cross-root bug 43e2f08 fixes.
+# c4's "cache parent matchers by directory" experience is STALE for c5 (following it naively
+# reproduces the leak) -> negative/Update diagnostic. Whether it is also beneficial (correct
+# experience helps) is determined by intervention, not asserted here. The edge is intervention-ready
+# pending N=1 preflight.

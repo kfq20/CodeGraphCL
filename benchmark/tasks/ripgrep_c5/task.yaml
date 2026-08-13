@@ -1,0 +1,59 @@
+schema_version: 1
+task_id: ripgrep_c5
+family_id: ripgrep_ignore_path
+
+repository:
+  url: https://github.com/BurntSushi/ripgrep
+  base_commit: 43e2f08^       # parent of the fix; c4 (14f4957b3d) is an ancestor -> real revision chain
+  gold_commit: 43e2f08
+  language: rust
+
+instruction:
+  path: instruction.md
+
+environment:
+  image: codegraphcl-ripgrep:rust
+  dockerfile: harbor_task/environment/Dockerfile.ripgrep
+  workdir: /workspace/repo
+  build_timeout_sec: 900
+  extra_mounts:
+    cargo_cache: /tmp/cgcl_cargo_cache
+    target: /tmp/cgcl_target
+
+patches:
+  gold: gold.patch                  # 43e2f08 source (move absolute_base off cached IgnoreInner onto per-walk Ignore)
+  verifier: verifier/verifier.patch # 653d7f5 test (ignore_git_multi_root_order rgtest block in tests/misc.rs)
+
+verifier:
+  command: bash verifier/test.sh    # cargo test --test integration ignore_git_multi_root_order
+  timeout_sec: 300
+  hermetic: false
+  fail_to_pass:
+    - "misc::ignore_git_multi_root_order"
+  pass_to_pass: []
+  pass_to_pass_not_applicable: true  # the test is new (added 653d7f5); no prior multi-root test to keep stable
+  near_miss_base: gold               # near-miss corrupts the gold structural move (absolute_base wiring)
+  near_miss:
+    - near_miss/nearmiss_c5_parentdir.py
+    - near_miss/nearmiss_c5_cachehit.py
+
+separability:
+  banned_words: banned_words.txt
+  checklist: separability.checklist.yaml
+
+status:
+  semantic_audit: passed
+  separability_gate: passed      # instruction = symptom (wrong root context leaks across multi-root); no absolute_base/IgnoreInner/cache leakage
+  executable_gate: passed        # mat_c5_3: 4/4 gates, 2 near-miss caught (parentdir add_child + cachehit)
+  intervention_preflight: pending
+
+notes: >
+  c4 -> 43e2f08 Update edge (4th node in ripgrep_ignore_path family). c4 introduced cached parent
+  matchers keyed by directory; 43e2f08 fixes that the cached matcher also stored the canonicalized
+  walk path in the SHARED IgnoreInner, so reuse across a second root rewrote paths relative to the
+  wrong root. The fix moves the walk-relative base off the shared inner onto the per-walk Ignore
+  value. base-fail VERIFIED (ignore_git_multi_root_order fails on 43e2f08^: src/invalid leaks).
+  gold-pass VERIFIED (passes on 43e2f08). The verifier test was added in a LATER commit (653d7f5,
+  2026-07) but exercises the 43e2f08 fix; ancestry: 43e2f08 is ancestor of 653d7f5.
+  Two near-misses (parent() wrong source + cache-hit wrong source) both re-leak by stamping the
+  cached matcher's own dir as the base instead of the current walker's base.

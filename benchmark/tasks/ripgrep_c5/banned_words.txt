@@ -1,0 +1,20 @@
+# Banned mechanism words for ripgrep_c5 instruction.
+# The fix moves the walk-relative path (absolute_base) out of the cached/shared IgnoreInner
+# onto the per-walk Ignore value, so cached parent matchers reused across roots carry the
+# CURRENT root's base, not whichever root was cached first. The agent must derive this; the
+# instruction may only describe the symptom (wrong root's context leaks across roots).
+absolute_base
+IgnoreInner
+Ignore {
+Ignore(
+cache
+cached
+walker
+walk root
+prebuilt
+inner.dir
+Arc<IgnoreInner>
+dir.rs
+parent()
+add_parents
+add_parent
