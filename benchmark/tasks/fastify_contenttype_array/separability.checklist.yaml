@@ -1,0 +1,45 @@
+# Separability checklist for fastify_contenttype_array (single-node, fastify_contenttype family).
+# Instruction states only the symptom (can only register one content type per call); the fix
+# (detect array arg, call add() per element) must be derived by the agent.
+schema_version: 1
+task_id: fastify_contenttype_array
+
+checks:
+  - id: S1_instruction_symptom_only
+    question: "Does the instruction state only the symptom (single-type registration), not the fix?"
+    answer: yes
+    evidence: >
+      instruction.md: "only accepts a single content-type string... no way to pass several content
+      types in one registration call." Acceptance: "accept either a single content type or several
+      content types at once, registering the given parser under every one of them."
+  - id: S2_instruction_no_mechanism_words
+    question: "Does the instruction avoid Array.isArray / forEach / array / collection / loop / iterate / the method name?"
+    answer: yes
+    evidence: "banned_words.txt forbids these; validate 9/9 confirms no leak (instruction says 'the registration method' and 'body-parser registration surface')"
+  - id: S3_instruction_no_file_names
+    question: "Does the instruction avoid naming fastify.js / addContentTypeParser / _contentTypeParser.add?"
+    answer: yes
+    evidence: "instruction says 'the fastify builder's content-type-parser registration surface'"
+  - id: S4_near_misses_plausible
+    question: "Are the near-misses plausible-but-incomplete, not absurd?"
+    answer: yes
+    evidence: >
+      A = register only the first element (real 'canonical-first' assumption); B = detect the array
+      but pass it whole to add (real incomplete-refactor 'guard exists, action not wired' smell).
+  - id: S5_near_misses_distinct_axes
+    question: "Do the near-misses fail along distinct axes?"
+    answer: yes
+    evidence: >
+      A fails the second-type assertion only (first type works); B fails BOTH type assertions
+      (array passed whole, neither real type matches). Different failure footprints.
+  - id: S6_base_solvable_and_feasible
+    question: "Is the base solvable, and comfortably under the agent time budget?"
+    answer: yes
+    evidence: >
+      5-line source patch (smaller than the ripgrep structural refactors that hit the 600s wall).
+      A reset agent should solve well under 600s, leaving headroom for a COST-metric CL read.
+
+edge_strength: n/a_single_node
+# Single-node consistency task; contributes an executable node + anti-hardcoding evidence.
+# Not a CL edge yet (no audited producer->reviser pair in this family). Feasibility-blessed by the
+# small patch size — a candidate for a future easy CL edge if a revision is found.

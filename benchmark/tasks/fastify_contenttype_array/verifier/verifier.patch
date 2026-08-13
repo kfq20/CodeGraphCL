@@ -1,0 +1,76 @@
+From 7f378355d2381439ea16cc13e868d455036f94c0 Mon Sep 17 00:00:00 2001
+From: Dustin Deus <deusdustin@gmail.com>
+Date: Mon, 11 Jun 2018 10:02:48 +0200
+Subject: [PATCH] Support array syntax to handle multiple content types as the
+ same (#967)
+
+---
+ test/custom-parser.test.js | 52 ++++++++++++++++++++++++++++++++++++++
+ 1 file changed, 52 insertions(+)
+
+diff --git a/test/custom-parser.test.js b/test/custom-parser.test.js
+index f1baaaae..d6f7d7aa 100644
+--- a/test/custom-parser.test.js
++++ b/test/custom-parser.test.js
+@@ -128,6 +128,58 @@ test('contentTypeParser should handle multiple custom parsers', t => {
+   })
+ })
+ 
++test('contentTypeParser should handle an array of custom contentTypes', t => {
++  t.plan(7)
++  const fastify = Fastify()
++
++  fastify.post('/', (req, reply) => {
++    reply.send(req.body)
++  })
++
++  fastify.post('/hello', (req, reply) => {
++    reply.send(req.body)
++  })
++
++  function customParser (req, done) {
++    jsonParser(req, function (err, body) {
++      done(err, body)
++    })
++  }
++
++  fastify.addContentTypeParser(['application/jsoff', 'application/ffosj'], customParser)
++
++  fastify.listen(0, err => {
++    t.error(err)
++    fastify.server.unref()
++
++    sget({
++      method: 'POST',
++      url: 'http://localhost:' + fastify.server.address().port,
++      body: '{"hello":"world"}',
++      headers: {
++        'Content-Type': 'application/jsoff'
++      }
++    }, (err, response, body) => {
++      t.error(err)
++      t.strictEqual(response.statusCode, 200)
++      t.deepEqual(body.toString(), JSON.stringify({ hello: 'world' }))
++    })
++
++    sget({
++      method: 'POST',
++      url: 'http://localhost:' + fastify.server.address().port + '/hello',
++      body: '{"hello":"world"}',
++      headers: {
++        'Content-Type': 'application/ffosj'
++      }
++    }, (err, response, body) => {
++      t.error(err)
++      t.strictEqual(response.statusCode, 200)
++      t.deepEqual(body.toString(), JSON.stringify({ hello: 'world' }))
++    })
++  })
++})
++
+ test('contentTypeParser should handle errors', t => {
+   t.plan(3)
+   const fastify = Fastify()
+-- 
+2.34.1
+

@@ -1,0 +1,31 @@
+From 7f378355d2381439ea16cc13e868d455036f94c0 Mon Sep 17 00:00:00 2001
+From: Dustin Deus <deusdustin@gmail.com>
+Date: Mon, 11 Jun 2018 10:02:48 +0200
+Subject: [PATCH] Support array syntax to handle multiple content types as the
+ same (#967)
+
+---
+ fastify.js | 7 ++++++-
+ 1 file changed, 6 insertions(+), 1 deletion(-)
+
+diff --git a/fastify.js b/fastify.js
+index 000ad401..d9ce2eed 100644
+--- a/fastify.js
++++ b/fastify.js
+@@ -716,7 +716,12 @@ function build (options) {
+       opts.bodyLimit = this._bodyLimit
+     }
+ 
+-    this._contentTypeParser.add(contentType, opts, parser)
++    if (Array.isArray(contentType)) {
++      contentType.forEach((type) => this._contentTypeParser.add(type, opts, parser))
++    } else {
++      this._contentTypeParser.add(contentType, opts, parser)
++    }
++
+     return this
+   }
+ 
+-- 
+2.34.1
+

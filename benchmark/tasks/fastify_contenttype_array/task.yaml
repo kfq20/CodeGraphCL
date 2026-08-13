@@ -1,0 +1,54 @@
+schema_version: 1
+task_id: fastify_contenttype_array
+family_id: fastify_contenttype
+
+repository:
+  url: https://github.com/fastify/fastify
+  base_commit: 7f378355^      # parent of the fix
+  gold_commit: 7f378355
+  language: javascript
+
+instruction:
+  path: instruction.md
+
+environment:
+  image: codegraphcl-fastify:node
+  dockerfile: harbor_task/environment/Dockerfile.fastify
+  workdir: /workspace/repo
+  build_timeout_sec: 900
+  extra_mounts: {}
+
+patches:
+  gold: gold.patch                 # fastify.js (array handling in addContentTypeParser)
+  verifier: verifier/verifier.patch # test/custom-parser.test.js (array-of-contentTypes test)
+
+verifier:
+  command: bash verifier/test.sh    # tap test/custom-parser.test.js --grep array
+  timeout_sec: 300
+  hermetic: false
+  fail_to_pass:
+    - "test: contentTypeParser should handle an array of custom contentTypes"
+  pass_to_pass: []
+  pass_to_pass_not_applicable: true  # the array test is new; no prior array test to keep stable
+  near_miss_base: gold               # near-miss corrupts gold-added array handling
+  near_miss:
+    - near_miss/nearmiss_ct_firstonly.py
+    - near_miss/nearmiss_ct_passthrough.py
+
+separability:
+  banned_words: banned_words.txt
+  checklist: separability.checklist.yaml
+
+status:
+  semantic_audit: passed
+  separability_gate: passed      # instruction = symptom (can only register one content type at a time); no Array.isArray/forEach/array leakage
+  executable_gate: passed        # mat_fs_ct_1: 4/4 gates, 2 near-miss caught (firstonly + passthrough)
+  intervention_preflight: pending
+
+notes: >
+  Second fastify family (fastify_contenttype). Single-node consistency task: addContentTypeParser
+  accepted only a single content-type string; gold adds array support (iterate, add per type).
+  base-fail = the array-of-types test fails on base (second content type not registered). gold-pass
+  = both types parse. Two near-misses (first-only + passthrough-whole-array) both re-fail by not
+  registering every element. Small 5-line source patch (good feasibility — agent should solve well
+  under 600s, unlike the ripgrep structural refactors).

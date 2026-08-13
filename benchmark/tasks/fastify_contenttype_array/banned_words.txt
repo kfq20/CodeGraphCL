@@ -1,0 +1,17 @@
+# Banned mechanism words for fastify_contenttype_array instruction.
+# The fix: detect when the contentType arg is a collection (Array.isArray) and call
+# this._contentTypeParser.add() for each element; else the single add as before.
+# The agent must derive the array-handling; the instruction may only describe the symptom
+# (can only register one content type at a time).
+Array.isArray
+isArray
+forEach
+for each
+for (... of
+array
+collection
+loop
+iterate
+fastify.js
+addContentTypeParser
+_contentTypeParser.add
