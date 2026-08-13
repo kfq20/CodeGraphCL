@@ -37,8 +37,11 @@ status:
   semantic_audit: passed
   executable_gate: passed         # ripgrep_c4 materialized 4/4 (mat_c4_reg, 2 near-miss caught)
   intervention_preflight: passed  # prompt-preview PASS (4 distinct prompts, shared instr_sha)
-  reset_feasibility: solvable     # reset-only probe (seed7): reward=1 timeout_solved 600s, 208 turns, 125 tools.
-                                  # c4 IS solvable by reset (unlike c5) but AT the 600s wall -> correctness will
-                                  # saturate; this edge can only be read on COST (turns/tools/tokens/elapsed).
-  causal_verification: proposed   # 4-arm N=1 worth running WITH a cost-metric read (not pass-rate).
-                                  # See runs/intervene_ripgrep_c3_to_c4_seed7_1786595550/SUMMARY.md
+  reset_feasibility: wall_band    # reset-only probe (seed7): reward=1 timeout_solved 600s 208 turns — solves
+                                  # AT the wall, the only edge in the funnel in the CL-readable band.
+  n1_intervention: sensitive      # N=1 4-arm (seed42): 3/4 solved, irrelevant FAILED (reward 0). The ONLY
+                                  # edge in the funnel with pass-rate sensitivity (not saturated). Direction
+                                  # partially correct (correct solved, irrelevant failed) but wrong/stale also
+                                  # solved (no negative transfer) — placebo-flavored. GO for N=3.
+                                  # See runs/intervene_ripgrep_c3_to_c4_seed42_1786608700/SUMMARY.md
+  causal_verification: intervention_smoke  # N=1 ran; N=3 pending (the escalation target)
