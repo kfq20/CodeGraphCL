@@ -25,10 +25,16 @@
 - **fastify_contenttype_array**: 4/4 materialized FIRST TRY (mat_fs_ct_1). New fastify_contenttype
   family (5th). 5-line source patch (commit 7f378355). Two near-miss (firstonly + passthrough)
   caught, distinct failure footprints. Feasibility-blessed small patch.
+- **fastify_redirect_statuscode**: 4/4 materialized (mat_fs_rd_3). New fastify_reply_api family
+  (6th — family target lower bound met). 4-line source patch (commit 92f474ea8c98): redirect
+  clobbers preset status code. Two near-miss (useset + always302) caught, opposite directions.
+  VERIFIER GOTCHA recorded: tap --grep matches TOP-LEVEL test names, not subtests — had to grep
+  the parent test `within an instance` to run the `redirect to \`/\` - 1..9` subtests (grepping
+  the route paths or subtest names skipped all 26 tests -> false rc=0 -> base-fail rejected).
 - c3 + c4 regression re-confirmed after host ENOSPC cleanup: pool-resolve change did NOT break
   ripgrep (both 4/4, 30s each).
 
-## Executable nodes (executable_gate: passed) — 7 total
+## Executable nodes (executable_gate: passed) — 8 total
 | node | family | repo | gate run | edge |
 |---|---|---|---|---|
 | ripgrep_c3 | ripgrep_ignore_path | ripgrep | mat_c3_reg | c2->c3 Update |
@@ -38,6 +44,7 @@
 | clap_derive_default_value_os | clap_derive_api | clap | mat_clap_1 | single-node Parity |
 | clap_derive_type_alias | clap_derive_api | clap | mat_clap_ta_2 | single-node consistency |
 | fastify_contenttype_array | fastify_contenttype | fastify | mat_fs_ct_1 | single-node (5-line patch, feasible) |
+| fastify_redirect_statuscode | fastify_reply_api | fastify | mat_fs_rd_3 | single-node (redirect clobbers preset code) |
 
 (httpx_tA/tB/tC are rejected causal tasks — kept as negative-transfer/rejected analysis.)
 
@@ -45,8 +52,8 @@
 | asset | target | current |
 |---|---|---|
 | repos | >=3 | 3 (ripgrep+fastify+clap) ✓ |
-| families | 6-8 | 5 active (ripgrep_ignore_path, fastify_decorator, fastify_contenttype, clap_derive_api, +httpx rejected) |
-| executable nodes | 20-30 | 7 |
+| families | 6-8 | **6 active** (ripgrep_ignore_path, fastify_decorator, fastify_contenttype, fastify_reply_api, clap_derive_api, +httpx rejected) — **LOWER BOUND MET** |
+| executable nodes | 20-30 | 8 |
 | semantic edges | 10-15 | 6 (c2->c3, c3->c4, c4->c5, c1->cef, +2 clap single-node) |
 | intervention-ready | >=8 | 4 (c2->c3, c3->c4, c4->c5, c1->cef) |
 | N=1 run | 4-6 sensitive | c4->c5 INCONCLUSIVE (too hard); c3->c4 reset-solvable (cost-metric only) |
