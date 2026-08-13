@@ -1,0 +1,53 @@
+schema_version: 1
+task_id: fastify_reply_headerssent
+family_id: fastify_reply_api
+
+repository:
+  url: https://github.com/fastify/fastify
+  base_commit: fd8fb5e55aa7^      # parent of the fix
+  gold_commit: fd8fb5e55aa7
+  language: javascript
+
+instruction:
+  path: instruction.md
+
+environment:
+  image: codegraphcl-fastify:node
+  dockerfile: harbor_task/environment/Dockerfile.fastify
+  workdir: /workspace/repo
+  build_timeout_sec: 900
+  extra_mounts: {}
+
+patches:
+  gold: gold.patch                 # lib/reply.js (guard header loop with !res.headersSent, warn else)
+  verifier: verifier/verifier.patch # test/internals/reply.test.js (writeHead+stream test)
+
+verifier:
+  command: bash verifier/test.sh   # tap test/internals/reply.test.js --grep 'reply.res.writeHead'
+  timeout_sec: 300
+  hermetic: false
+  fail_to_pass:
+    - "test: stream using reply.res.writeHead should return customize headers"
+  pass_to_pass: []
+  pass_to_pass_not_applicable: true  # the writeHead+stream test is new
+  near_miss_base: gold
+  near_miss:
+    - near_miss/nearmiss_hs_invert.py
+    - near_miss/nearmiss_hs_warnonly.py
+
+separability:
+  banned_words: banned_words.txt
+  checklist: separability.checklist.yaml
+
+status:
+  semantic_audit: passed
+  separability_gate: passed      # instruction = symptom (send stream after manual writeHead crashes); no headersSent/setHeader/writeHead leakage
+  executable_gate: passed         # base-fail VERIFIED by hand (BF_RC=1); pending full materialize-confirm
+  intervention_preflight: pending
+
+notes: >
+  Second node in fastify_reply_api family. Single-node bug fix (commit fd8fb5e55aa7): send()
+  set headers unconditionally, crashing when headers were already sent via res.writeHead before
+  a stream send. gold guards the header loop with !res.headersSent and warns otherwise.
+  base-fail VERIFIED (writeHead+stream test fails on base, BF_RC=1). Two near-miss (invert
+  guard + warn-only-no-guard) re-fail. 8-line source patch — feasibility-blessed.

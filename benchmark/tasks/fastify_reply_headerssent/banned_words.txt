@@ -1,0 +1,10 @@
+# Banned MECHANISM words for fastify_reply_headerssent instruction.
+# The fix: guard the header-setting loop with `if (!res.headersSent) { ...loop... } else { warn }`.
+# "headers"/"stream" are symptom-level; the headersSent guard mechanism is banned.
+headersSent
+headers_sent
+res.setHeader
+reply._headers
+writeHead
+for (var key
+reply.js
