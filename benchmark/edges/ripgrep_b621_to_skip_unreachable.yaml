@@ -48,5 +48,10 @@ status:
                                   # cache (CGCL_CARGO_TARGET_DIR, pre-built once -> ~2s warm build), the agent
                                   # iterates (60 tool calls) and solves 1/2. Per phase3 Gate 5: 1/2, not all
                                   # at the wall -> NON-saturated -> PROCEED to 4-arm N=1.
-  causal_verification: proposed   # Executable Gate passed (4/4 + 2 near-miss) + Reset calibration
-                                  # non-saturated (1/2 warm); 4-arm N=1 next.
+  n1_outcome: reversed          # 4-arm N=1 (warm, seed42): 1/4 solved (irrelevant solved; correct/
+                                  # wrong/reset FAILED). Direction REVERSED vs hypothesis (correct
+                                  # should help; correct FAILED, irrelevant solved). None of phase3
+                                  # Gate 6 escalation triggers fire (trigger 1 needs correct-succeed-
+                                  # while-reset/irrelevant-fail; opposite here). NO-GO for N=3.
+  causal_verification: rejected   # N=1 reversed; not escalated to N=3. n=1 screening, not a causal
+                                  # effect estimate. Same reversed pattern as all Phase 2 edges.
