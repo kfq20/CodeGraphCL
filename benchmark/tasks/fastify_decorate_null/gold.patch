@@ -1,0 +1,25 @@
+From adde52452d9454aeb8e0a304567c9e8b38e303fb Mon Sep 17 00:00:00 2001
+From: James Sumners <james.sumners@gmail.com>
+Date: Tue, 26 Jun 2018 20:28:34 -0400
+Subject: [PATCH] Resolve issue #998 (#999)
+
+---
+ lib/decorate.js | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/lib/decorate.js b/lib/decorate.js
+index 7db68667..3567d4a8 100644
+--- a/lib/decorate.js
++++ b/lib/decorate.js
+@@ -9,7 +9,7 @@ function decorate (name, fn, dependencies) {
+     checkDependencies(this, dependencies)
+   }
+ 
+-  if (typeof fn.getter === 'function' || typeof fn.setter === 'function') {
++  if (fn && (typeof fn.getter === 'function' || typeof fn.setter === 'function')) {
+     Object.defineProperty(this, name, {
+       get: fn.getter,
+       set: fn.setter
+-- 
+2.34.1
+

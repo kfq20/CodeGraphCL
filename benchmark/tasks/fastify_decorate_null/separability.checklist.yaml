@@ -1,0 +1,41 @@
+# Separability checklist for fastify_decorate_null (single-node, fastify_decorator family).
+# Instruction states the symptom (decorate with empty value crashes); the fix (guard fn before
+# reading fn.getter/fn.setter) must be derived.
+schema_version: 1
+task_id: fastify_decorate_null
+
+checks:
+  - id: S1_instruction_symptom_only
+    question: "Does the instruction state only the symptom (empty-value crash), not the fix?"
+    answer: yes
+    evidence: >
+      instruction.md: "the method assumes the value is an object and reads a property off it
+      unconditionally." Acceptance: register empty values without crashing.
+  - id: S2_instruction_no_mechanism_words
+    question: "Does the instruction avoid fn.getter / fn.setter / fn && / typeof fn / getter / setter?"
+    answer: yes
+    evidence: "banned_words.txt forbids these; instruction says 'reads a property off it' generically"
+  - id: S3_instruction_no_file_names
+    question: "Does the instruction avoid naming decorate.js?"
+    answer: yes
+    evidence: "instruction says 'the fastify decorate implementation'"
+  - id: S4_near_misses_plausible
+    question: "Are the near-misses plausible-but-wrong, not absurd?"
+    answer: yes
+    evidence: >
+      A = guard null but swallow (plausible 'empty decorator is meaningless, skip it'); B = invert
+      the guard (plausible 'route empty-or-accessor through defineProperty' misread).
+  - id: S5_near_misses_distinct_axes
+    question: "Do the near-misses fail along distinct axes?"
+    answer: yes
+    evidence: >
+      A is a clean no-op (registers nothing -> hasOwnProperty false); B crashes (TypeError, same
+      as base). Different failure modes.
+  - id: S6_base_solvable_and_feasible
+    question: "Is the base solvable and comfortably under the agent time budget?"
+    answer: yes
+    evidence: "2-line source patch. base-fail verified by hand (BF_RC=1). Easiest task in the bank."
+
+edge_strength: n/a_single_node
+# Single-node bug fix; second node in fastify_decorator family (separate snapshot from
+# fastify_decorator_getter — different bug, not a revision pair).

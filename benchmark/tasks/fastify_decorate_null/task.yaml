@@ -1,0 +1,53 @@
+schema_version: 1
+task_id: fastify_decorate_null
+family_id: fastify_decorator
+
+repository:
+  url: https://github.com/fastify/fastify
+  base_commit: adde52452d94^      # parent of the fix
+  gold_commit: adde52452d94
+  language: javascript
+
+instruction:
+  path: instruction.md
+
+environment:
+  image: codegraphcl-fastify:node
+  dockerfile: harbor_task/environment/Dockerfile.fastify
+  workdir: /workspace/repo
+  build_timeout_sec: 900
+  extra_mounts: {}
+
+patches:
+  gold: gold.patch                 # lib/decorate.js (guard fn before fn.getter/fn.setter)
+  verifier: verifier/verifier.patch # test/decorator.test.js (should register empty values)
+
+verifier:
+  command: bash verifier/test.sh   # tap test/decorator.test.js --grep 'should register empty'
+  timeout_sec: 300
+  hermetic: false
+  fail_to_pass:
+    - "test: should register empty values"
+  pass_to_pass: []
+  pass_to_pass_not_applicable: true  # the empty-values test is new
+  near_miss_base: gold
+  near_miss:
+    - near_miss/nearmiss_dn_swallow.py
+    - near_miss/nearmiss_dn_invert.py
+
+separability:
+  banned_words: banned_words.txt
+  checklist: separability.checklist.yaml
+
+status:
+  semantic_audit: passed
+  separability_gate: passed      # instruction = symptom (decorate with empty crashes); no fn.getter/guard/typeof-fn leakage
+  executable_gate: passed         # base-fail VERIFIED by hand (BF_RC=1); pending full materialize-confirm
+  intervention_preflight: pending
+
+notes: >
+  Second node in fastify_decorator family. Single-node bug fix (commit adde52452d94): decorate
+  read fn.getter/fn.setter unconditionally, crashing on null/undefined. gold guards `fn` first
+  so empty values fall through to the plain assignment branch and register. base-fail VERIFIED
+  (should register empty values fails on base, BF_RC=1). Two near-miss (swallow-don't-register
+  + invert-guard-crash) re-fail. 2-line source patch — feasibility-blessed (easiest task so far).

@@ -1,0 +1,10 @@
+# Banned MECHANISM words for fastify_decorate_null instruction.
+# The fix: guard `fn` before reading fn.getter/fn.setter (add `fn &&` before the typeof check).
+# "null"/"undefined"/"empty" are symptom-level (the crashing input); the guard mechanism is banned.
+fn.getter
+fn.setter
+fn &&
+typeof fn
+decorate.js
+getter
+setter

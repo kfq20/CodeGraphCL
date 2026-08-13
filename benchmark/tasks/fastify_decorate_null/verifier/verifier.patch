@@ -1,0 +1,35 @@
+From adde52452d9454aeb8e0a304567c9e8b38e303fb Mon Sep 17 00:00:00 2001
+From: James Sumners <james.sumners@gmail.com>
+Date: Tue, 26 Jun 2018 20:28:34 -0400
+Subject: [PATCH] Resolve issue #998 (#999)
+
+---
+ test/decorator.test.js | 15 +++++++++++++++
+ 1 file changed, 15 insertions(+)
+
+diff --git a/test/decorator.test.js b/test/decorator.test.js
+index dcd980a6..54a6aa24 100644
+--- a/test/decorator.test.js
++++ b/test/decorator.test.js
+@@ -515,3 +515,18 @@ test('should register properties via getter/setter objects', t => {
+     t.notOk(fastify.test)
+   })
+ })
++
++test('should register empty values', t => {
++  t.plan(2)
++  const fastify = Fastify()
++
++  fastify.register((instance, opts, next) => {
++    instance.decorate('test', null)
++    t.true(instance.hasOwnProperty('test'))
++    next()
++  })
++
++  fastify.ready(() => {
++    t.notOk(fastify.test)
++  })
++})
+-- 
+2.34.1
+
