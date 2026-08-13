@@ -1,0 +1,10 @@
+# Banned MECHANISM words for fastify_contenttype_emptybody instruction.
+# The fix: remove the `if (receivedLength === 0) { reply.code(400).send(...); return }` early-reject.
+# "empty body"/"zero-length" are symptom-level; the receivedLength guard mechanism is banned.
+receivedLength
+=== 0
+body input
+reply.code(400)
+ContentTypeParser.js
+onEnd
+onData

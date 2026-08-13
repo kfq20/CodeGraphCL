@@ -1,0 +1,53 @@
+schema_version: 1
+task_id: fastify_contenttype_emptybody
+family_id: fastify_contenttype
+
+repository:
+  url: https://github.com/fastify/fastify
+  base_commit: 8c5e732f2e9b^      # parent of the fix
+  gold_commit: 8c5e732f2e9b
+  language: javascript
+
+instruction:
+  path: instruction.md
+
+environment:
+  image: codegraphcl-fastify:node
+  dockerfile: harbor_task/environment/Dockerfile.fastify
+  workdir: /workspace/repo
+  build_timeout_sec: 900
+  extra_mounts: {}
+
+patches:
+  gold: gold.patch                 # lib/ContentTypeParser.js (remove zero-length early-reject)
+  verifier: verifier/verifier.patch # test/custom-parser.test.js (parse empty bodies string+buffer)
+
+verifier:
+  command: bash verifier/test.sh   # tap test/custom-parser.test.js --grep 'parse empty bodies as a string'
+  timeout_sec: 300
+  hermetic: false
+  fail_to_pass:
+    - "test: Should parse empty bodies as a string"
+  pass_to_pass: []
+  pass_to_pass_not_applicable: true  # the empty-body tests are new
+  near_miss_base: gold
+  near_miss:
+    - near_miss/nearmiss_eb_422.py
+    - near_miss/nearmiss_eb_silent.py
+
+separability:
+  banned_words: banned_words.txt
+  checklist: separability.checklist.yaml
+
+status:
+  semantic_audit: passed
+  separability_gate: passed      # instruction = symptom (empty body rejected before custom parser); no receivedLength/early-reject leakage
+  executable_gate: passed         # base-fail VERIFIED by hand (BF_RC=1); pending full materialize-confirm
+  intervention_preflight: pending
+
+notes: >
+  Second node in fastify_contenttype family. Single-node bug fix (commit 8c5e732f2e9b): the
+  content-type parser pre-rejected zero-length bodies (a JSON-era optimization), so custom
+  parsers never saw empty input. gold removes the early-reject. base-fail VERIFIED (parse-empty-
+  bodies-as-a-string fails on base, BF_RC=1). Two near-miss (re-add reject with 422 + silent
+  no-op) re-fail. 5-line source DELETION — feasibility-blessed.

@@ -1,0 +1,29 @@
+From 8c5e732f2e9b5f4c435589f8c5f0f5950bba9cea Mon Sep 17 00:00:00 2001
+From: Nathan Woltman <nwoltman@outlook.com>
+Date: Sat, 21 Apr 2018 18:08:59 -0400
+Subject: [PATCH] Allow parsing empty request bodies (#895)
+
+Disallowing empty bodies was an optimization for parsing `application/json` requests (since JSON bodies are not valid if they are empty). However, now that the ContentTypeParser can be used to parse other content types, this has become a bug.
+---
+ lib/ContentTypeParser.js | 5 -----
+ 1 file changed, 5 deletions(-)
+
+diff --git a/lib/ContentTypeParser.js b/lib/ContentTypeParser.js
+index f247b934..58f2cd17 100644
+--- a/lib/ContentTypeParser.js
++++ b/lib/ContentTypeParser.js
+@@ -146,11 +146,6 @@ function rawBody (request, reply, options, parser, done) {
+       return
+     }
+ 
+-    if (receivedLength === 0) {
+-      reply.code(400).send(new Error('Unexpected end of body input'))
+-      return
+-    }
+-
+     if (asString === false) {
+       body = Buffer.concat(body)
+     }
+-- 
+2.34.1
+

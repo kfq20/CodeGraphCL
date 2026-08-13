@@ -1,0 +1,41 @@
+# Separability checklist for fastify_contenttype_emptybody (single-node, fastify_contenttype family).
+# Instruction states the symptom (empty body rejected before custom parser); the fix (remove the
+# zero-length early-reject) must be derived.
+schema_version: 1
+task_id: fastify_contenttype_emptybody
+
+checks:
+  - id: S1_instruction_symptom_only
+    question: "Does the instruction state only the symptom (empty body pre-rejected), not the fix?"
+    answer: yes
+    evidence: >
+      instruction.md: "rejects any request with a zero-length body before it ever calls the user's
+      custom parser." Acceptance: allow empty body to reach the custom parser.
+  - id: S2_instruction_no_mechanism_words
+    question: "Does the instruction avoid receivedLength / === 0 / body input / reply.code(400) / onEnd?"
+    answer: yes
+    evidence: "banned_words.txt forbids these; instruction says 'zero-length body' and 'pre-reject' generically"
+  - id: S3_instruction_no_file_names
+    question: "Does the instruction avoid naming ContentTypeParser.js?"
+    answer: yes
+    evidence: "instruction says 'the content-type-parser body-reading path'"
+  - id: S4_near_misses_plausible
+    question: "Are the near-misses plausible-but-wrong, not absurd?"
+    answer: yes
+    evidence: >
+      A = re-add the reject with a 'more precise' 422 status (real status-code bikeshed); B = silent
+      no-op on empty (real 'empty = nothing to do' assumption).
+  - id: S5_near_misses_distinct_axes
+    question: "Do the near-misses fail along distinct axes?"
+    answer: yes
+    evidence: >
+      A returns a 422 rejection (wrong status, no parse); B returns NO response (silent drop).
+      Different failure mode (422 body vs hang/no-body).
+  - id: S6_base_solvable_and_feasible
+    question: "Is the base solvable and comfortably under the agent time budget?"
+    answer: yes
+    evidence: "5-line source DELETION. base-fail verified by hand (BF_RC=1). Trivial fix."
+
+edge_strength: n/a_single_node
+# Single-node bug fix; second node in fastify_contenttype family (separate snapshot from
+# fastify_contenttype_array — different bug, not a revision pair).
