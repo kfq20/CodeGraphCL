@@ -36,7 +36,7 @@ separability:
 status:
   semantic_audit: passed
   separability_gate: failed      # INSTRUCTION LEAKS THE CONTRACT (signature + loop.start_tls hint + cipher behavior)
-  executable_gate: passed         # base-fail/gold-pass verified by hand earlier
+  executable_gate: not_applicable  # REJECTED (separability failed) — not an executable target
   intervention_preflight: rejected  # all arms saturate -> untestable
 
 notes: >
