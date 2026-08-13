@@ -31,9 +31,11 @@ verifier:
     - "test: decorateReply should work with getter/setter"
   pass_to_pass: []
   pass_to_pass_not_applicable: true  # cef's tests are new; no prior Request/Reply getter/setter tests
+  near_miss_base: gold   # near-miss corrupts GOLD-ADDED code (Request/Reply defineProperty);
+                         # apply gold first so verifier passes, then near-miss must re-fail it
   near_miss:
-    - near_miss/nearmiss_fastify_value_only.py   # TODO: write
-    - near_miss/nearmiss_fastify_wrong_proto.py    # TODO: write
+    - near_miss/nearmiss_fastify_value_only.py
+    - near_miss/nearmiss_fastify_wrong_proto.py
 
 separability:
   banned_words: banned_words.txt
@@ -42,7 +44,7 @@ separability:
 status:
   semantic_audit: passed
   separability_gate: passed      # 7/7 (instruction = symptom; Object.defineProperty banned)
-  executable_gate: pending       # needs materialize (npm install + tap test)
+  executable_gate: passed        # 4/4 gates (mat_fs_3): base-fail, gold-pass, P2P n/a, 2 near-miss caught
   intervention_preflight: pending
 
 notes: >

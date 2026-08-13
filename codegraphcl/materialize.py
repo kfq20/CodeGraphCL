@@ -89,6 +89,50 @@ def _ensure_container(image: str, mounts: list[tuple[str, str]], workdir: str) -
     return short
 
 
+def _resolve_pool(cname: str | None) -> str:
+    """Return the host-side directory that the container `cname` binds at /pool.
+
+    Why this exists: each long-lived task container (cgcl-rg-box, cgcl-mat-box,
+    cgcl-fs-box) binds /pool to a *different* host directory
+    (/tmp/cgcl_box_pool vs /tmp/cgcl_fs_pool). materialize must write the work
+    tree into the SAME host dir the container sees, or the container can't read
+    the worktree, the command never starts, and the sentinel never appears
+    (the "TIMEOUT (sentinel never appeared)" red herring that blocked fastify).
+    Default CGCL_POOL=/tmp/cgcl_box_pool only matches the ripgrep/httpx boxes.
+
+    Resolution order:
+      1. explicit CGCL_POOL env (caller override — highest precedence)
+      2. inspect the container's /pool bind-mount source (correct per-container)
+      3. fall back to /tmp/cgcl_box_pool (legacy default)
+    """
+    env_pool = os.environ.get("CGCL_POOL")
+    if env_pool:
+        return env_pool
+    if cname:
+        r = subprocess.run(
+            ["docker", "inspect", cname,
+             "--format", "{{range .Mounts}}{{if eq .Destination \"/pool\"}}{{.Source}}{{end}}{{end}}"],
+            capture_output=True, text=True, timeout=20)
+        src = r.stdout.strip() if r.returncode == 0 else ""
+        if src:
+            # docker inspect reports the bind source from the DAEMON's view, which on this
+            # containerized host is under /bindfs-mapped/ebs/rootfs/... — a path that is NOT
+            # writable from this shell. The same directory is reachable from our process at
+            # /tmp/... (the daemon path with the /bindfs-mapped/ebs/rootfs prefix stripped).
+            # e.g. /bindfs-mapped/ebs/rootfs/tmp/cgcl_fs_pool  ->  /tmp/cgcl_fs_pool
+            #      /bindfs-mapped/ebs/rootfs/tmp/cgcl_box_pool ->  /tmp/cgcl_box_pool
+            DAEMON_PREFIX = "/bindfs-mapped/ebs/rootfs"
+            if src.startswith(DAEMON_PREFIX):
+                mapped = src[len(DAEMON_PREFIX):]
+                if mapped.startswith("/"):
+                    src = mapped
+            # only trust the inspected path if it is actually writable from here
+            import os.path as _op
+            if _op.isdir(src) and os.access(src, os.W_OK):
+                return src
+    return "/tmp/cgcl_box_pool"
+
+
 def _container_exec(cname: str, cmd: str, mounts: list[tuple[str, str]], workdir: str,
                     timeout: int = 300) -> tuple[int, str]:
     """Run cmd in the long-lived container `cname`. docker exec does NOT block on this host
@@ -168,11 +212,23 @@ def cmd_materialize(task_dir: str, run_id: str | None = None, container: str | N
         print(json.dumps(result, indent=2))
         return 1
 
-    # phase 1: prepare base workdir. Use POOL MODE: work lives under CGCL_POOL (a host dir
-    # bind-mounted at /pool in the long-lived image container). This is the stable path on
-    # this fuse-overlayfs host (docker run --rm drops stdout + loses fuse writes). The
-    # container workdir is /pool/<run_id>/work, overriding task.yaml's workdir.
-    pool_host = Path(os.environ.get("CGCL_POOL", "/tmp/cgcl_box_pool"))
+    # phase 1: prepare base workdir. Use POOL MODE: work lives under the host dir the
+    # long-lived container binds at /pool. This is the stable path on this fuse-overlayfs
+    # host (docker run --rm drops stdout + loses fuse writes). The container workdir is
+    # /pool/<run_id>/work, overriding task.yaml's workdir.
+    image = cfg["environment"]["image"]
+    cname = container or _find_running_container(image)
+    if not cname:
+        result = {"status": "environment_failure",
+                  "reason": (f"no long-lived container running image {image}. On this host, "
+                             f"start one first with /pool mounted (see ENV_RECIPE.md). "
+                             f"materialize does not manage container mounts.")}
+        (run_dir / "materialization_result.json").write_text(json.dumps(result, indent=2))
+        print(json.dumps(result, indent=2)); return 1
+    # resolve the host pool dir THIS container actually binds at /pool (per-container:
+    # rg/httpx -> /tmp/cgcl_box_pool, fastify -> /tmp/cgcl_fs_pool). Writing the worktree
+    # into the wrong pool dir is why fastify previously timed out (container never saw it).
+    pool_host = Path(_resolve_pool(cname))
     pool_host.mkdir(parents=True, exist_ok=True)
     ep_pool = pool_host / run_id
     if ep_pool.exists():
@@ -181,7 +237,8 @@ def cmd_materialize(task_dir: str, run_id: str | None = None, container: str | N
     work.mkdir(parents=True, exist_ok=True)
     container_work = f"/pool/{run_id}/work"
     # also keep a run_dir under runs/ for the manifest/logs (audit copy)
-    (run_dir / "work_meta.txt").write_text(f"work lives in pool: {work} -> {container_work}\n")
+    (run_dir / "work_meta.txt").write_text(
+        f"work lives in pool: {work} -> {container_work}\ncontainer: {cname}\n")
 
     # copy the clone tree, then checkout base
     shutil.copytree(clone, work, dirs_exist_ok=True, ignore=shutil.ignore_patterns(".git"))
@@ -203,17 +260,10 @@ def cmd_materialize(task_dir: str, run_id: str | None = None, container: str | N
     image = cfg["environment"]["image"]
     vcmd = cfg["verifier"]["command"]
     vtimeout = cfg["verifier"]["timeout_sec"]
-    # POOL MODE: the long-lived container already has /pool mounted. We don't pass a work
-    # mount (it's already there); extra_mounts (wheels) must also already be mounted in the
-    # long-lived box — materialize checks the box is up but does NOT manage its mounts.
-    cname = container or _find_running_container(image)
-    if not cname:
-        result = {"status": "environment_failure",
-                  "reason": (f"no long-lived container running image {image}. On this host, "
-                             f"start one first with /pool mounted (see ENV_RECIPE.md). "
-                             f"materialize does not manage container mounts.")}
-        (run_dir / "materialization_result.json").write_text(json.dumps(result, indent=2))
-        print(json.dumps(result, indent=2)); return 1
+    # POOL MODE: the long-lived container already has /pool mounted (resolved above to the
+    # correct per-container host dir). We don't pass a work mount (it's already there);
+    # extra_mounts (wheels) must also already be mounted in the long-lived box — materialize
+    # checks the box is up but does NOT manage its mounts.
     mounts = [(str(work), container_work)]   # for log-file path resolution only
     workdir = container_work
 
@@ -339,6 +389,18 @@ def cmd_materialize(task_dir: str, run_id: str | None = None, container: str | N
             for f in vdir.iterdir():
                 if f.is_file():
                     shutil.copy2(f, nm_work / "verifier" / f.name)
+        # near-miss base mode (default "base"): whether to also apply the gold patch before
+        # injecting the near-miss. For tasks whose near-miss corrupts GOLD-ADDED code (not
+        # base-existing code), use "gold" — the verifier passes after gold, then the near-miss
+        # variant must make it FAIL again (proves the verifier checks behavior, not "gold applied").
+        nm_base_mode = cfg.get("verifier", {}).get("near_miss_base", "base")
+        if nm_base_mode == "gold" and gold_patch and gold_patch.exists():
+            gar = _git(["apply", str(gold_patch)], nm_work)
+            if gar.returncode != 0:
+                nm_results.append({"patch": nm_rel, "status": "apply_failed",
+                                   "rc": -1, "detail": "gold patch for near-miss base"})
+                continue
+            time.sleep(1.0)
         # apply the near-miss: .patch via git, .py via running it in the container against work
         nm_container_work = f"/pool/{run_id}_nm{i}/work"
         nm_mounts = [(str(nm_work), nm_container_work)]

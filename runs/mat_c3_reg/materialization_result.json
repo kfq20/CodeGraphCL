@@ -1,0 +1,32 @@
+{
+  "status": "passed",
+  "gates": {
+    "base_fail": "passed",
+    "gold_pass": "passed",
+    "pass_to_pass": "passed",
+    "near_miss": "passed"
+  },
+  "fail_to_pass": [
+    "regression::r829_2747",
+    "regression::r829_2778",
+    "regression::r829_2836",
+    "regression::r829_2933"
+  ],
+  "pass_to_pass": [
+    "regression::r829_original",
+    "regression::r829_2731"
+  ],
+  "near_miss_results": [
+    {
+      "patch": "near_miss/nearmiss_c3_overstrip.py",
+      "rc": 101,
+      "status": "caught"
+    },
+    {
+      "patch": "near_miss/nearmiss_c3_nostrip.py",
+      "rc": 101,
+      "status": "caught"
+    }
+  ],
+  "run_dir": "/vePFS-Mindverse/user/intern/fanqi/CodeGraphCL/runs/mat_c3_reg"
+}
