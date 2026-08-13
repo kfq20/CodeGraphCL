@@ -17,6 +17,8 @@
   edge built this session (cached parent matcher path leaks across search roots). Two near-miss
   (parentdir/add_child-drop + cachehit-wrong-source) caught after iterating on near-miss A
   (parent()-only was NOT caught — test is sensitive to add_child propagation, documented).
+  **N=1 intervention run**: INCONCLUSIVE (3/4 timeout_failed, wrong arm fluke-solved at 600s).
+  c5 too hard for clean N=1 read; retarget to easier edge. See runs/.../SUMMARY.md.
 - c3 regression confirmed (mat_c3_reg): pool-resolve change did NOT break ripgrep (4/4, 30s).
 
 ## Executable nodes (executable_gate: passed) — 6 total
@@ -54,8 +56,7 @@
 - DinD: npm/apt/pip slow under nested docker. cargo OK (crates.io cache persists).
 
 ## Next
-- Continue building executable nodes toward 20-30 (prioritize small co-change commits: more
-  clap derive, then fastify content-type/errors, then ripgrep c5/c6).
-- Build a real CL EDGE (multi-node revision pair) — clap type_alias↔default_value_os are same
-  family but NOT a revision pair; need an audited producer→reviser chain for beneficial/required
-  edges. The c2→c3 ripgrep Update chain is the only real CL edge so far.
+- **c5 N=1 INCONCLUSIVE** (3/4 timeout_failed, wrong arm fluke-solved) — c5 too hard for clean
+  N=1 read (agent times out regardless of prior). NOT escalating to N=3. Retarget to easier
+  revision edge: c3->c4 (smaller `.`-dir refactor) or fastify parity, where reset solves <300s
+  so the edge measures experience COST not feasibility.
