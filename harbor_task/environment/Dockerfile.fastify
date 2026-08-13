@@ -1,0 +1,12 @@
+# CodeGraphCL fastify task image (node + npm deps, NO apt — same DinD pattern as ripgrep).
+# node:20-slim ships npm. fastify cef-era needs tap/typescript/standard (devDeps installed at runtime
+# via npm ci in the worktree — keeps the image generic, deps travel with the repo snapshot).
+FROM node:20-slim
+
+ENV DEBIAN_FRONTEND=noninteractive
+
+# node:20-slim has no git — patches applied on HOST, then cp'd in (same as ripgrep).
+# No apt layer (deb.debian.org is unreachable on this DinD host).
+
+RUN mkdir -p /workspace
+WORKDIR /workspace

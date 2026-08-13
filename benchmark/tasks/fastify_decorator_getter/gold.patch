@@ -1,0 +1,47 @@
+From cef8814ea104101f84bc385408b661b073e17cd2 Mon Sep 17 00:00:00 2001
+From: James Sumners <james.sumners@gmail.com>
+Date: Wed, 29 Aug 2018 10:11:26 -0400
+Subject: [PATCH] Fix decorate{Request, Reply} not recognizing getter/setter
+ config (#1114)
+
+---
+ lib/decorate.js | 16 ++++++++++++++++
+ 1 file changed, 16 insertions(+)
+
+diff --git a/lib/decorate.js b/lib/decorate.js
+index 3567d4a8..3516ece2 100644
+--- a/lib/decorate.js
++++ b/lib/decorate.js
+@@ -58,6 +58,14 @@ function decorateReply (name, fn, dependencies) {
+     checkDependencies(this._Reply, dependencies)
+   }
+ 
++  if (fn && (typeof fn.getter === 'function' || typeof fn.setter === 'function')) {
++    Object.defineProperty(this._Reply.prototype, name, {
++      get: fn.getter,
++      set: fn.setter
++    })
++    return this
++  }
++
+   this._Reply.prototype[name] = fn
+   return this
+ }
+@@ -71,6 +79,14 @@ function decorateRequest (name, fn, dependencies) {
+     checkDependencies(this._Request, dependencies)
+   }
+ 
++  if (fn && (typeof fn.getter === 'function' || typeof fn.setter === 'function')) {
++    Object.defineProperty(this._Request.prototype, name, {
++      get: fn.getter,
++      set: fn.setter
++    })
++    return this
++  }
++
+   this._Request.prototype[name] = fn
+   return this
+ }
+-- 
+2.34.1
+

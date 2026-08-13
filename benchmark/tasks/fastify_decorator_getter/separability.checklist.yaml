@@ -1,0 +1,24 @@
+schema_version: 1
+task_id: fastify_decorator_getter
+checks:
+  - id: S1_instruction_describes_symptom_only
+    question: "Does the instruction describe the symptom (Request/Reply don't accept getter/setter) without naming Object.defineProperty?"
+    answer: yes
+    evidence: "instruction says 'getter/setter object is silently ignored' — symptom; no Object.defineProperty"
+  - id: S2_correct_not_derivable
+    question: "Can the correct (c1 decorate rule) atom be derived from the instruction?"
+    answer: no
+    evidence: "instruction says 'same way decorate does'; the HOW (Object.defineProperty on prototype) is in c1's atom, not instruction"
+  - id: S3_stale_not_negated
+    question: "Does the instruction negate the stale (Request/Reply deliberately simple) atom?"
+    answer: no
+    evidence: "instruction doesn't say Request/Reply should support getter/setter — says they DON'T, which is the symptom"
+  - id: S4_provenance_verified
+    question: "Atoms cite producer commits with no future-knowledge?"
+    answer: yes
+    evidence: "c1 atom = c1aac3cd85 (decorate getter/setter); no cef Request/Reply gap discovery"
+  - id: S5_reset_non_saturating
+    question: "Is Reset solvable but non-trivial?"
+    answer: yes
+    evidence: "agent must read decorate.js, find decorate's getter/setter pattern, replicate on Request/Reply"
+edge_strength: beneficial_parity

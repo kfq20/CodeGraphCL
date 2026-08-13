@@ -1,0 +1,52 @@
+schema_version: 1
+task_id: fastify_decorator_getter
+family_id: fastify_decorator
+
+repository:
+  url: https://github.com/fastify/fastify
+  base_commit: cef8814ea1^      # parent of cef; c1 already applied (decorate has getter/setter)
+  gold_commit: cef8814ea1
+  language: javascript
+
+instruction:
+  path: instruction.md
+
+environment:
+  image: codegraphcl-fastify:node
+  dockerfile: harbor_task/environment/Dockerfile.fastify
+  workdir: /workspace/repo
+  build_timeout_sec: 900
+  extra_mounts: {}
+
+patches:
+  gold: gold.patch
+  verifier: verifier/verifier.patch
+
+verifier:
+  command: bash verifier/test.sh
+  timeout_sec: 300
+  hermetic: false
+  fail_to_pass:
+    - "test: decorateRequest should work with getter/setter"
+    - "test: decorateReply should work with getter/setter"
+  pass_to_pass: []
+  pass_to_pass_not_applicable: true  # cef's tests are new; no prior Request/Reply getter/setter tests
+  near_miss:
+    - near_miss/nearmiss_fastify_value_only.py   # TODO: write
+    - near_miss/nearmiss_fastify_wrong_proto.py    # TODO: write
+
+separability:
+  banned_words: banned_words.txt
+  checklist: separability.checklist.yaml
+
+status:
+  semantic_audit: passed
+  separability_gate: passed      # 7/7 (instruction = symptom; Object.defineProperty banned)
+  executable_gate: pending       # needs materialize (npm install + tap test)
+  intervention_preflight: pending
+
+notes: >
+  c1->cef Parity edge. c1 (c1aac3cd85) added getter/setter to `decorate`. cef (cef8814ea1)
+  propagates to `decorateRequest`/`decorateReply`. base-fail = Request/Reply tests fail on base
+  (no getter/setter). gold-pass = cef source adds it. Needs node:20 + npm install + tap.
+  Patches apply clean on cef base. near-miss TODO (need 2 valid injectors).

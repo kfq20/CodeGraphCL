@@ -1,0 +1,7 @@
+# banned MECHANISM words for fastify_decorator_getter
+# (getter/setter are fastify's public API field names — legitimate in instruction.
+#  Only the JS implementation mechanism is off-limits.)
+Object.defineProperty
+defineProperty
+this._Reply.prototype
+this._Request.prototype
