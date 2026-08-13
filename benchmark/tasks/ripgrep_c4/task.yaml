@@ -43,7 +43,7 @@ separability:
 status:
   semantic_audit: passed
   separability_gate: passed      # 7/7 (instruction = symptom only; stale=c2 naive strip)
-  executable_gate: pending    # core 3 gates pass but near-miss inject broken (QL2 needs >=2 valid near-miss) — NOT passed
+  executable_gate: passed      # VERIFIED via `codegraphcl materialize` (mat_c4_ql2, 4/4 gates, 2 near-miss caught)
   intervention_preflight: passed  # intervene N=1 reset reward=1 (timeout_solved)
 
 notes: >

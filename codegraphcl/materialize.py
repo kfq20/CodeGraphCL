@@ -350,11 +350,16 @@ def cmd_materialize(task_dir: str, run_id: str | None = None, container: str | N
             time.sleep(1.0)
             nm_cmd = vcmd
         elif nm_path.suffix == ".py":
-            # script injects a near-miss into the repo; stage it + run it in container
-            shutil.copy2(nm_path, nm_work / "near_miss_inject.py")
-            inject_cmd = (f"python3 {nm_container_work}/near_miss_inject.py "
-                          f"{nm_container_work} A 2>&1; ")
-            nm_cmd = inject_cmd + vcmd
+            # script injects a near-miss into the repo. Run on HOST (container may lack python3
+            # — rust:slim ships no python). Then container only runs the verifier.
+            inject_r = subprocess.run([sys.executable, str(nm_path), str(nm_work)],
+                                       capture_output=True, text=True, timeout=30)
+            if inject_r.returncode != 0:
+                nm_results.append({"patch": nm_rel, "status": "inject_failed",
+                                   "rc": -1, "stderr": inject_r.stderr[:200]})
+                continue
+            time.sleep(1.0)  # fuse sync after host-side file modification
+            nm_cmd = vcmd
         else:
             nm_results.append({"patch": nm_rel, "status": "unsupported_nearmiss_type", "rc": -1})
             continue
