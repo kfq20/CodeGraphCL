@@ -1,0 +1,88 @@
+From 435f59fc4b43af3ab32f34d53fa34978f393fe52 Mon Sep 17 00:00:00 2001
+From: jif <jif@openai.com>
+Date: Wed, 29 Jul 2026 16:00:03 +0100
+Subject: [PATCH] ignore: skip loading unreachable ignore files
+
+When parallelism isn't used (e.g., when sorting results), then
+it's possible in some cases for the `ignore` crate to still try and
+load gitignore files inside of directories that are never
+descended into. This can occur when `--max-depth` is used, or
+even just when a directory is skipped for some other reason.
+
+Fixes #2565, PR #3496
+---
+ crates/ignore/src/walk.rs | 34 +++++++++++++++++++++++++++++++---
+ 1 file changed, 31 insertions(+), 3 deletions(-)
+
+diff --git a/crates/ignore/src/walk.rs b/crates/ignore/src/walk.rs
+index 9e0776e..2b0300e 100644
+--- a/crates/ignore/src/walk.rs
++++ b/crates/ignore/src/walk.rs
+@@ -636,6 +636,7 @@ impl WalkBuilder {
+             it: None,
+             ig_root: ig_root.clone(),
+             ig: ig_root.clone(),
++            max_depth: self.max_depth,
+             max_filesize: self.max_filesize,
+             skip: self.skip.clone(),
+             filter: self.filter.clone(),
+@@ -1118,6 +1119,7 @@ pub struct Walk {
+     it: Option<WalkEventIter>,
+     ig_root: Ignore,
+     ig: Ignore,
++    max_depth: Option<usize>,
+     max_filesize: Option<u64>,
+     skip: Option<Arc<Handle>>,
+     filter: Option<Filter>,
+@@ -1228,12 +1230,17 @@ impl Iterator for Walk {
+                         self.it.as_mut().unwrap().it.skip_current_dir();
+                         // Still need to push this on the stack because
+                         // we'll get a WalkEvent::Exit event for this dir.
+-                        // We don't care if it errors though.
+-                        let (igtmp, _) = self.ig.add_child(ent.path());
++                        // Its ignore files cannot apply to any visited entry.
++                        let (igtmp, _) =
++                            self.ig.add_child_with_entries(ent.path(), &[]);
+                         self.ig = igtmp;
+                         continue;
+                     }
+-                    let (igtmp, err) = self.ig.add_child(ent.path());
++                    let (igtmp, err) = if self.max_depth == Some(ent.depth()) {
++                        self.ig.add_child_with_entries(ent.path(), &[])
++                    } else {
++                        self.ig.add_child(ent.path())
++                    };
+                     self.ig = igtmp;
+                     ent.err = err;
+                     return Some(Ok(ent));
+@@ -2427,6 +2434,27 @@ mod tests {
+         );
+     }
+ 
++    #[test]
++    fn max_depth_does_not_load_unreachable_ignore_files() {
++        let td = tmpdir();
++        let leaf = td.path().join("leaf");
++        mkdirp(&leaf);
++        wfile(leaf.join(".ignore"), "{invalid\n");
++
++        let mut builder = WalkBuilder::new(td.path());
++        builder.max_depth(Some(1));
++        let entry = builder
++            .build()
++            .find_map(|result| {
++                let entry = result.unwrap();
++                (entry.path() == leaf).then_some(entry)
++            })
++            .unwrap();
++
++        assert!(entry.error().is_none());
++        assert_paths(td.path(), &builder, &["leaf"]);
++    }
++
+     #[test]
+     fn min_depth() {
+         let td = tmpdir();
+-- 
+2.34.1
+

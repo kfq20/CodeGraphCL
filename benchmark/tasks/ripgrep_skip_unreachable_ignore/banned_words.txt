@@ -1,0 +1,12 @@
+# Banned MECHANISM words for ripgrep_skip_unreachable_ignore instruction.
+# The fix: at the depth boundary (or skipped dir), call add_child_with_entries(path, &[])
+# instead of add_child(path) to build an empty matcher without loading the ignore file.
+# "ignore file"/"depth"/"walk" are symptom-level; the add_child_with_entries mechanism is banned.
+add_child_with_entries
+add_child
+add_child(
+Some(ent.depth())
+max_depth == Some
+entries: &[]
+walk.rs
+mod tests

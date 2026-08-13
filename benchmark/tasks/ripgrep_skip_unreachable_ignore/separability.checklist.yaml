@@ -1,0 +1,47 @@
+# Separability checklist for ripgrep_skip_unreachable_ignore (ripgrep_walk_lifecycle, Phase 3).
+# Instruction states the symptom (an unvisited dir's malformed ignore file surfaces a parse
+# error); the fix (add_child_with_entries(path, &[]) at the boundary, not add_child) must be derived.
+schema_version: 1
+task_id: ripgrep_skip_unreachable_ignore
+
+checks:
+  - id: S1_instruction_symptom_only
+    question: "Does the instruction state only the symptom, not the fix?"
+    answer: yes
+    evidence: >
+      instruction.md: "the walker still opens and parses that subdirectory's ignore file...
+      the parse error surfaces on the directory's entry." Acceptance: do not load ignore files
+      for non-descended dirs; the entry must carry no error.
+  - id: S2_instruction_no_mechanism_words
+    question: "Does the instruction avoid add_child/add_child_with_entries/Some(ent.depth())/mod tests?"
+    answer: yes
+    evidence: "banned_words.txt forbids these; instruction says 'the directory-walk iterator' generically"
+  - id: S3_instruction_no_file_names
+    question: "Does the instruction avoid naming walk.rs / mod tests?"
+    answer: yes
+    evidence: "instruction says 'the directory-walk iterator'"
+  - id: S4_near_misses_plausible
+    question: "Are the near-misses plausible-but-wrong, not absurd?"
+    answer: yes
+    evidence: >
+      A = fix the skip-dir block but not the max_depth branch (real 'the boundary is a different
+      case, still load there' reasoning); B = invert the depth-check polarity (real 'I flipped the
+      condition' misread). Both are real code-level mistakes, not absurd patches.
+  - id: S5_near_misses_distinct_axes
+    question: "Do the near-misses fail along distinct axes?"
+    answer: yes
+    evidence: >
+      A removes the boundary fix entirely (no add_child_with_entries in the max_depth branch);
+      B keeps both calls but swaps which arm fires at the boundary. Different residual: A loads
+      at boundary via plain add_child; B loads at boundary via the inverted arm. Both empirically
+      caught (assertion failed, rc=101).
+  - id: S6_base_solvable_and_feasible
+    question: "Is the base solvable and in the non-saturated band?"
+    answer: yes
+    evidence: >
+      31-line source patch. base-fail verified (BF_RC=101, assertion). Reset calibration (N=2)
+      pending — will determine saturation before the 4-arm.
+
+edge_strength: candidate   # awaiting reset calibration + N=1
+# Phase 3 edge: producer b621e65 (matcher-chain cache architecture) -> consumer 435f59f (skip
+# unreachable ignore files). Motif: lifecycle/cache-invalidation.

@@ -1,0 +1,32 @@
+diff --git a/crates/ignore/src/walk.rs b/crates/ignore/src/walk.rs
+index 9e0776e..2b0300e 100644
+--- a/crates/ignore/src/walk.rs
++++ b/crates/ignore/src/walk.rs
+@@ -2427,6 +2434,27 @@ mod tests {
+         );
+     }
+ 
++    #[test]
++    fn max_depth_does_not_load_unreachable_ignore_files() {
++        let td = tmpdir();
++        let leaf = td.path().join("leaf");
++        mkdirp(&leaf);
++        wfile(leaf.join(".ignore"), "{invalid\n");
++
++        let mut builder = WalkBuilder::new(td.path());
++        builder.max_depth(Some(1));
++        let entry = builder
++            .build()
++            .find_map(|result| {
++                let entry = result.unwrap();
++                (entry.path() == leaf).then_some(entry)
++            })
++            .unwrap();
++
++        assert!(entry.error().is_none());
++        assert_paths(td.path(), &builder, &["leaf"]);
++    }
++
+     #[test]
+     fn min_depth() {
+         let td = tmpdir();

@@ -1,0 +1,95 @@
+schema_version: 1
+task_id: ripgrep_skip_unreachable_ignore
+family_id: ripgrep_walk_lifecycle
+
+repository:
+  url: https://github.com/BurntSushi/ripgrep
+  base_commit: 435f59f^      # parent of the consumer fix (includes producer b621e65)
+  gold_commit: 435f59f
+  language: rust
+
+instruction:
+  path: instruction.md
+
+environment:
+  image: codegraphcl-ripgrep:rust
+  dockerfile: harbor_task/environment/Dockerfile.ripgrep
+  workdir: /workspace/repo
+  build_timeout_sec: 900
+  extra_mounts:
+    cargo_cache: /tmp/cgcl_cargo_cache
+    target: /tmp/cgcl_target
+
+patches:
+  gold: gold.patch                 # crates/ignore/src/walk.rs source (add_child_with_entries at boundary)
+  verifier: verifier/verifier.patch # crates/ignore/src/walk.rs test hunk (inline in mod tests)
+
+verifier:
+  command: bash verifier/test.sh  # cargo test -p ignore max_depth_does_not_load_unreachable
+  timeout_sec: 300
+  hermetic: false
+  fail_to_pass:
+    - "test: walk::tests::max_depth_does_not_load_unreachable_ignore_files"
+  pass_to_pass: []
+  pass_to_pass_not_applicable: true  # the test is new (inline in walk.rs mod tests)
+  near_miss_base: gold               # near-miss corrupts gold's source change
+  near_miss:
+    - near_miss/nearmiss_skip_onlyskipdir.py
+    - near_miss/nearmiss_skip_invert.py
+
+separability:
+  banned_words: banned_words.txt
+  checklist: separability.checklist.yaml
+
+mechanism_audit:
+  reusable_decision: >
+    Producer (b621e65, "ignore: add incremental checking") established the Ignore matcher-chain
+    architecture: parent matchers are cached by directory in IgnoreInner.compiled, and the Walk
+    iterator pushes/pops Ignore instances as it descends via add_child (which loads the dir's
+    .ignore/.gitignore/.rgignore). The chain must stay consistent (each visited dir gets a stack
+    entry) but the LOADING of ignore files is only meaningful for dirs whose entries will be
+    visited — loading an unreachable dir's ignore file pollutes the cache and surfaces parse
+    errors on entries that are never visited.
+  plausible_path_correct: >
+    At the depth boundary (max_depth reached) or when a dir is otherwise skipped, call
+    add_child_with_entries(path, &[]) — build an empty child matcher so the chain stays consistent
+    (the Exit event still has a stack entry) but do NOT load/parse the dir's ignore file. Descended
+    dirs keep using add_child.
+  plausible_path_competing: >
+    Keep calling add_child(path) unconditionally for every dir the iterator yields (including the
+    depth-boundary dir). This maintains the chain AND loads the ignore file — "correct" by the
+    producer's original architecture (add_child is THE way to descend), but it loads an unreachable
+    file whose parse error then attaches to an unvisited entry.
+  why_instruction_does_not_disambiguate: >
+    The instruction describes the symptom (an unvisited dir's malformed ignore file surfaces a
+    parse error) and the expectation (don't load ignore files for non-descended dirs). It does NOT
+    name add_child, add_child_with_entries, the compiled cache, or the chain-consistency tradeoff
+    — a reset agent seeing add_child as "the way to descend" can't tell that an empty-matcher
+    variant exists, or that loading is the thing to avoid vs. the stack entry.
+  why_correct_history_selects_path: >
+    The producer's decision (the cache holds matchers per-directory; loading is only meaningful for
+    visited subtrees) points at the empty-matcher path: at the boundary, build the stack entry
+    WITHOUT loading (add_child_with_entries with empty entries). A prior carrying "loading an
+    unreachable dir pollutes the cache" rules out the "add_child everywhere" path.
+  why_wrong_history_is_plausible: >
+    The wrong prior — "add_child is the correct way to maintain the matcher chain for every dir the
+    iterator yields" — is literally the producer's own architecture (add_child IS the descend
+    primitive). A reset agent following it loads every dir's ignore file, which is the base bug.
+    It is not absurd; it's the documented pattern, applied where it shouldn't be.
+
+status:
+  semantic_audit: passed
+  separability_gate: pending
+  executable_gate: passed         # base-fail + gold-pass + BOTH near-miss VERIFIED by hand
+                                  # (BF_RC=101, GP_RC=0, NMA2_RC=101 assertion, NMB_RC=101 assertion)
+  verification_tier: executable_candidate
+  intervention_preflight: pending
+
+notes: >
+  New ripgrep_walk_lifecycle family (Phase 3). Motif: lifecycle/cache-invalidation (matcher cache
+  holds per-dir matchers; loading an unreachable dir's ignore file pollutes the cache + surfaces
+  parse errors on unvisited entries). base-fail + gold-pass + both near-miss VERIFIED by hand.
+  31-line source patch. Producer b621e65 (add incremental checking / the cache architecture) ->
+  consumer 435f59f (skip unreachable ignore files). NOTE: the verifier is an INLINE test in
+  walk.rs's mod tests; gold.patch = source hunks, verifier.patch = the test hunk (split from the
+  same file). This is the first Phase 3 edge with a fully-passed Executable Gate.
