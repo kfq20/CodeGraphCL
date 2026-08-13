@@ -36,4 +36,10 @@ expected_effect:
 
 status:
   semantic_audit: passed
-  causal_verification: proposed   # both nodes executable_verified (mat_fs_hh_1, mat_fs_rh_1); intervention pending
+  causal_verification: intervention_smoke  # N=1 RAN (seed42): all 4 arms solved (pass-rate
+                                  # saturated) — task too easy for a pass-rate signal. Cost asymmetry
+                                  # present (irrelevant 41 turns << correct/wrong/reset 96-110) but
+                                  # direction does NOT match the beneficial-edge hypothesis (correct
+                                  # not cheaper than reset). No-go for N=3 — sensitivity is mud, not
+                                  # in the predicted direction. Reset-probe predicted this (177s/25t).
+                                  # See runs/intervene_fastify_hasheader_to_removeheader_seed42_1786603532/SUMMARY.md
