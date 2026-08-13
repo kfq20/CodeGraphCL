@@ -1,0 +1,42 @@
+schema_version: 1
+edge_id: ripgrep_c4_to_c5
+from: ripgrep_c4
+to: ripgrep_c5
+edge_type: beneficial_update
+
+# c4 established: cache parent matchers by directory for reuse, but keep each search root's
+# path context with the walk (not the cached matcher). c5 refines: when a cached parent matcher
+# is reused across a SECOND root, the path context was leaking via shared cached state — the
+# context must live with the walk, not the shared matcher. c4's caching discipline is the
+# CORRECT prior for c5 (transfers forward); c3's pre-caching approach is STALE for c5.
+experience:
+  statement: >
+    Parent ignore matchers are compiled once per directory and reused. The path context used to
+    rewrite a file's path before matching against a parent ignore file belongs to the search
+    root being walked — it is NOT a property of the cached matcher. Reusing a cached parent
+    matcher under a different search root must apply the current root's path context, not the
+    context active when the matcher was first built. Keep the walk-relative path with the walk,
+    separate from the shared cached matcher state.
+  type: parent_matcher_caching_discipline
+  scope: crates/ignore/src/dir.rs
+  provenance:
+    repository: ripgrep
+    commit: 0407e104f6          # c4 (producer)
+  validity: valid_for_c5        # c4's discipline transfers forward to c5
+
+conditions:
+  reset: null
+  correct: correct               # c4's caching discipline (keep walk path with the walk)
+  irrelevant: irrelevant
+  stale: wrong                    # c3's pre-caching approach (stale, predates c4's caching)
+
+expected_effect:
+  correctness: possible           # c5's cross-root refinement is non-trivial
+  efficiency: possible
+  negative_transfer: possible     # c3 stale (ignore caching) may cause failure
+
+status:
+  semantic_audit: passed
+  executable_gate: passed         # ripgrep_c5 materialized 4/4 (mat_c5_3)
+  intervention_preflight: passed  # prompt-preview PASS (4 distinct prompts, instr_sha shared, no condition-word leak)
+  causal_verification: proposed   # N=1 then N=3 if sensitive

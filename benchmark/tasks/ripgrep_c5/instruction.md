@@ -1,11 +1,11 @@
-# Task — ripgrep: parent ignore rules applied to the wrong directory when searching multiple roots
+# Task — ripgrep: parent ignore rules applied to an incorrect directory when searching multiple roots
 
 ## Symptom (external behavior)
 
 When ripgrep is invoked with more than one search root on the command line, the parent
-`.gitignore` / `.rgignore` rules are applied using the wrong directory's path context. A file
+`.gitignore` / `.rgignore` rules are applied using an incorrect directory's path context. A file
 that should be ignored by a parent ignore file in one root can leak into the results, or be
-ignored for the wrong reason, because the parent-ignore state established while walking the
+ignored for an unrelated reason, because the parent-ignore state established while walking the
 first root carries the first root's directory context into the later root when it is reused.
 
 The single-root case works correctly; only multiple explicit roots in one invocation expose
