@@ -1,0 +1,10 @@
+# Banned MECHANISM words for fastify_reply_removeheader instruction.
+# The fix: Reply.prototype.removeHeader = function(key) { delete this._headers[key.toLowerCase()]; return this }
+# "remove"/"header" are symptom-level; the delete+lowercase mechanism is banned.
+removeHeader
+_headers
+delete this
+delete \[
+toLowerCase
+reply.js
+Reply.prototype

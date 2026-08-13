@@ -1,0 +1,52 @@
+schema_version: 1
+task_id: fastify_reply_removeheader
+family_id: fastify_reply_api
+
+repository:
+  url: https://github.com/fastify/fastify
+  base_commit: cfa760cbd129^      # parent of the fix
+  gold_commit: cfa760cbd129
+  language: javascript
+
+instruction:
+  path: instruction.md
+
+environment:
+  image: codegraphcl-fastify:node
+  dockerfile: harbor_task/environment/Dockerfile.fastify
+  workdir: /workspace/repo
+  build_timeout_sec: 900
+  extra_mounts: {}
+
+patches:
+  gold: gold.patch                 # lib/reply.js (removeHeader: delete lowercased key, return this)
+  verifier: verifier/verifier.patch # test/internals/reply.test.js (removeHeader test)
+
+verifier:
+  command: bash verifier/test.sh   # tap test/internals/reply.test.js --grep 'removeHeader can remove'
+  timeout_sec: 300
+  hermetic: false
+  fail_to_pass:
+    - "test: reply.removeHeader can remove the value"
+  pass_to_pass: []
+  pass_to_pass_not_applicable: true  # the removeHeader test is new
+  near_miss_base: gold
+  near_miss:
+    - near_miss/nearmiss_rh_noreturn.py
+    - near_miss/nearmiss_rh_blank.py
+
+separability:
+  banned_words: banned_words.txt
+  checklist: separability.checklist.yaml
+
+status:
+  semantic_audit: passed
+  separability_gate: passed      # instruction = symptom (no way to remove a set header); no removeHeader/_headers/delete/toLowerCase leakage
+  executable_gate: passed         # base-fail + both near-miss VERIFIED by hand (BF/NMA/NMB all rc=1)
+  intervention_preflight: pending
+
+notes: >
+  Fourth node in fastify_reply_api family. Single-node feature-add (commit cfa760cbd129): no way
+  to remove a set response header. gold adds removeHeader that deletes the lowercased key from
+  the header store and returns `this` (fluent). base-fail VERIFIED. Both near-miss VERIFIED by
+  hand before materialize (NMA_RC=1 chaining-break, NMB_RC=1 blank-not-delete).
