@@ -1,18 +1,21 @@
 family_id: ripgrep_ignore_path
 repository: ripgrep
 
-# The ripgrep ignore-path family. Update chain c2 -> c3 -> c4.
+# The ripgrep ignore-path family. Update chain c2 -> c3 -> c4 -> c5.
 # c2: naive strip (avoid duplication). c3: precise strip (avoid over-strip too).
-# c4: .-dir/hidden-file scope refinement. c2->c3 = Stale/Update; c3->c4 = candidate
-# beneficial edge (c3 rule transfers forward; c2 is stale two-revisions-back).
+# c4: .-dir/hidden-file scope refinement. c5: structural refactor (move absolute_base off the
+# shared IgnoreInner). c2->c3 = Stale/Update; c3->c4 = the only edge that reached N=3 (REJECTED,
+# variance-dominated at the 600s wall); c4->c5 = N=1 INCONCLUSIVE (c5 too hard, 3/4 timeout).
 nodes:
   - ripgrep_c2
   - ripgrep_c3
   - ripgrep_c4
+  - ripgrep_c5
 
 edges:
   - ripgrep_c2_to_c3
   - ripgrep_c3_to_c4
+  - ripgrep_c4_to_c5
 
 structure:
   type: update_chain
@@ -20,6 +23,7 @@ structure:
     - ripgrep_c2
     - ripgrep_c3
     - ripgrep_c4
+    - ripgrep_c5
 
 diagnostic_targets:
   - target: ripgrep_c3
@@ -34,5 +38,24 @@ diagnostic_targets:
       - correct          # correct-from-c3 (c3's precise strip)
       - irrelevant
       - wrong            # stale-from-c2
+  - target: ripgrep_c5
+    conditions:
+      - reset
+      - correct          # correct-from-c4
+      - irrelevant
+      - wrong            # stale-from-c3
 
-rejection_log: []   # none rejected (unlike httpx); all three pass Separability Gate
+rejection_log: []   # none rejected on Separability; see screening_log for causal outcomes
+
+screening_log:
+  - edge: ripgrep_c2_to_c3
+    stage: reset_probe
+    result: infra_fail   # reward-path bug in ripgrep_c3/verifier/test.sh (printf "$PASS" wrote
+                         # empty/count -> non-0/1 reward -> infra_fail). Fixed to binary 0/1.
+  - edge: ripgrep_c3_to_c4
+    stage: n3
+    result: rejected     # correct 1/3, reset 1/3, irrelevant 2/3, wrong 2/3 — N=1 ordering did
+                         # not reproduce; variance-dominated at the wall.
+  - edge: ripgrep_c4_to_c5
+    stage: n1
+    result: inconclusive # 3/4 timeout_failed (reset FAILED) — c5 too hard for a clean read.

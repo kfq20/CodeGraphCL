@@ -1,0 +1,34 @@
+family_id: fastify_schemas
+repository: fastify
+
+# The fastify schemas family. Two nodes; one candidate Update edge.
+# c9141a071d0f ("Add method to get all shared schemas"): shared schemas live in an internal store,
+#   read back via a SNAPSHOT copy (Object.assign({}, this.store)); the stored originals are never
+#   handed out. (bank: fastify_get_shared_schemas)
+# 5ffb131e40b9 ("clean the $id key before passing it to the compiler"): when a shared schema is
+#   pulled into a route's schema tree for compilation, its $id must be stripped from the COPY,
+#   not the stored original (which must stay retrievable). (bank: fastify_clean_schema_id)
+nodes:
+  - fastify_get_shared_schemas   # gold=c9141a071d0f
+  - fastify_clean_schema_id      # gold=5ffb131e40b9
+
+edges:
+  - fastify_getschemas_to_cleanid   # c914 -> 5ffb; beneficial_update
+
+structure:
+  type: update_chain
+  order:
+    - c9141a071d0f
+    - 5ffb131e40b9
+
+diagnostic_targets:
+  - target: fastify_clean_schema_id
+    conditions:
+      - reset
+      - correct          # c914's snapshot/original-distinction ("don't hand out the internal store")
+      - irrelevant
+      - wrong            # "internal store passed by reference, trust callers not to mutate"
+
+screening_log:
+  - edge: fastify_getschemas_to_cleanid
+    stage: pending      # N=1 not yet run (one of the 3 untested fastify edges this round)

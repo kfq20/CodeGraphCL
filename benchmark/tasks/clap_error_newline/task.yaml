@@ -45,6 +45,7 @@ status:
   semantic_audit: passed
   separability_gate: passed      # instruction = symptom (error message has no trailing newline); no \n/wasn't-found/errors.rs leakage
   executable_gate: passed         # base-fail VERIFIED by hand (BF_RC=101); near-miss pending empirical confirm
+  verification_tier: executable_candidate   # passed the 4/4 materialize gate + near-miss anti-hardcoding; NOT yet a released node. Final publish requires alternative-correct implementation controls (>=1 plausible-but-different patch that also passes the verifier) to rule out trivial-shape solutions.
   intervention_preflight: pending
 
 notes: >

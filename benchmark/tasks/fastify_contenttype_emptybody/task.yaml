@@ -43,6 +43,7 @@ status:
   semantic_audit: passed
   separability_gate: passed      # instruction = symptom (empty body rejected before custom parser); no receivedLength/early-reject leakage
   executable_gate: passed         # base-fail VERIFIED by hand (BF_RC=1); pending full materialize-confirm
+  verification_tier: executable_candidate   # passed the 4/4 materialize gate + near-miss anti-hardcoding; NOT yet a released node. Final publish requires alternative-correct implementation controls (>=1 plausible-but-different patch that also passes the verifier) to rule out trivial-shape solutions.
   intervention_preflight: pending
 
 notes: >

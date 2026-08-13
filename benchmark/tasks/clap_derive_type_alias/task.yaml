@@ -45,6 +45,7 @@ status:
   semantic_audit: passed
   separability_gate: passed      # instruction = symptom (codegen breaks under user aliases); no qualify/::std leakage
   executable_gate: passed        # mat_clap_ta_2: 4/4 gates, 2 near-miss caught (onesite + maponly)
+  verification_tier: executable_candidate   # passed the 4/4 materialize gate + near-miss anti-hardcoding; NOT yet a released node. Final publish requires alternative-correct implementation controls (>=1 plausible-but-different patch that also passes the verifier) to rule out trivial-shape solutions.
   intervention_preflight: pending
 
 notes: >

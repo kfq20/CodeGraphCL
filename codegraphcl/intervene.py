@@ -250,22 +250,44 @@ def _run_episode(cfg, td, epid, cond, cname, pool_host) -> int:
         prompt, mfields = _build_prompt(cfg, td, cond, container_work, container=cname)
     except ValueError as e:
         print(f"  {e}"); return 1
-    mfields.update({"episode_id": epid, "model": os.environ.get("CGCL_MODEL", "macaron-v1-coding-venti"),
-                    "base_url": os.environ.get("ANTHROPIC_BASE_URL", "https://mintcn.macaron.xin"),
-                    "base_commit": cfg["repository"]["base_commit"]})
+    model = os.environ.get("CGCL_MODEL", "macaron-v1-coding-venti")
+    base_url = os.environ.get("ANTHROPIC_BASE_URL", "https://mintcn.macaron.xin")
+    # reproducibility fields: hashes + provenance so a run can be re-identified & re-run.
+    prompt_sha = hashlib.sha256(prompt.encode()).hexdigest()
+    atom_sha = ""
+    atoms_md = td / "atoms.md"
+    if atoms_md.exists():
+        atom_sha = hashlib.sha256(atoms_md.read_bytes()).hexdigest()
+    try:
+        harness_commit = subprocess.run(["git", "-C", str(ROOT), "rev-parse", "HEAD"],
+                                       capture_output=True, text=True).stdout.strip()
+    except Exception:
+        harness_commit = ""
+    try:
+        img_digest = subprocess.run(["docker", "inspect", "--format", "{{index .RepoDigests 0}}",
+                                    cfg["environment"]["image"]], capture_output=True,
+                                   text=True).stdout.strip() or cfg["environment"]["image"]
+    except Exception:
+        img_digest = cfg["environment"]["image"]
+    mfields.update({"episode_id": epid, "model": model, "base_url": base_url,
+                    "base_commit": cfg["repository"]["base_commit"],
+                    "prompt_sha256": prompt_sha, "atom_sha256": atom_sha,
+                    "harness_commit": harness_commit, "image_digest": img_digest,
+                    "claude_model_flag": model})  # claude_model_flag: what we pass to --model
     (out / "manifest.json").write_text(json.dumps(mfields, indent=2))
     (out / "prompt.txt").write_text(prompt)
     # agent phase: claude on host, cwd = work.
     # Prompt is piped via stdin (cat prompt | claude -p) to avoid shell-quoting bugs: repr(prompt)
     # passed inline as `claude -p <repr>` breaks when the prompt contains apostrophes/parens that
     # bash re-parses (clap newline prompt with "clap's" -> syntax error near `(`, agent_fail rc=2).
+    # --model is passed explicitly (CGCL_MODEL) so the run is reproducible against a pinned model,
+    # not whatever claude's default is on the day (was previously only written to the manifest).
     prompt_file = out / "prompt.txt"  # already written above; reuse for stdin
-    export = (f"ANTHROPIC_BASE_URL={os.environ.get('ANTHROPIC_BASE_URL','https://mintcn.macaron.xin')} "
-              f"ANTHROPIC_AUTH_TOKEN={os.environ.get('ANTHROPIC_AUTH_TOKEN','')}")
+    export = (f"ANTHROPIC_BASE_URL={base_url} ANTHROPIC_AUTH_TOKEN={os.environ.get('ANTHROPIC_AUTH_TOKEN','')}")
     allow = "--allowedTools Read,Write,Edit,Bash,Glob,Grep,LS"
     start = time.time()
-    agent_cmd = (f"{export} timeout 600 claude -p --output-format stream-json --verbose {allow}"
-                 f" < {prompt_file}")
+    agent_cmd = (f"{export} timeout 600 claude -p --model {model} --output-format stream-json "
+                 f"--verbose {allow} < {prompt_file}")
     # run claude on HOST (not container) — it edits files in `work` (host path)
     with open(out / "agent.jsonl", "w") as af, open(out / "agent.stderr", "w") as ef:
         r = subprocess.run(agent_cmd, shell=True, cwd=str(work), stdout=af, stderr=ef, timeout=620)

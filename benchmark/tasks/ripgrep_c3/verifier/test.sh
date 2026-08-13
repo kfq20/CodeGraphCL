@@ -16,13 +16,15 @@ cd "$workspace" || { printf 0 > "$logs_dir/verifier/reward.txt"; exit 1; }
 OUTPUT=$(cargo test --test integration r829 2>&1)
 RC=$?
 echo "$OUTPUT" > "$logs_dir/verifier/test-stdout.txt"
-# c3 reward: all 6 c3-block tests must pass (the 4 FAIL_TO_PASS + 2 PASS_TO_PASS)
+# c3 reward (BINARY 0/1 — intervene treats any non-0/1 reward as infra_fail, so never write a
+# count). reward=1 iff all 6 c3-block tests pass (4 FAIL_TO_PASS + 2 PASS_TO_PASS), i.e. RC==0.
+# (Previously this wrote a partial-credit count via `printf "$PASS"`, which (a) wrote an empty
+# file when PASS was empty -> reward="ERR" -> infra_fail, and (b) wrote counts >1 -> infra_fail.
+# The count is still recorded in test-stdout.txt for offline partial-credit analysis.)
 if [ "$RC" -eq 0 ]; then
   printf 1 > "$logs_dir/verifier/reward.txt"
 else
-  # partial-credit: count c3-block tests that passed
-  PASS=$(echo "$OUTPUT" | grep -cE '\.\.\. ok' || true)
-  printf "$PASS" > "$logs_dir/verifier/reward.txt" 2>/dev/null || printf 0 > "$logs_dir/verifier/reward.txt"
+  printf 0 > "$logs_dir/verifier/reward.txt"
 fi
 cat "$logs_dir/verifier/reward.txt"
 exit 0

@@ -1,0 +1,22 @@
+family_id: fastify_validation
+repository: fastify
+
+# The fastify validation family. One node; single-node bug fix (no candidate edge).
+# 2907be7c5352 ("use map instead of join to lowercase required headers"): required-header
+# validation was case-sensitive; gold lowercases the required header-name array before comparing.
+# (bank: fastify_header_case_validation)
+nodes:
+  - fastify_header_case_validation   # gold=2907be7c5352
+
+edges: []
+
+structure:
+  type: single_node   # only one node; no multi-node edge possible yet
+  order:
+    - 2907be7c5352
+
+diagnostic_targets: []   # no edge to screen
+
+screening_log: []
+# To make this family screenable for an edge, a second node sharing the case-normalization or
+# validation-surface convention would need to be built.

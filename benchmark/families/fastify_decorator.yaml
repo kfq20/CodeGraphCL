@@ -1,0 +1,35 @@
+family_id: fastify_decorator
+repository: fastify
+
+# The fastify decorator family. Two nodes; one candidate Parity edge (c1 -> cef).
+# c1 (c1aac3cd85, "Add support for decorating with a getter/setter object"): established the
+# getter/setter accessor convention on `decorate` (NOT a bank node — feature-add, not base-fail).
+# adde52452d94 ("Resolve issue #998"): guard `fn` before reading fn.getter/fn.setter, so empty
+#   (null/undefined) decorator values register instead of crashing. (bank node: fastify_decorate_null)
+# cef8814ea1 ("Fix decorate{Request,Reply} not recognizing getter/setter config"): propagate the
+#   getter/setter accessor handling to decorateRequest/decorateReply. (bank node: fastify_decorator_getter)
+nodes:
+  - fastify_decorate_null        # gold=adde52452d94
+  - fastify_decorator_getter      # gold=cef8814ea1
+
+edges:
+  - fastify_c1_to_cef_decorator   # c1 (non-node) -> cef; beneficial_parity
+
+structure:
+  type: parity
+  order:
+    - adde52452d94                # fn-guard discipline (producer for the guard, not for getter)
+    - c1aac3cd85                  # getter/setter convention (producer for cef; not a bank node)
+    - cef8814ea1                  # propagate getter/setter to Request/Reply (consumer)
+
+diagnostic_targets:
+  - target: fastify_decorator_getter
+    conditions:
+      - reset
+      - correct          # c1's getter/setter-on-decorate convention
+      - irrelevant
+      - wrong            # "Request/Reply deliberately don't support getter/setter"
+
+screening_log:
+  - edge: fastify_c1_to_cef_decorator
+    stage: pending      # N=1 not yet run (one of the 3 untested fastify edges this round)

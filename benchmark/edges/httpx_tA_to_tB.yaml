@@ -32,10 +32,17 @@ expected_effect:
   negative_transfer: possible   # wrong prior may mislead (defer-handshake -> NeedHandshakeError)
 
 status:
-  semantic_audit: passed
-  causal_verification: intervention_smoke   # N=3 run done (old runner): negative transfer verified, positive not observed
-  # prior N=3 result (voided-for-protocol, kept as evidence):
-  #   wrong 0/3 (reward=0, NeedHandshakeError); reset/correct/irrelevant 3/3
-  #   correct did NOT beat reset on cost -> no positive transfer.
-  #   This edge enters the paper as a negative-transfer diagnostic, NOT a beneficial edge.
-  # Must re-run via `codegraphcl intervene` to count under the unified protocol.
+  semantic_audit: failed    # httpx_tA (the producer node) separability_gate=FAILED (instruction
+                             # leaks the contract: signature + loop.start_tls + cipher behavior).
+                             # A producer whose instruction leaks cannot anchor a Separability-clean
+                             # edge. This edge is DIAGNOSTIC ONLY, NOT intervention-ready, and does
+                             # NOT count toward the ready-edge tally.
+  causal_verification: rejected   # NOT re-run under the unified `codegraphcl intervene` protocol.
+                             # The prior N=3 (old runner, voided-for-protocol, kept as evidence only)
+                             # showed wrong 0/3 (NeedHandshakeError), reset/correct/irrelevant 3/3,
+                             # correct did not beat reset on cost. That is a negative-transfer
+                             # DIAGNOSTIC, not a causally-verified beneficial edge under the current
+                             # protocol. Counted as a rejected-family diagnostic, not a ready edge.
+# Per the 6-correction review: httpx_tA_to_tB is NOT the 9th ready edge — it is a rejected-family
+# diagnostic. Ready-edge count is 8 (the other 8 prompt-preview-PASS edges whose producer node
+# passes Separability).

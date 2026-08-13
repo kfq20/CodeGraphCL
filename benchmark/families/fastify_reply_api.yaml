@@ -1,0 +1,42 @@
+family_id: fastify_reply_api
+repository: fastify
+
+# The fastify reply-API family. Six nodes; the largest family. One candidate Update edge
+# (hasheader -> removeheader), plus two behavior fixes and a parity chain.
+nodes:
+  - fastify_redirect_statuscode     # gold=92f474ea8c98 — redirect clobbers preset status code
+  - fastify_reply_headerssent       # gold=fd8fb5e55aa7 — send stream after manual writeHead crashes
+  - fastify_reply_json_charset      # gold=2f4a84317885 — JSON+charset content-type clobbered
+  - fastify_reply_removeheader      # gold=cfa760cbd129 — add removeHeader (follows the convention)
+  - fastify_404_unsupported_method  # gold=fa5e591b7ab3 — unsupported method returns 405 not 404
+  - fastify_reply_hasheader         # gold=31c5f7e259d1 — add hasHeader/getHeader (the convention)
+
+edges:
+  - fastify_hasheader_to_removeheader   # 31c5 -> cfa7; beneficial_update (only candidate edge)
+
+structure:
+  type: single_node_collection   # 5 single-node tasks + 1 edge; no multi-node chain otherwise
+  order:
+    - 31c5f7e259d1              # hasHeader convention (producer for removeHeader)
+    - cfa760cbd129              # removeHeader (consumer)
+  standalone_nodes:
+    - fastify_redirect_statuscode
+    - fastify_reply_headerssent
+    - fastify_reply_json_charset
+    - fastify_404_unsupported_method
+
+diagnostic_targets:
+  - target: fastify_reply_removeheader
+    conditions:
+      - reset
+      - correct          # 31c5's header-accessor convention (lowercase key + return this)
+      - irrelevant
+      - wrong            # case-sensitive storage, no chaining contract
+
+screening_log:
+  - edge: fastify_hasheader_to_removeheader
+    stage: n1
+    result: saturated_easy   # 4/4 solved (pass-rate 1.0); cost REVERSED vs hypothesis (correct
+                              # tied-reset-slowest, irrelevant fastest). No-go for N=3. The
+                              # consumer's 2 near-miss injectors ARE the 2 convention halves —
+                              # near-miss design confirms the mechanism, but the task is too easy.

@@ -70,10 +70,10 @@
 | families | 6-8 | **9 active** (ripgrep_ignore_path, fastify_decorator, fastify_contenttype, fastify_reply_api, fastify_schemas, fastify_validation, clap_derive_api, clap_error, +httpx rejected) — **TARGET EXCEEDED** ✓ |
 | executable nodes | 20-30 | **20** (LOWER-BOUND MET) ✓ |
 | semantic edges | 10-15 | **10** (LOWER-BOUND MET) ✓ |
-| intervention-ready | >=8 | **9** (TARGET EXCEEDED) ✓ |
+| intervention-ready | >=8 | **8** (lower-bound MET) ✓ |
 | N=1 run | 4-6 sensitive | c4->c5 INCONCLUSIVE (too hard); c3->c4 reset-solvable (cost-metric only) |
 
-## Semantic edges (10 total, 9 intervention-ready)
+## Semantic edges (10 total, 8 intervention-ready)
 | edge | type | producer -> consumer | evidence |
 |---|---|---|---|
 | ripgrep_c2_to_c3 | beneficial_update | c2 -> c3 | c3 msg: "previous code deleted too many parts" |
@@ -100,37 +100,69 @@
 - httpx_tB near-miss: patch malformed (hand-written). Needs conversion to .py injector.
 - DinD: npm/apt/pip slow under nested docker. cargo OK (crates.io cache persists).
 
-## Causal-verification funnel — EXECUTED AND COMPLETE (negative result)
+## Causal-verification funnel — PARTIALLY SCREENED (not all edges covered)
 
-5 edges N=1-preflighted; 1 (the only one with pass-rate sensitivity) escalated to N=3.
-| edge | reset-feasibility | N=1 4-arm | N=3 (12 eps) | verdict |
+Coverage is partial: of the 8 intervention-ready edges, 4 have a full N=1 4-arm, 1 has only a
+reset-only probe (infra-failed), and 3 were not run at all this round. N=3 was run on the single
+edge that showed N=1 sensitivity. **The funnel is incomplete; the result below is a screening
+outcome on a subset, not a statement about the whole bank.**
+
+| edge | reset-feasibility | N=1 4-arm | N=3 (12 eps) | status |
 |---|---|---|---|---|
-| ripgrep c4->c5 | too hard | 3/4 timeout, reset FAILED | — | too-hard (no-go) |
-| fastify hasheader->removeheader | 177s (easy) | 4/4 solved, cost REVERSED | — | saturated-easy (no-go) |
-| clap help_newline->newline (strongest text evidence) | 185s (easy) | 4/4 solved, cost REVERSED | — | saturated-easy (no-go) |
-| ripgrep c2->c3 | infra-flake (reward-path) | — | — | blocked |
-| **ripgrep c3->c4** | **600s wall (CL-readable band)** | 3/4 solved, irrelevant FAILED | **correct 1/3, reset 1/3, irrelevant 2/3, wrong 2/3** | **REJECTED (variance-dominated)** |
+| ripgrep c4->c5 | (not probed) | 3/4 timeout, reset FAILED | — | full N=1; too-hard, no-go |
+| fastify hasheader->removeheader | 177s (easy) | 4/4 solved, cost REVERSED | — | full N=1; saturated-easy, no-go |
+| clap help_newline->newline (strongest text evidence) | 185s (easy) | 4/4 solved, cost REVERSED | — | full N=1; saturated-easy, no-go |
+| **ripgrep c3->c4** | 600s (at wall) | 3/4 solved, irrelevant FAILED | correct 1/3, reset 1/3, irrelevant 2/3, wrong 2/3 | full N=1 + N=3; **not escalated** |
+| ripgrep c2->c3 | infra-fail (reward-path bug) | — (reset-only probe) | — | **reset-only; blocked** |
+| fastify_getschemas_to_cleanid | — | — | — | **not run** |
+| fastify_emptybody_to_array | — | — | — | **not run** |
+| fastify_c1_to_cef_decorator | — | — | — | **not run** |
 
-**N=3 verdict on c3->c4:** correct prior was WORST (1/3 solved), no stable ordering across
-conditions. The N=1 "sensitivity" (irrelevant fail / correct solve) did NOT reproduce at N=3 —
-it was a single draw from a variance-dominated wall-band distribution (every ep times out at
-600s; success = path-variance, not the prior). REJECTED — does not pass the Causal Dependency Gate.
+Summary: **4 full N=1 + 1 reset-only + 3 unrun** of the 8 ready edges.
 
-**CROSS-CUTTING CONCLUSION (the full funnel):** The causal-verification standard was EXECUTED
-(N=1 on 5 edges, N=3 on the 1 qualifying edge) and returned a NEGATIVE result — NO edge in the
-current bank carries a causally-verified beneficial signal. The bank's edges saturate (too-easy
-or too-hard) or are variance-dominated (wall-band). Meeting the KPI with a POSITIVE result
-requires edges where the agent solves comfortably BELOW the wall (pass-rate doesn't saturate)
-AND the prior deterministically shapes the path — a band the current bank does not contain.
+### N=3 on ripgrep c3->c4 — what the data supports, and what it does NOT
+N=3 per-condition: correct 1/3, reset 1/3, irrelevant 2/3, wrong 2/3.
 
-## Phase2 final status
-- Production targets: ALL MET (nodes 20/20-30, families 9/6-8, semantic edges 10/10-15,
-  intervention-ready 9/8).
-- Causal-verification standard: EXECUTED (N=1 on 5, N=3 on 1). Result: negative — no
-  causally-verified beneficial edge in the current bank. This is an honest negative result, not
-  a skipped step.
+What the data supports (a screening call): **the single edge that qualified for N=3 did not
+reproduce the N=1 condition ordering** (N=1 had irrelevant-fail / correct-solve; N=3 reversed
+it). Per the phase2 funnel rule ("only escalate to N=3 confirmation if N=1 shows stable
+sensitivity"), this edge is **not escalated** — it does not pass the Causal Dependency Gate as
+a beneficial edge.
 
-## Next (for a positive causal-verification result)
-- Build edges where reset solves comfortably below the wall (e.g. 200-400s, not at 600s and not
-  <150s) AND the prior deterministically shapes the solving path (not just effort length). The
-  current bank's tasks are below (saturate-easy) or at/above (variance/too-hard) the wall.
+What the data does NOT support: it does not statistically prove "correct is the worst prior" or
+"variance dominates" — n=3/condition is too small for a statistical claim, and N=3 is a
+screening gate, not a causal-effect estimate. It also does not say anything about the 3 unrun
+edges or the 1 blocked edge. Therefore the only defensible scope-level statement is:
+
+> In the edges screened so far, no edge passed the Causal Dependency Gate; the one edge escalated
+> to N=3 did not reproduce N=1's condition ordering.
+
+This is strictly weaker than (and replaces) any earlier phrasing asserting the bank "has no
+causal edge" or that the wall-band is "variance-dominated" as a proven mechanism — those were
+over-reads. "Correct worst" and "variance-dominated" remain working interpretations, not findings.
+
+### Screening criterion (working hypothesis, not a fixed rule)
+The "reset solves 200–400s below the wall" framing is a **working hypothesis tied to this
+model+machine**, not a portable rule. A more reliable, model/machine-independent screening
+criterion: **under a fixed model and fixed budget, the reset arm's success rate sits in a
+non-saturated band (roughly 20–80%)**. If reset is ~100% the task is too easy (pass-rate
+saturates above); if reset is ~0% it is too hard (saturates below). Wall-time seconds are a
+proxy that shifts with model and hardware; the non-saturated success-rate band is the more
+stable gate. Apply this probe before a 4-arm.
+
+## Phase2 status (corrected)
+- Production targets: MET (nodes 20/20-30, families 9/6-8, semantic edges 10/10-15,
+  intervention-ready 8/8 — NOT 9; httpx_tA_to_tB is a rejected-family diagnostic, not a ready
+  edge, because httpx_tA's separability_gate=FAILED).
+- 20 nodes are **executable candidates** (4/4 gate + near-miss), NOT released nodes; final
+  publish requires alternative-correct implementation controls.
+- Causal-verification: PARTIALLY screened (4 full N=1 + 1 reset-only + 3 unrun, of 8 ready
+  edges). 1 edge escalated to N=3; it did not pass the Causal Dependency Gate. This is a
+  screening outcome on a subset, not a bank-wide verdict.
+
+## Next (Phase 2.1 closeout before Phase 3)
+1. Run the 3 unrun fastify edges (getschemas->cleanid, emptybody->array, c1->cef) to full
+   coverage: 4→7 full N=1 + 1 reset-only.
+2. Re-run c2->c3 (the test.sh reward-path bug is now fixed to binary 0/1) — clears the blocked
+   edge to either a clean N=1 or a documented abandon.
+3. Only after full coverage, consider whether any edge meets the escalate-to-N=3 rule.

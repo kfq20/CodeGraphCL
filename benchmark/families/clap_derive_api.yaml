@@ -1,0 +1,27 @@
+family_id: clap_derive_api
+repository: clap
+
+# The clap derive-API family. Two nodes; single-node Parity/consistency tasks (no candidate edge
+# — they share the derive surface but aren't a producer->reviser pair; 7c10 is a descendant of
+# 1285, not a fix-of).
+# 1285c0f8 ("Add derive(DataType)": type_alias): second node, ancestor of 7c10.
+#   (bank: clap_derive_type_alias)
+# 7c10b5a9b4 ("Add derive(default_value_os)"): default_value_os Parity task.
+#   (bank: clap_derive_default_value_os)
+nodes:
+  - clap_derive_default_value_os   # gold=7c10b5a9b4
+  - clap_derive_type_alias          # gold=1285c0f8
+
+edges: []   # 7c10 descends from 1285 but is a separate feature, not a revision-of -> no edge
+
+structure:
+  type: single_node_collection
+  order:
+    - 1285c0f8
+    - 7c10b5a9b4
+
+diagnostic_targets: []
+
+screening_log: []
+# A candidate edge would need a reviser that FIXES a derive convention 1285/7c10 established;
+# none in the current bank.

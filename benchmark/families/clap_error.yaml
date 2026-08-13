@@ -1,0 +1,39 @@
+family_id: clap_error
+repository: clap
+
+# The clap error family. Two nodes; one candidate Update edge (the STRONGEST textual-evidence
+# edge in the bank).
+# 2eb69def4ecb ("fix(error): Ensure trailing newline without help"): established the invariant
+#   that every clap error message must terminate with a trailing newline, and fixed the
+#   help/subcommand branch that omitted it. (bank: clap_error_help_newline)
+# a72e5726f872 ("fix(error): Ensure newline on value_of_t not found"): the AUDIT FOLLOW-UP — its
+#   commit message reads "Found this when auditing for cases related to #2787", and the producer
+#   fixed #2787. (bank: clap_error_newline)
+nodes:
+  - clap_error_help_newline   # gold=2eb69def4ecb (producer)
+  - clap_error_newline        # gold=a72e5726f872 (consumer)
+
+edges:
+  - clap_help_newline_to_newline   # 2eb69 -> a72e; beneficial_update
+
+structure:
+  type: update_chain
+  order:
+    - 2eb69def4ecb
+    - a72e5726f872
+
+diagnostic_targets:
+  - target: clap_error_newline
+    conditions:
+      - reset
+      - correct          # 2eb69's termination invariant + audit-the-branches habit
+      - irrelevant
+      - wrong            # "library returns bare messages, caller terminates lines"
+
+screening_log:
+  - edge: clap_help_newline_to_newline
+    stage: n1
+    result: saturated_easy   # 4/4 solved (pass-rate 1.0); cost REVERSED (correct SLOWEST at 600s
+                              # wall, wrong FASTEST 166s). No-go for N=3. NOTE: this edge had the
+                              # STRONGEST textual evidence in the bank (consumer msg literally
+                              # references the producer's issue #2787) — yet still saturated.
