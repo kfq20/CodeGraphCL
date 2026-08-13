@@ -255,13 +255,17 @@ def _run_episode(cfg, td, epid, cond, cname, pool_host) -> int:
                     "base_commit": cfg["repository"]["base_commit"]})
     (out / "manifest.json").write_text(json.dumps(mfields, indent=2))
     (out / "prompt.txt").write_text(prompt)
-    # agent phase: claude on host, cwd = work
+    # agent phase: claude on host, cwd = work.
+    # Prompt is piped via stdin (cat prompt | claude -p) to avoid shell-quoting bugs: repr(prompt)
+    # passed inline as `claude -p <repr>` breaks when the prompt contains apostrophes/parens that
+    # bash re-parses (clap newline prompt with "clap's" -> syntax error near `(`, agent_fail rc=2).
+    prompt_file = out / "prompt.txt"  # already written above; reuse for stdin
     export = (f"ANTHROPIC_BASE_URL={os.environ.get('ANTHROPIC_BASE_URL','https://mintcn.macaron.xin')} "
               f"ANTHROPIC_AUTH_TOKEN={os.environ.get('ANTHROPIC_AUTH_TOKEN','')}")
     allow = "--allowedTools Read,Write,Edit,Bash,Glob,Grep,LS"
     start = time.time()
-    agent_cmd = (f"{export} timeout 600 claude -p {repr(prompt)} --output-format stream-json "
-                 f"--verbose {allow}")
+    agent_cmd = (f"{export} timeout 600 claude -p --output-format stream-json --verbose {allow}"
+                 f" < {prompt_file}")
     # run claude on HOST (not container) — it edits files in `work` (host path)
     with open(out / "agent.jsonl", "w") as af, open(out / "agent.stderr", "w") as ef:
         r = subprocess.run(agent_cmd, shell=True, cwd=str(work), stdout=af, stderr=ef, timeout=620)

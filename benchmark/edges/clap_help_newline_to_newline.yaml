@@ -36,5 +36,11 @@ expected_effect:
 
 status:
   semantic_audit: passed
-  causal_verification: proposed   # both nodes executable_verified (mat_clap_hn_1, mat_clap_nl_1); intervention pending
+  causal_verification: intervention_smoke  # N=1 RAN (seed42): all 4 arms solved (pass-rate
+                                  # saturated). Cost direction REVERSED vs hypothesis (correct
+                                  # SLOWEST at 600s wall; wrong FASTEST at 166s). No-go for N=3 —
+                                  # sensitivity present but reversed, same as hasheader->removeheader.
+                                  # NOTE: this edge had the STRONGEST textual evidence in the bank
+                                  # (consumer msg: "Found this when auditing for cases related to
+                                  # #2787", producer fixed #2787) — yet still saturated. See SUMMARY.md.
 
