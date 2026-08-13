@@ -161,7 +161,13 @@ def cmd_intervene(edge_yaml: str, n: int = 1, seed: int = 42, conditions: list[s
         order = conditions[:]; random.shuffle(order)
         for c in order:
             plan.append((f"ep_{i:06d}", c, b)); i += 1
-    pool_host = Path(os.environ.get("CGCL_POOL", "/tmp/cgcl_box_pool"))
+    # resolve the host pool dir THIS container actually binds at /pool (per-container: rg/httpx
+    # -> /tmp/cgcl_box_pool, fastify -> /tmp/cgcl_fs_pool). Writing the worktree to the wrong
+    # pool dir makes the container unable to see it -> agent/verifier hang forever (the same bug
+    # fixed in materialize._resolve_pool; intervene had the same defect).
+    from .materialize import _resolve_pool
+    pool_host = Path(_resolve_pool(cname))
+    pool_host.mkdir(parents=True, exist_ok=True)
     import time as _t
     run_stamp = f"{Path(edge_yaml).stem}_seed{seed}_{int(_t.time())}"
     results_csv = ROOT / "runs" / f"intervene_{run_stamp}" / "results.csv"
