@@ -105,6 +105,21 @@ edges:
   to: fastify_header_case_validation
   edge_type: beneficial_update
   intervention_status: proposed
+- edge_id: httpx_encoding_to_multipart
+  from: httpx_json_encoding_detection
+  to: httpx_multipart_header_encoding
+  edge_type: beneficial_parity
+  intervention_status: proposed
+- edge_id: httpx_queryparam_types_to_lists
+  from: httpx_queryparam_types
+  to: httpx_queryparam_lists
+  edge_type: beneficial_update
+  intervention_status: proposed
+- edge_id: httpx_sslconfig_to_urlauthority
+  from: httpx_sslconfig_accept_context
+  to: httpx_url_copywith_authority
+  edge_type: beneficial_update
+  intervention_status: proposed
 - edge_id: httpx_tA_to_tB
   from: httpx_tA
   to: httpx_tB

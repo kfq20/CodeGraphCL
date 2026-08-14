@@ -1,0 +1,38 @@
+schema_version: 1
+edge_id: httpx_queryparam_types_to_lists
+from: httpx_queryparam_types
+to: httpx_queryparam_lists
+edge_type: beneficial_update
+
+# Producer 66754ad (query param types) established the query-param coercion convention:
+# str_query_param() with type-specific branches (True->"true", False->"false", None->"").
+# Consumer 57ae7ea (query param lists) builds on this: flatten_queryparams() recursively
+# expands sequence values, using str_query_param() for coercion. The type-coercion convention
+# transfers forward.
+experience:
+  statement: >
+    Query param coercion uses a type-specific str_query_param() function (True->"true",
+    False->"false", None->""). When list/tuple support is added, the flattening logic must
+    use the same coercion for each expanded value, so a list {"a": [True, False]} produces
+    "a=true&a=false" not "a=True&a=False".
+  type: query_param_coercion
+  scope: httpx/utils.py + httpx/models.py
+  provenance:
+    repository: httpx
+    commit: "66754ad"
+  validity: valid_for_consumer
+
+conditions:
+  reset: null
+  correct: correct
+  irrelevant: irrelevant
+  stale: wrong
+
+expected_effect:
+  correctness: possible
+  efficiency: possible
+  negative_transfer: possible
+
+status:
+  semantic_audit: passed
+  causal_verification: proposed

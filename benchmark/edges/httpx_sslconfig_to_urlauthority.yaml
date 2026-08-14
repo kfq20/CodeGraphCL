@@ -1,0 +1,39 @@
+schema_version: 1
+edge_id: httpx_sslconfig_to_urlauthority
+from: httpx_sslconfig_accept_context
+to: httpx_url_copywith_authority
+edge_type: beneficial_update
+
+# Producer df8874b (SSLConfig accept SSLContext) established the config-widening convention:
+# accept multiple input types for a config parameter (bool OR ssl.SSLContext), branching on
+# isinstance to handle each. Consumer e6da325 (URL copy_with authority) applies the same
+# multi-type convention: copy_with() must accept individual URL components (username/password/
+# host/port) and assemble them into an authority string, handling None for each.
+experience:
+  statement: >
+    Config/builder methods must accept multiple input types and assemble them correctly:
+    SSLConfig(verify=...) accepts bool OR ssl.SSLContext (isinstance branch), and
+    URL.copy_with() accepts individual components (username/password/host/port) and assembles
+    them into an authority string with conditional formatting (None handling for each).
+    Both are "the method must handle multiple input shapes and assemble the right output."
+  type: multi_type_config_handling
+  scope: httpx/config.py + httpx/models.py
+  provenance:
+    repository: httpx
+    commit: "df8874b"
+  validity: valid_for_consumer
+
+conditions:
+  reset: null
+  correct: correct
+  irrelevant: irrelevant
+  stale: wrong
+
+expected_effect:
+  correctness: possible
+  efficiency: possible
+  negative_transfer: possible
+
+status:
+  semantic_audit: passed
+  causal_verification: proposed

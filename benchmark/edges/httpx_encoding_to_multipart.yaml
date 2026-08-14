@@ -1,0 +1,38 @@
+schema_version: 1
+edge_id: httpx_encoding_to_multipart
+from: httpx_json_encoding_detection
+to: httpx_multipart_header_encoding
+edge_type: beneficial_parity
+
+# Producer 5442006 (encoding detection in Response.json) established the encoding-handling
+# convention: the framework must handle character encoding edge cases (BOM detection, UTF-32
+# detection) to match requests' behavior. Consumer fb17459 (multipart header encoding) applies
+# the same "respect the spec's encoding rules" discipline: multipart param encoding must follow
+# HTML5 form-encoding spec (control char escaping), not generic urllib quoting.
+experience:
+  statement: >
+    The framework must respect encoding specs: detect charset from BOM/null-byte patterns for
+    JSON responses (matching requests' guess_json_utf), and escape multipart header params per
+    the HTML5 form-encoding spec (control chars 0x00-0x1F). Both are "don't use generic
+    encoding — follow the spec's specific rules."
+  type: spec_compliant_encoding
+  scope: httpx/utils.py + httpx/multipart.py
+  provenance:
+    repository: httpx
+    commit: "5442006"
+  validity: valid_for_consumer
+
+conditions:
+  reset: null
+  correct: correct
+  irrelevant: irrelevant
+  stale: wrong
+
+expected_effect:
+  correctness: possible
+  efficiency: possible
+  negative_transfer: possible
+
+status:
+  semantic_audit: passed
+  causal_verification: proposed
