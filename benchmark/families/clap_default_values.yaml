@@ -1,0 +1,20 @@
+family_id: clap_default_values
+repository: clap
+
+# The clap default-values family. One node; a parity task adding default_values_if/ifs
+# to match the existing default_values API.
+# c2ced1ae ("feat: Add default_values_if and default_values_ifs"): adds multi-value
+#   conditional defaults to match default_values. (bank: clap_default_values_if)
+nodes:
+  - clap_default_values_if   # gold=c2ced1ae
+
+edges: []
+
+structure:
+  type: single_node_collection
+  order:
+    - c2ced1ae
+
+diagnostic_targets: []
+
+screening_log: []

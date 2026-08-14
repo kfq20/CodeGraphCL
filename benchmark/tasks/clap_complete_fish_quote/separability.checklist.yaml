@@ -1,0 +1,48 @@
+# Separability checklist for clap_complete_fish_quote (single-node, clap_completion family).
+# Instruction states the symptom (completer path mangled across the second parse); the fix
+# (two-pass quoting) must be derived.
+schema_version: 1
+task_id: clap_complete_fish_quote
+
+checks:
+  - id: S1_instruction_symptom_only
+    question: "Does the instruction state only the symptom (path mangled by re-parse), not the fix?"
+    answer: yes
+    evidence: >
+      instruction.md: "the completer path is not escaped correctly if it contains special
+      characters such as backslashes or dollar signs... the current quoting only survives the
+      first pass." Acceptance: preserve the literal path across both parses.
+  - id: S2_instruction_no_mechanism_words
+    question: "Does the instruction avoid fish_quote / fish_quote_for_eval / shlex / try_quote / two-pass / second-pass?"
+    answer: yes
+    evidence: "banned_words.txt forbids these; instruction says 'quoting only survives the first pass' generically"
+  - id: S3_instruction_no_file_names
+    question: "Does the instruction avoid naming clap_complete/src/env/shells.rs?"
+    answer: yes
+    evidence: "instruction says 'the shell-completion registration quoting surface'"
+  - id: S4_near_misses_plausible
+    question: "Are the near-misses plausible-but-wrong, not absurd?"
+    answer: yes
+    evidence: >
+      A = use single-pass quoting for BOTH the command token and the completer path (plausible
+      "use the same quoting helper everywhere"); B = escape backslash and quote but skip the
+      dollar sign (plausible "dollar is fine, only \ and ' need escaping"). Both are real
+      reasoning errors a developer could make.
+  - id: S5_near_misses_distinct_axes
+    question: "Do the near-misses fail along distinct axes?"
+    answer: yes
+    evidence: >
+      A fails because the completer path (re-evaluated) still loses the backslash on the second
+      pass (single-pass quoting insufficient for a two-parse context). B fails because the dollar
+      sign is left unescaped and gets interpreted as a variable expansion on the second pass.
+      Different special-character axis (backslash-escaping-depth vs dollar-escape-omission).
+  - id: S6_base_solvable_and_feasible
+    question: "Is the base solvable and comfortably under the agent time budget?"
+    answer: yes
+    evidence: >
+      ~60-line source patch, mostly mechanical (two new quoting helpers + call-site swap).
+      Self-contained in one file. Requires understanding fish's double-parse but the symptom +
+      reproduction point at the re-evaluation.
+
+edge_strength: n/a_single_node
+# Single-node bug fix; new clap_completion family.

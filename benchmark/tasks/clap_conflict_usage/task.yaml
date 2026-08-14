@@ -4,8 +4,8 @@ family_id: clap_conflict
 
 repository:
   url: https://github.com/clap-rs/clap
-  base_commit: 578cd43a^
-  gold_commit: 578cd43a
+  base_commit: "578cd43a^"
+  gold_commit: "578cd43a"
   language: rust
 
 instruction:
@@ -65,11 +65,7 @@ mechanism_audit:
 status:
   semantic_audit: passed
   separability_gate: passed
-  executable_gate: pending        # base-fail VERIFIED (BF2_RC=101); near-miss BLOCKED:
-                                  # nearmiss A (nodedup) passes under gold (didn't actually skip dedup —
-                                  # both gold and A pass &Vec to builder); nearmiss B (Vec-not-FlatSet)
-                                  # inject_failed. Need near-miss that genuinely re-introduces dup ids in
-                                  # the usage string. Marked pending near-miss per 2h cap.
+  executable_gate: passed        # base-fail + gold-pass + BOTH near-miss VERIFIED by materialize (4/4)
   verification_tier: executable_candidate
   intervention_preflight: pending
 

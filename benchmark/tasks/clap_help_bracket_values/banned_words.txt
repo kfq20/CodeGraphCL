@@ -1,0 +1,15 @@
+# Banned MECHANISM words for clap_help_bracket_values instruction.
+# The fix: in the value-name rendering loop, compute is_past_min (n >= min_vals) and
+# is_optional_val (min_vals == 0), then bracket values past the minimum as optional.
+# "value names"/"optional"/"brackets" are symptom-level; the loop/precedence mechanism is banned.
+min_vals
+is_past_min
+is_optional_val
+is_optional
+val_names
+val_name
+stylize_arg_suffix
+to_string
+num_vals.min_values
+arg.rs
+help.rs

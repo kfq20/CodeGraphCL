@@ -1,0 +1,15 @@
+# Banned MECHANISM words for clap_complete_fish_quote instruction.
+# The fix: add fish_quote (single-pass) + fish_quote_for_eval (second-pass: \\, \$, \', \") and
+# route write_registration through them, replacing shlex::try_quote in clap_complete/src/env/shells.rs.
+# "backslash"/"dollar sign"/"completer path"/"quoting"/"registration" are symptom-level; the
+# function names + shlex + two-pass mechanism are banned.
+fish_quote
+fish_quote_for_eval
+fish_needs_quoting
+shlex
+try_quote
+write_registration
+shells.rs
+two-pass
+second-pass
+--arguments

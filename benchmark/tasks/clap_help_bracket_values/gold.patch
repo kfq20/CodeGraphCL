@@ -1,0 +1,45 @@
+commit 1ca55413c8e79c3b437054c0d9dc7e4691bd3e71
+Author: Aashish Thapa <aashishthapa520@gmail.com>
+Date:   Fri Jul 31 10:45:46 2026 -0500
+
+    fix(help): Bracket values past the minimum
+    
+    An option declared with a value-count range, like `num_args(1..=2)` with
+    two value names, rendered as
+    
+        --example <FOO> <BAR>
+    
+    while the parser accepts `--example FOO`, so the help contradicted what
+    the parser would take. Render the value names past the minimum as
+    optional instead
+    
+        --example <FOO> [BAR]
+    
+    An option whose value is optional as a whole is bracketed by
+    `stylize_arg_suffix`, so its names stay unbracketed to avoid `[[name]]`.
+    
+    Fixes #4847
+
+diff --git a/clap_builder/src/builder/arg.rs b/clap_builder/src/builder/arg.rs
+index d9ae4790..ca4b74fa 100644
+--- a/clap_builder/src/builder/arg.rs
++++ b/clap_builder/src/builder/arg.rs
+@@ -4721,8 +4721,17 @@ impl Arg {
+         }
+ 
+         debug_assert!(self.is_takes_value_set());
++        let min_vals = num_vals.min_values();
+         for (n, val_name) in val_names.iter().enumerate() {
+-            let arg_name = if self.is_positional() && (num_vals.min_values() == 0 || !required) {
++            let is_optional_val = min_vals == 0;
++            let is_past_min = min_vals <= n;
++            let is_optional = if self.is_positional() {
++                !required || is_past_min
++            } else {
++                // The caller already brackets an optional value; avoid `[[name]]`
++                !is_optional_val && is_past_min
++            };
++            let arg_name = if is_optional {
+                 format!("[{val_name}]")
+             } else {
+                 format!("<{val_name}>")

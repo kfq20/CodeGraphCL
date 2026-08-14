@@ -1,0 +1,24 @@
+family_id: clap_help_render
+repository: clap
+
+# The clap help-rendering family. Two nodes; single-node tasks touching the help/usage
+# rendering surface (value-name bracketing, short-only arg padding).
+# 1ca55413 ("fix(help): Bracket values past the minimum"): render value names past the
+#   minimum as optional [BAR] instead of required <BAR>. (bank: clap_help_bracket_values)
+# 126440ca ("fix(help): Correctly calculate padding for short-only args"): fix doubled
+#   padding for value args and crash for Count args. (bank: clap_help_short_padding)
+nodes:
+  - clap_help_bracket_values   # gold=1ca55413
+  - clap_help_short_padding    # gold=126440ca
+
+edges: []   # both touch help rendering but are independent fixes, not a revision-of
+
+structure:
+  type: single_node_collection
+  order:
+    - 126440ca
+    - 1ca55413
+
+diagnostic_targets: []
+
+screening_log: []

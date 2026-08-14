@@ -1,0 +1,43 @@
+# Separability checklist for clap_help_short_padding (single-node, clap_help_render family).
+# Instruction states the symptom (wrong padding / crash for short-only args); the fix (check
+# get_long instead of is_positional, remove longest_filter) must be derived.
+schema_version: 1
+task_id: clap_help_short_padding
+
+checks:
+  - id: S1_instruction_symptom_only
+    question: "Does the instruction state only the symptom (wrong padding, crash), not the fix?"
+    answer: yes
+    evidence: >
+      instruction.md: "the generated help text has incorrect column alignment in the options
+      list" and "the help renderer panics". Acceptance: make column alignment correct for
+      short-only args and stop the crash.
+  - id: S2_instruction_no_mechanism_words
+    question: "Does the instruction avoid longest_filter / SHORT_SIZE / get_long / is_positional / display_width?"
+    answer: yes
+    evidence: "banned_words.txt forbids these; instruction says 'column alignment' and 'count action' generically"
+  - id: S3_instruction_no_file_names
+    question: "Does the instruction avoid naming help_template.rs / help.rs?"
+    answer: yes
+    evidence: "instruction says 'the help-text column-alignment surface'"
+  - id: S4_near_misses_plausible
+    question: "Are the near-misses plausible-but-wrong, not absurd?"
+    answer: yes
+    evidence: >
+      A = keep the old filter-based logic (real 'the filter was there for a reason' assumption);
+      B = check get_short instead of get_long (real 'check short instead of long' but wrong for
+      short-only value args).
+  - id: S5_near_misses_distinct_axes
+    question: "Do the near-misses fail along distinct axes?"
+    answer: yes
+    evidence: >
+      A reverts to the excluded-filter path (padding still wrong via the old branch); B uses the
+      wrong condition (short-present instead of long-present) producing wrong padding for the
+      value case. Different failure mechanism.
+  - id: S6_base_solvable_and_feasible
+    question: "Is the base solvable and comfortably under the agent time budget?"
+    answer: yes
+    evidence: "Small source patch (remove filter fn + change condition). base-fail via snapshot mismatch."
+
+edge_strength: n/a_single_node
+# Single-node bug fix; new clap_help_render family.

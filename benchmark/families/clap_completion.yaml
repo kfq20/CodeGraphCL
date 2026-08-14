@@ -1,0 +1,26 @@
+family_id: clap_completion
+repository: clap
+
+# The clap shell-completion family. Two nodes; single-node tasks touching the
+# clap_complete engine/env-completer surface.
+# 49a05cdc ("fix(complete): Two-pass quote fish env-completer"): fish parses
+#   --arguments twice; the completer path needs second-pass escaping.
+#   (bank: clap_complete_fish_quote)
+# ac0d148f ("feat(complete): Index-aware ValueCompleter"): add complete_at(arg_index)
+#   so multi-value args can return different candidates per slot.
+#   (bank: clap_complete_value_index)
+nodes:
+  - clap_complete_fish_quote    # gold=49a05cdc
+  - clap_complete_value_index   # gold=ac0d148f
+
+edges: []   # both touch completion but are independent fixes/features
+
+structure:
+  type: single_node_collection
+  order:
+    - ac0d148f
+    - 49a05cdc
+
+diagnostic_targets: []
+
+screening_log: []

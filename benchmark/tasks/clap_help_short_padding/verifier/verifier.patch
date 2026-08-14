@@ -1,0 +1,63 @@
+commit 126440ca846613671e1dac98198b2ceb17dab2b0
+Author: Ed Page <eopage@gmail.com>
+Date:   Wed Oct 29 09:12:41 2025 -0500
+
+    fix(help): Correctly calculate padding for short-only args
+    
+    This manifests in two ways
+    - If a value is taken, we double the padding
+    - If `ArgAction::Count` is used, we don't account for `...` and crash
+    
+    Fixes #6164
+
+diff --git a/tests/builder/help.rs b/tests/builder/help.rs
+index dd709c4a..cbf27e68 100644
+--- a/tests/builder/help.rs
++++ b/tests/builder/help.rs
+@@ -2433,14 +2433,13 @@ Options:
+   -h, --help  Print help
+ 
+ Baz:
+-  -z <BAZ>      Short only
++  -z <BAZ>  Short only
+ 
+ "#]];
+     utils::assert_output(cmd, "demo -h", expected, false);
+ }
+ 
+ #[test]
+-#[should_panic]
+ fn short_with_count() {
+     let cmd = Command::new("demo").arg(
+         Arg::new("baz")
+diff --git a/tests/builder/multiple_values.rs b/tests/builder/multiple_values.rs
+index a56372c0..2c0109ef 100644
+--- a/tests/builder/multiple_values.rs
++++ b/tests/builder/multiple_values.rs
+@@ -480,8 +480,8 @@ fn optional_value() {
+ Usage: test [OPTIONS]
+ 
+ Options:
+-  -p [<NUM>]      
+-  -h, --help      Print help
++  -p [<NUM>]  
++  -h, --help  Print help
+ 
+ "#]]
+     );
+diff --git a/tests/macros.rs b/tests/macros.rs
+index cb1ed801..a82130c8 100644
+--- a/tests/macros.rs
++++ b/tests/macros.rs
+@@ -308,8 +308,8 @@ mod arg {
+ Usage: test [OPTIONS]
+ 
+ Options:
+-  -p [<NUM>]      
+-  -h, --help      Print help
++  -p [<NUM>]  
++  -h, --help  Print help
+ 
+ "#]]
+         );
+

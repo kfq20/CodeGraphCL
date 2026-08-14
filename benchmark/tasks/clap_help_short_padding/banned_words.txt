@@ -1,0 +1,14 @@
+# Banned MECHANISM words for clap_help_short_padding instruction.
+# The fix: in the help-template padding logic, check arg.get_long().is_some() instead of
+# arg.is_positional(), and remove the longest_filter function (which excluded some short-only
+# args entirely). The symptom is "wrong padding / crash for short-only args"; the mechanism
+# (filter function name, size constant, file path, condition functions) is banned.
+longest_filter
+SHORT_SIZE
+help_template.rs
+get_long
+is_positional
+display_width
+should_panic
+short_with_value
+help.rs

@@ -1,0 +1,25 @@
+# Banned MECHANISM words for clap_default_values_if instruction.
+# The fix: widen the conditional-default storage to hold a list, add the list-valued
+# conditional builder methods, and iterate that list in the parser.
+# "conditional fallback"/"list of values" are symptom-level; the API names, the field name,
+# the concrete types and the file names are the mechanism (banned).
+default_values_if
+default_values_ifs
+default_vals_ifs
+default_value_if
+default_value_ifs
+default_values
+default_vals
+into_resettable
+into_option
+IntoResettable
+OsStr
+Vec<OsStr>
+Option<Vec<OsStr>>
+ArgPredicate
+arg.rs
+parser.rs
+default_vals.rs
+builder/arg.rs
+parser/parser.rs
+num_args

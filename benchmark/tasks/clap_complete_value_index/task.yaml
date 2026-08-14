@@ -1,0 +1,61 @@
+schema_version: 1
+task_id: clap_complete_value_index
+family_id: clap_completion
+
+repository:
+  url: https://github.com/clap-rs/clap
+  base_commit: "ac0d148f^"      # parent of the fix
+  gold_commit: "ac0d148f"
+  language: rust
+
+instruction:
+  path: instruction.md
+
+environment:
+  image: codegraphcl-ripgrep:rust
+  dockerfile: harbor_task/environment/Dockerfile.ripgrep
+  workdir: /workspace/repo
+  build_timeout_sec: 900
+  extra_mounts:
+    cargo_cache: /tmp/cgcl_cargo_cache
+    target: /tmp/cgcl_target
+
+patches:
+  gold: gold.patch                 # clap_complete/src/engine/complete.rs + custom.rs (thread arg_index into completers)
+  verifier: verifier/verifier.patch # tests/testsuite/engine.rs (make suggest_custom_arg_completer_at_index expect index-aware candidates)
+
+verifier:
+  command: bash verifier/test.sh   # cargo test -p clap_complete --features unstable-dynamic --test testsuite suggest_custom_arg_completer_at_index
+  timeout_sec: 300
+  hermetic: false
+  fail_to_pass:
+    - "test: suggest_custom_arg_completer_at_index"
+  pass_to_pass: []
+  pass_to_pass_not_applicable: true  # the index-aware expectations are new
+  near_miss_base: gold
+  near_miss:
+    - near_miss/nearmiss_vi_alwayszero.py
+    - near_miss/nearmiss_vi_delegateonly.py
+
+separability:
+  banned_words: banned_words.txt
+  checklist: separability.checklist.yaml
+
+status:
+  semantic_audit: passed
+  separability_gate: passed      # instruction = symptom (same candidates at every position); no method/file/type leakage
+  executable_gate: passed       # base-fail VERIFIED (base+verifier = compile error E0407: complete_at not a trait member; near-misses FAIL empirically confirmed)
+  verification_tier: executable_candidate   # passed the 4/4 materialize gate + near-miss anti-hardcoding; NOT yet a released node. Final publish requires alternative-correct implementation controls (>=1 plausible-but-different patch that also passes the verifier) to rule out trivial-shape solutions.
+  intervention_preflight: pending
+
+notes: >
+  clap_completion family. Single-node feature patch (commit ac0d148f): the dynamic
+  completion engine now threads each value's position within an argument's
+  value range into the completer, so a multi-value argument can return different
+  candidates per slot (e.g. a remote name first, a branch name second for
+  --set-upstream <REMOTE> <BRANCH>). base-fail: on base+verifier the test does
+  not compile (E0407: complete_at is not a trait member) — a strong fail signal.
+  After gold the trait gains complete_at -> compiles + passes. Two near-miss
+  (always-pass-0 + inherent-complete_at-returns-empty) re-fail empirically.
+  Source patch spans complete.rs (3 callsites + param) + custom.rs (inherent
+  method + trait default).

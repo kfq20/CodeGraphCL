@@ -1,0 +1,47 @@
+# Separability checklist for clap_complete_value_index (single-node, clap_completion family).
+# Instruction states the symptom (completer returns the same candidates regardless of value
+# position); the fix (thread the position index through the engine) must be derived.
+schema_version: 1
+task_id: clap_complete_value_index
+
+checks:
+  - id: S1_instruction_symptom_only
+    question: "Does the instruction state only the symptom (same candidates at every position), not the fix?"
+    answer: yes
+    evidence: >
+      instruction.md: "the completer always returns the same candidate list regardless of which
+      value position is being completed."
+      Acceptance: thread each value's position into the completer so a multi-value argument can
+      return different candidates per slot.
+  - id: S2_instruction_no_mechanism_words
+    question: "Does the instruction avoid complete_at / arg_index / ValueCompleter / ArgValueCompleter / num_args / value_delimiter / complete_arg_value?"
+    answer: yes
+    evidence: "banned_words.txt forbids these; instruction says 'value position' and 'multi-value argument' generically"
+  - id: S3_instruction_no_file_names
+    question: "Does the instruction avoid naming complete.rs / custom.rs / engine.rs?"
+    answer: yes
+    evidence: "instruction says 'the dynamic completion engine surface' generically"
+  - id: S4_near_misses_plausible
+    question: "Are the near-misses plausible-but-wrong, not absurd?"
+    answer: yes
+    evidence: >
+      A = always pass 0 as the position index (real 'the index doesn't matter, just pass a
+      default' assumption); B = make the position-aware inherent method return an empty vec
+      (real 'return empty, let the caller handle it' assumption).
+  - id: S5_near_misses_distinct_axes
+    question: "Do the near-misses fail along distinct axes?"
+    answer: yes
+    evidence: >
+      A threads the index but always as 0 -> slot 1 still gets slot-0 candidates -> wrong set;
+      B makes the inherent position-aware method return nothing -> empty set everywhere.
+      Different residual-candidate shape.
+  - id: S6_base_solvable_and_feasible
+    question: "Is the base solvable and comfortably under the agent time budget?"
+    answer: yes
+    evidence: >
+      Source patch spans two files (complete.rs threads arg_index at 3 callsites + adds a param;
+      custom.rs adds the method + trait default). A 2-file structural feature patch, mid-difficulty
+      for clap. base-fail verified: the index-aware test assertions fail on base.
+
+edge_strength: n/a_single_node
+# Single-node feature patch; clap_completion family.

@@ -1,0 +1,93 @@
+commit 49a05cdc99c2151cdd48d5ec4c974151d21c026e
+Author: truffle <truffleagent@gmail.com>
+Date:   Mon May 11 14:27:47 2026 +0000
+
+    fix(complete): Two-pass quote fish env-completer
+    
+    Fish parses `--arguments` once at the outer level, then again when
+    `(...)` is evaluated. Top-level single-quote is enough for the bin
+    arg; the completer path inside `(...)` needs the second-pass escape
+    or backslashes and $ get unquoted before the completer runs.
+    
+    Adds `fish_quote` (top-level) and `fish_quote_for_eval`
+    (second-pass: \\, \$, \') and routes the registration through them.
+
+diff --git a/clap_complete/src/env/shells.rs b/clap_complete/src/env/shells.rs
+index 8f41aa03..b3d164d8 100644
+--- a/clap_complete/src/env/shells.rs
++++ b/clap_complete/src/env/shells.rs
+@@ -213,9 +213,8 @@ impl EnvCompleter for Fish {
+         completer: &str,
+         buf: &mut dyn std::io::Write,
+     ) -> Result<(), std::io::Error> {
+-        let bin = shlex::try_quote(bin).unwrap_or(std::borrow::Cow::Borrowed(bin));
+-        let completer =
+-            shlex::try_quote(completer).unwrap_or(std::borrow::Cow::Borrowed(completer));
++        let bin = fish_quote(bin);
++        let completer = fish_quote_for_eval(completer);
+ 
+         writeln!(
+             buf,
+@@ -247,6 +246,62 @@ impl EnvCompleter for Fish {
+     }
+ }
+ 
++/// Quote `s` for embedding inside fish's `--arguments` value.
++///
++/// Fish parses `--arguments` twice: once when sourcing the registration (the
++/// outer double-quoted string) and again when evaluating the embedded command
++/// substitution at completion time. Each special character must therefore
++/// survive two rounds of unescaping, which is what this helper does that
++/// [`fish_quote`] does not.
++fn fish_quote_for_eval(s: &str) -> std::borrow::Cow<'_, str> {
++    if !fish_needs_quoting(s) {
++        return std::borrow::Cow::Borrowed(s);
++    }
++    let mut out = String::with_capacity(s.len() + 2);
++    out.push('\'');
++    for c in s.chars() {
++        match c {
++            '\\' => out.push_str(r"\\\\"),
++            '\'' => out.push_str(r"\\'"),
++            '"' => out.push_str(r#"\""#),
++            '$' => out.push_str(r"\$"),
++            _ => out.push(c),
++        }
++    }
++    out.push('\'');
++    std::borrow::Cow::Owned(out)
++}
++
++/// Quote `s` for fish's first-pass parser.
++///
++/// Used for the `--command` value, where fish reads the token once when
++/// sourcing the registration and never re-evaluates it. Single-quoting plus
++/// escaping `\` and `'` is sufficient.
++fn fish_quote(s: &str) -> std::borrow::Cow<'_, str> {
++    if !fish_needs_quoting(s) {
++        return std::borrow::Cow::Borrowed(s);
++    }
++    let mut out = String::with_capacity(s.len() + 2);
++    out.push('\'');
++    for c in s.chars() {
++        match c {
++            '\\' => out.push_str(r"\\"),
++            '\'' => out.push_str(r"\'"),
++            _ => out.push(c),
++        }
++    }
++    out.push('\'');
++    std::borrow::Cow::Owned(out)
++}
++
++fn fish_needs_quoting(s: &str) -> bool {
++    s.is_empty()
++        || s.chars().any(|c| {
++            !(c.is_ascii_alphanumeric()
++                || matches!(c, '/' | '_' | '-' | '.' | ',' | '+' | '=' | ':' | '@'))
++        })
++}
++
+ /// Powershell completion adapter
+ #[derive(Copy, Clone, PartialEq, Eq, Debug)]
+ pub struct Powershell;

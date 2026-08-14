@@ -1,0 +1,46 @@
+commit 49a05cdc99c2151cdd48d5ec4c974151d21c026e
+Author: truffle <truffleagent@gmail.com>
+Date:   Mon May 11 14:27:47 2026 +0000
+
+    fix(complete): Two-pass quote fish env-completer
+    
+    Fish parses `--arguments` once at the outer level, then again when
+    `(...)` is evaluated. Top-level single-quote is enough for the bin
+    arg; the completer path inside `(...)` needs the second-pass escape
+    or backslashes and $ get unquoted before the completer runs.
+    
+    Adds `fish_quote` (top-level) and `fish_quote_for_eval`
+    (second-pass: \\, \$, \') and routes the registration through them.
+
+diff --git a/clap_complete/src/env/shells.rs b/clap_complete/src/env/shells.rs
+index 8f41aa03..b3d164d8 100644
+--- a/clap_complete/src/env/shells.rs
++++ b/clap_complete/src/env/shells.rs
+@@ -516,7 +516,7 @@ mod tests {
+         assert_data_eq!(
+             script,
+             snapbox::str![[r#"
+-complete --keep-order --exclusive --command /ignored/bin --arguments "(V=fish "/p/dyn\\amic/foo" -- (commandline --current-process --tokenize --cut-at-cursor) (commandline --current-token))"
++complete --keep-order --exclusive --command /ignored/bin --arguments "(V=fish '/p/dyn\\\\amic/foo' -- (commandline --current-process --tokenize --cut-at-cursor) (commandline --current-token))"
+ 
+ "#]]
+             .raw()
+@@ -533,7 +533,7 @@ complete --keep-order --exclusive --command /ignored/bin --arguments "(V=fish "/
+         assert_data_eq!(
+             script,
+             snapbox::str![[r#"
+-complete --keep-order --exclusive --command "dyn\\amic" --arguments "(V=fish /p/completer -- (commandline --current-process --tokenize --cut-at-cursor) (commandline --current-token))"
++complete --keep-order --exclusive --command 'dyn\\amic' --arguments "(V=fish /p/completer -- (commandline --current-process --tokenize --cut-at-cursor) (commandline --current-token))"
+ 
+ "#]]
+             .raw()
+@@ -550,7 +550,7 @@ complete --keep-order --exclusive --command "dyn\\amic" --arguments "(V=fish /p/
+         assert_data_eq!(
+             script,
+             snapbox::str![[r#"
+-complete --keep-order --exclusive --command /ignored/bin --arguments "(V=fish '/p/$var/c' -- (commandline --current-process --tokenize --cut-at-cursor) (commandline --current-token))"
++complete --keep-order --exclusive --command /ignored/bin --arguments "(V=fish '/p/\$var/c' -- (commandline --current-process --tokenize --cut-at-cursor) (commandline --current-token))"
+ 
+ "#]]
+             .raw()
+

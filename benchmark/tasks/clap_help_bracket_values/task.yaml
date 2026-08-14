@@ -1,0 +1,56 @@
+schema_version: 1
+task_id: clap_help_bracket_values
+family_id: clap_help_render
+
+repository:
+  url: https://github.com/clap-rs/clap
+  base_commit: "1ca55413^"       # parent of the fix
+  gold_commit: "1ca55413"
+  language: rust
+
+instruction:
+  path: instruction.md
+
+environment:
+  image: codegraphcl-ripgrep:rust
+  dockerfile: harbor_task/environment/Dockerfile.ripgrep
+  workdir: /workspace/repo
+  build_timeout_sec: 900
+  extra_mounts:
+    cargo_cache: /tmp/cgcl_cargo_cache
+    target: /tmp/cgcl_target
+
+patches:
+  gold: gold.patch                 # clap_builder/src/builder/arg.rs source (bracket past min)
+  verifier: verifier/verifier.patch # tests/builder/help.rs + arg.rs inline test hunks
+
+verifier:
+  command: bash verifier/test.sh   # cargo test --test builder partially_optional_value_names
+  timeout_sec: 300
+  hermetic: false
+  fail_to_pass:
+    - "test: partially_optional_value_names"
+  pass_to_pass: []
+  pass_to_pass_not_applicable: true  # snapshot expectation is modified by the gold commit
+  near_miss_base: gold
+  near_miss:
+    - near_miss/nearmiss_bv_first.py
+    - near_miss/nearmiss_bv_all.py
+
+separability:
+  banned_words: banned_words.txt
+  checklist: separability.checklist.yaml
+
+status:
+  semantic_audit: passed
+  separability_gate: passed      # instruction = symptom (help shows required when parser accepts fewer); no mechanism leakage
+  executable_gate: passed        # base-fail + gold-pass + BOTH near-miss VERIFIED by materialize (4/4)
+  verification_tier: executable_candidate
+  intervention_preflight: pending
+
+notes: >
+  New clap_help_render family. Single-node bug fix (commit 1ca55413): value names past the
+  minimum were rendered as required when the parser accepts fewer. gold brackets them as
+  optional. 19-line source patch. Motif: scope/precedence (the bracketing decision depends on
+  the value's position relative to the minimum, and must avoid double-bracketing already-optional
+  values).

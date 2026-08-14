@@ -1,0 +1,65 @@
+schema_version: 1
+task_id: clap_default_values_if
+family_id: clap_default_values
+
+repository:
+  url: https://github.com/clap-rs/clap
+  base_commit: "c2ced1ae^"      # parent of the feature commit
+  gold_commit: "c2ced1ae"
+  language: rust
+
+instruction:
+  path: instruction.md
+
+environment:
+  image: codegraphcl-ripgrep:rust
+  dockerfile: harbor_task/environment/Dockerfile.ripgrep
+  workdir: /workspace/repo
+  build_timeout_sec: 900
+  extra_mounts:
+    cargo_cache: /tmp/cgcl_cargo_cache
+    target: /tmp/cgcl_target
+
+patches:
+  gold: gold.patch                 # clap_builder/src/builder/arg.rs + clap_builder/src/parser/parser.rs (source only)
+  verifier: verifier/verifier.patch # tests/builder/default_vals.rs (list-valued conditional-default tests)
+
+verifier:
+  command: bash verifier/test.sh   # cargo test --test builder default_values_if_arg_present_with_value_no_default
+  timeout_sec: 900
+  hermetic: false
+  fail_to_pass:
+    - "test: default_values_if_arg_present_with_value_no_default"
+  pass_to_pass: []
+  pass_to_pass_not_applicable: true  # every list-valued conditional-default test is new in this commit
+  near_miss_base: gold
+  near_miss:
+    - near_miss/nearmiss_dv_single.py
+    - near_miss/nearmiss_dv_wrongtype.py
+
+separability:
+  banned_words: banned_words.txt
+  checklist: separability.checklist.yaml
+
+status:
+  semantic_audit: passed
+  separability_gate: passed      # instruction = symptom (conditional fallback can only carry one value); no API/field/type/file-name leakage
+  executable_gate: passed        # 4/4 verified by hand on a base worktree (host cargo 1.88):
+                                 #   base+verifier   RC=101 (E0599, method absent -> `builder` target won't compile)
+                                 #   gold+verifier   RC=0   (3 tests pass: no_default / _fail / _user_override)
+                                 #   near-miss A     RC=101 (compiles; assertion left ["df1"] != right ["df1","df2"])
+                                 #   near-miss B     RC=101 (E0308 Option<OsStr> vs Option<Vec<OsStr>>)
+  verification_tier: executable_candidate   # passed the 4/4 materialize gate + near-miss anti-hardcoding; NOT yet a released node. Final publish requires alternative-correct implementation controls (>=1 plausible-but-different patch that also passes the verifier) to rule out trivial-shape solutions.
+  intervention_preflight: pending
+
+notes: >
+  New clap_default_values family. Single-node feature add (commit c2ced1ae): the conditional
+  default surface only accepted one value per condition, so multi-value arguments could not be
+  given a conditional default. gold widens the conditional-default storage to hold a list, adds
+  the list-valued conditional builder methods (single + batch), rewraps the pre-existing
+  single-value entry point, and makes the parser apply every stored value instead of one.
+  base-fail is a compile error of the `builder` integration target (the called builder method is
+  absent on base), which the materialize gate scores as FAIL. Two near-miss on distinct axes,
+  both EMPIRICALLY CONFIRMED to re-fail: A = parser applies only the first stored value
+  (compiles; runtime assertion ["df1"] != ["df1","df2"]); B = storage widened without rewrapping
+  the single-value entry point (E0308 compile-time type mismatch).

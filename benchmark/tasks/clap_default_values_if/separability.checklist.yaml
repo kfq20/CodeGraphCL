@@ -1,0 +1,68 @@
+# Separability checklist for clap_default_values_if (single-node, clap_default_values family).
+# Instruction states the symptom (a conditional default can only supply one value, so
+# multi-value arguments cannot get a conditional default); the fix (widen the stored
+# conditional default to a list, add the list-valued builder methods, iterate in the parser)
+# must be derived.
+schema_version: 1
+task_id: clap_default_values_if
+
+checks:
+  - id: S1_instruction_symptom_only
+    question: "Does the instruction state only the symptom (conditional fallback carries one value), not the fix?"
+    answer: yes
+    evidence: >
+      instruction.md: "That conditional fallback can supply exactly one value... There is no way
+      to express 'when --opt is value, this argument should fall back to df1 and df2'."
+      Acceptance: attach a list of conditional fallback values, plus a batch form, and have all
+      listed values reach the parsed matches in order. It never says to change a field type,
+      add a wrapping map, or iterate in the parser.
+  - id: S2_instruction_no_mechanism_words
+    question: "Does the instruction avoid the API/field/type names (the *_if/*_ifs method names, the storage field, Option<Vec<OsStr>>, into_resettable/into_option, num_args)?"
+    answer: yes
+    evidence: >
+      banned_words.txt forbids these; a scripted scan of instruction.md over banned_words.txt
+      reports no hits. The instruction says "conditional fallback", "list of fallback values",
+      "an argument that takes two values".
+  - id: S3_instruction_no_file_names
+    question: "Does the instruction avoid naming clap_builder/src/builder/arg.rs, clap_builder/src/parser/parser.rs and tests/builder/default_vals.rs?"
+    answer: yes
+    evidence: >
+      instruction says "the argument-builder default-value configuration surface, plus whatever
+      the parser needs so the values actually land in the matches" — a surface, not a path.
+  - id: S4_near_misses_plausible
+    question: "Are the near-misses plausible-but-wrong, not absurd?"
+    answer: yes
+    evidence: >
+      A = after widening the storage to a list, the parser still applies a single value ("a
+      conditional default is still one value") — the exact shape of the pre-existing code.
+      B = widen the storage type but leave the single-value entry point untouched ("just change
+      the type, the old method is unchanged") — the most common half-migration.
+  - id: S5_near_misses_distinct_axes
+    question: "Do the near-misses fail along distinct axes?"
+    answer: yes
+    evidence: >
+      A compiles and fails at RUNTIME (only "df1" lands; assertion left ["df1"] != right
+      ["df1", "df2"], RC=101). B fails at COMPILE time (E0308: Option<OsStr> vs the widened
+      Option<Vec<OsStr>>, RC=101). Different failure stage and different file (parser vs
+      builder). Both empirically confirmed on a base+gold+verifier worktree.
+  - id: S6_base_solvable_and_feasible
+    question: "Is the base solvable and comfortably under the agent time budget?"
+    answer: yes
+    evidence: >
+      Gold touches 2 source files: one storage-type widening, one 4-line rewrap of the existing
+      single-value entry point, two new builder methods that mirror the unconditional
+      list-valued pair, and a 2-line parser change. No cross-crate refactor. Rust build is the
+      dominant cost, so verifier timeout is 900s (vs 300s for the trivial clap_error task).
+  - id: S7_base_fail_is_compile_error
+    question: "Is it acceptable that base+verifier fails to compile rather than asserting?"
+    answer: yes
+    evidence: >
+      The verifier test calls a builder method that does not exist on base, so the `builder`
+      integration target fails to compile and cargo exits non-zero — scored FAIL by the
+      materialize gate, same as an assertion failure. This is inherent to a feature-add node
+      (the API is the deliverable). Near-miss A is deliberately a RUNTIME failure so the task
+      is not only guarded by "does it compile".
+
+edge_strength: n/a_single_node
+# Single-node feature add; new clap_default_values family. Candidate parent for a later edge
+# (the unconditional list-valued default surface is the natural prior).

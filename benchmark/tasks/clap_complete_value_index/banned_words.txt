@@ -1,0 +1,16 @@
+# Banned MECHANISM words for clap_complete_value_index instruction.
+# The fix adds a position-aware completion method to the dynamic engine and
+# threads the value's index through it. "multi-value argument" / "value
+# position" are symptom-level; the exact method/type/file names are the
+# mechanism (banned).
+complete_at
+arg_index
+ValueCompleter
+ArgValueCompleter
+complete.rs
+custom.rs
+engine.rs
+num_args
+value_delimiter
+complete_arg_value
+suggest_custom_arg_completer_at_index

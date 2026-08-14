@@ -1,0 +1,20 @@
+family_id: clap_conflict
+repository: clap
+
+# The clap conflict-error family. One node; a precedence task where the dedup must
+# happen on conflict IDS before the usage builder consumes them (not on rendered strings).
+# 578cd43a ("fix(parser): Don't report conflicting arguments in usage"):
+#   (bank: clap_conflict_usage)
+nodes:
+  - clap_conflict_usage   # gold=578cd43a
+
+edges: []
+
+structure:
+  type: single_node_collection
+  order:
+    - 578cd43a
+
+diagnostic_targets: []
+
+screening_log: []

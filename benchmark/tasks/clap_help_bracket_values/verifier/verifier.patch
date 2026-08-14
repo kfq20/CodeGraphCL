@@ -1,0 +1,76 @@
+commit 1ca55413c8e79c3b437054c0d9dc7e4691bd3e71
+Author: Aashish Thapa <aashishthapa520@gmail.com>
+Date:   Fri Jul 31 10:45:46 2026 -0500
+
+    fix(help): Bracket values past the minimum
+    
+    An option declared with a value-count range, like `num_args(1..=2)` with
+    two value names, rendered as
+    
+        --example <FOO> <BAR>
+    
+    while the parser accepts `--example FOO`, so the help contradicted what
+    the parser would take. Render the value names past the minimum as
+    optional instead
+    
+        --example <FOO> [BAR]
+    
+    An option whose value is optional as a whole is bracketed by
+    `stylize_arg_suffix`, so its names stay unbracketed to avoid `[[name]]`.
+    
+    Fixes #4847
+
+diff --git a/clap_builder/src/builder/arg.rs b/clap_builder/src/builder/arg.rs
+index d9ae4790..ca4b74fa 100644
+--- a/clap_builder/src/builder/arg.rs
++++ b/clap_builder/src/builder/arg.rs
+@@ -5003,7 +5003,7 @@ mod test {
+             .value_names(["file", "name"]);
+         o._build();
+ 
+-        assert_eq!(o.to_string(), "-o <file> <name>...");
++        assert_eq!(o.to_string(), "-o <file> [name]...");
+     }
+ 
+     #[test]
+@@ -5015,7 +5015,7 @@ mod test {
+             .value_names(["FOO", "BAR"]);
+         o._build();
+ 
+-        assert_eq!(o.to_string(), "--example <FOO> <BAR>");
++        assert_eq!(o.to_string(), "--example <FOO> [BAR]");
+     }
+ 
+     #[test]
+@@ -5029,7 +5029,7 @@ mod test {
+             .value_names(["FOO", "BAR"]);
+         o._build();
+ 
+-        assert_eq!(o.to_string(), "--example=<FOO> <BAR>");
++        assert_eq!(o.to_string(), "--example=<FOO> [BAR]");
+     }
+ 
+     #[test]
+@@ -5041,7 +5041,7 @@ mod test {
+             .value_names(["A", "B"]);
+         o._build();
+ 
+-        assert_eq!(o.to_string(), "--example <A> <B>...");
++        assert_eq!(o.to_string(), "--example <A> [B]...");
+     }
+ 
+     #[test]
+diff --git a/tests/builder/help.rs b/tests/builder/help.rs
+index 7da44f6f..a840b82c 100644
+--- a/tests/builder/help.rs
++++ b/tests/builder/help.rs
+@@ -4824,7 +4824,7 @@ fn partially_optional_value_names() {
+ Usage: prog [OPTIONS]
+ 
+ Options:
+-      --example <FOO> <BAR>  Takes one or two values
++      --example <FOO> [BAR]  Takes one or two values
+   -h, --help                 Print help
+ 
+ "#]];
+

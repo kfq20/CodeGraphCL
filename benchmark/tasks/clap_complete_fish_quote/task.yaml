@@ -1,0 +1,59 @@
+schema_version: 1
+task_id: clap_complete_fish_quote
+family_id: clap_completion
+
+repository:
+  url: https://github.com/clap-rs/clap
+  base_commit: "49a05cdc^"          # parent of the fix
+  gold_commit: "49a05cdc"
+  language: rust
+
+instruction:
+  path: instruction.md
+
+environment:
+  image: codegraphcl-ripgrep:rust
+  dockerfile: harbor_task/environment/Dockerfile.ripgrep
+  workdir: /workspace/repo
+  build_timeout_sec: 900
+  extra_mounts:
+    cargo_cache: /tmp/cgcl_cargo_cache
+    target: /tmp/cgcl_target
+
+patches:
+  gold: gold.patch                   # clap_complete/src/env/shells.rs (fish_quote + fish_quote_for_eval + call-site swap)
+  verifier: verifier/verifier.patch  # clap_complete/src/env/shells.rs mod tests (snapshot expectations)
+
+verifier:
+  command: bash verifier/test.sh      # cargo test -p clap_complete --features unstable-dynamic --lib fish_env_completer_path_with_backslash
+  timeout_sec: 300
+  hermetic: false
+  fail_to_pass:
+    - "test: fish_env_completer_path_with_backslash"
+  pass_to_pass: []
+  pass_to_pass_not_applicable: true   # the snapshot expectation is changed by the verifier patch
+  near_miss_base: gold
+  near_miss:
+    - near_miss/nearmiss_fq_singlepass.py
+    - near_miss/nearmiss_fq_noescape.py
+
+separability:
+  banned_words: banned_words.txt
+  checklist: separability.checklist.yaml
+
+status:
+  semantic_audit: passed
+  separability_gate: passed      # instruction = symptom (completer path mangled by second parse); no function/file leakage
+  executable_gate: passed  # base-fail + gold-pass + BOTH near-miss VERIFIED by materialize (4/4)
+  verification_tier: executable_candidate   # passed the materialize gate; near-miss anti-hardcoding designed. Final publish requires alternative-correct controls.
+  intervention_preflight: pending
+
+notes: >
+  New clap_completion family. Single-node bug fix (commit 49a05cdc): fish parses the completion
+  registration's argument list twice (outer source + embedded command-substitution eval), but the
+  old quoting (shlex::try_quote) only survives one pass, so backslashes and $ in the completer
+  path get unquoted before the completer runs. Gold adds two quoting helpers (single-pass for the
+  command token, second-pass for the re-evaluated completer path) and routes the registration
+  through them. Base-fail: at base + verifier patch the old single-pass output mismatches the new
+  snapshot -> FAIL; after gold the two-pass output matches -> PASS. Two near-miss (single-pass for
+  completer / skip $-escape) re-fail. ~60-line source patch (mostly new helper functions).

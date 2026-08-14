@@ -1,0 +1,60 @@
+commit 126440ca846613671e1dac98198b2ceb17dab2b0
+Author: Ed Page <eopage@gmail.com>
+Date:   Wed Oct 29 09:12:41 2025 -0500
+
+    fix(help): Correctly calculate padding for short-only args
+    
+    This manifests in two ways
+    - If a value is taken, we double the padding
+    - If `ArgAction::Count` is used, we don't account for `...` and crash
+    
+    Fixes #6164
+
+diff --git a/clap_builder/src/output/help_template.rs b/clap_builder/src/output/help_template.rs
+index c954f5cb..a0bc70fe 100644
+--- a/clap_builder/src/output/help_template.rs
++++ b/clap_builder/src/output/help_template.rs
+@@ -479,20 +479,18 @@ impl HelpTemplate<'_, '_> {
+             // args alignment
+             should_show_arg(self.use_long, arg)
+         }) {
+-            if longest_filter(arg) {
+-                let width = display_width(&arg.to_string());
+-                let actual_width = if arg.is_positional() {
+-                    width
+-                } else {
+-                    width + SHORT_SIZE
+-                };
+-                longest = longest.max(actual_width);
+-                debug!(
+-                    "HelpTemplate::write_args: arg={:?} longest={}",
+-                    arg.get_id(),
+-                    longest
+-                );
+-            }
++            let width = display_width(&arg.to_string());
++            let actual_width = if arg.get_long().is_some() {
++                width + SHORT_SIZE
++            } else {
++                width
++            };
++            longest = longest.max(actual_width);
++            debug!(
++                "HelpTemplate::write_args: arg={:?} longest={}",
++                arg.get_id(),
++                longest
++            );
+ 
+             let key = (sort_key)(arg);
+             ord_v.insert(key, arg);
+@@ -1144,10 +1142,6 @@ fn should_show_subcommand(subcommand: &Command) -> bool {
+     !subcommand.is_hide_set()
+ }
+ 
+-fn longest_filter(arg: &Arg) -> bool {
+-    arg.is_takes_value_set() || arg.get_long().is_some() || arg.get_short().is_none()
+-}
+-
+ #[cfg(test)]
+ mod test {
+     #[test]
