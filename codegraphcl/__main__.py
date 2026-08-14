@@ -41,6 +41,10 @@ def main() -> int:
     sm = sub.add_parser("summarize", help="aggregate a run's results")
     sm.add_argument("run_dir")
 
+    al = sub.add_parser("atom-lengths", help="check Phase 3.1 atom length-match controls")
+    al.add_argument("task_dir")
+    al.add_argument("atoms_file", nargs="?", default="atoms.md")
+
     args = ap.parse_args()
 
     if args.cmd == "validate":
@@ -59,6 +63,9 @@ def main() -> int:
     elif args.cmd == "summarize":
         from .summarize import cmd_summarize
         return cmd_summarize(args.run_dir)
+    elif args.cmd == "atom-lengths":
+        from .atom_lengths import main as al_main
+        return al_main(args.task_dir, args.atoms_file)
     return 2
 
 

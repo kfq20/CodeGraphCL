@@ -44,12 +44,17 @@ def _build_prompt(cfg: dict, td: Path, condition: str, container_workdir: str,
     """Build the prompt for a condition. Returns (prompt_text, manifest_fields).
     `container` is the discovered container name (NOT hardcoded — passed by caller)."""
     instr = (td / cfg["instruction"]["path"]).read_text().strip()
-    atoms_path = td / "atoms.md"
+    # Carrier ablation (Phase 3.1): if CGCL_ATOMS_FILE is set (e.g. "atoms_ablation.md"), read
+    # that instead of atoms.md. This lets length-matched short/long atom pairs run as a SEPARATE
+    # experiment without overwriting the original atoms.md (anti-tampering: the original 4-cond
+    # results are reproducible from atoms.md; the ablation is reproducible from atoms_ablation.md).
+    atoms_name = os.environ.get("CGCL_ATOMS_FILE", "atoms.md")
+    atoms_path = td / atoms_name
     atoms = atoms_path.read_text() if atoms_path.exists() else ""
-    # condition name -> atom name (edge may map e.g. stale->wrong)
+    # condition name -> atom name (edge may map e.g. stale->wrong; ablation uses correct_short etc.)
     prefix = "" if condition == "reset" else _extract_atom(atoms, condition)
     if condition != "reset" and not prefix:
-        raise ValueError(f"condition '{condition}' produced empty prefix — atom missing")
+        raise ValueError(f"condition '{condition}' produced empty prefix — atom {condition} missing in {atoms_name}")
     docker_hint = (
         "You are working in the repository at your current directory. To run the project's "
         "tests (in the prepared container env, not on the host), use:\n"
