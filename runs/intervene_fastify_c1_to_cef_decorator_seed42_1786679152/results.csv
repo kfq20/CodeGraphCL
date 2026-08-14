@@ -1,0 +1,13 @@
+episode_id,condition,block,reward,outcome,elapsed_sec,input_tokens,output_tokens,cache_read_tokens,tool_uses,assistant_turns,prefix_chars,prompt_sha256
+ep_000000,correct_long,0,1,solved,283,40453,11405,1589520,56,100,1038,a267b5c7a4cf
+ep_000001,correct_short,0,1,solved,158,18407,8616,1201190,43,76,312,1a54fefffabf
+ep_000002,irrelevant_short,0,ERR,infra_fail,133,16657,4595,1034624,41,64,286,7bbf966bd991
+ep_000003,irrelevant_long,0,1,solved,309,25853,9773,1611880,49,89,1000,f105052489a0
+ep_000004,reset,0,1,solved,421,19141,11719,1801116,59,84,0,dc60fb6d7055
+ep_000005,correct_long,1,1,solved,107,17937,6915,772224,27,48,1038,18e1c17a4a04
+ep_000006,irrelevant_short,1,1,solved,140,26214,7386,1114624,41,68,286,f9a5f5f2523b
+ep_000007,reset,1,1,solved,175,16371,9351,1086976,42,80,0,1342a68493b7
+ep_000008,irrelevant_long,1,1,solved,64,9411,3174,405248,17,32,1000,309f89a7ef14
+ep_000009,correct_short,1,1,solved,114,14731,5301,821760,32,58,312,2dc770878310
+ep_000010,correct_long,2,1,solved,99,14269,4737,735488,29,48,1038,d1422640a509
+ep_000011,correct_short,2,1,solved,278,30038,15287,1891455,59,106,312,3a5fb1afcf41
