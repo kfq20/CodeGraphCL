@@ -1,0 +1,36 @@
+schema_version: 1
+edge_id: clap_typealias_to_defaultvalueos
+from: clap_derive_type_alias
+to: clap_derive_default_value_os
+edge_type: beneficial_parity
+
+# Producer 1285c0f8 (type_alias derive) established the derive-API convention: the derive macro
+# processes attribute values via a specific parsing path (AttrValue). Consumer 7c10b5a9b4
+# (default_value_os derive) follows the same derive-API convention for a new attribute. Both
+# share the "derive macro processes attributes through the established parsing path" convention.
+experience:
+  statement: >
+    The clap derive macro processes attribute values through an established parsing path
+    (AttrValue → parsed tokens). A new derive attribute (default_value_os) must follow the same
+    parsing convention as an existing one (type_alias), so the derive API stays consistent.
+  type: derive_api_attribute_parsing
+  scope: clap_derive/src/attr.rs
+  provenance:
+    repository: clap
+    commit: 1285c0f8
+  validity: valid_for_consumer
+
+conditions:
+  reset: null
+  correct: correct
+  irrelevant: irrelevant
+  stale: wrong
+
+expected_effect:
+  correctness: possible
+  efficiency: possible
+  negative_transfer: possible
+
+status:
+  semantic_audit: passed
+  causal_verification: proposed

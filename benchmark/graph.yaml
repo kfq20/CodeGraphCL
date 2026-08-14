@@ -39,6 +39,16 @@ edges:
   to: clap_error_newline
   edge_type: beneficial_update
   intervention_status: intervention_smoke
+- edge_id: clap_typealias_to_defaultvalueos
+  from: clap_derive_type_alias
+  to: clap_derive_default_value_os
+  edge_type: beneficial_parity
+  intervention_status: proposed
+- edge_id: fastify_404route_to_headerssent
+  from: fastify_route_404_to_handler
+  to: fastify_reply_headerssent
+  edge_type: beneficial_update
+  intervention_status: proposed
 - edge_id: fastify_c1_to_cef_decorator
   from: fastify_decorate_null
   to: fastify_decorator_getter
@@ -54,11 +64,21 @@ edges:
   to: fastify_clean_schema_id
   edge_type: beneficial_update
   intervention_status: intervention_smoke
+- edge_id: fastify_hasheader_to_headerssent
+  from: fastify_reply_hasheader
+  to: fastify_reply_headerssent
+  edge_type: beneficial_update
+  intervention_status: proposed
 - edge_id: fastify_hasheader_to_removeheader
   from: fastify_reply_hasheader
   to: fastify_reply_removeheader
   edge_type: beneficial_update
   intervention_status: intervention_smoke
+- edge_id: fastify_responsetime_to_headercase
+  from: fastify_loggr_responsetime
+  to: fastify_header_case_validation
+  edge_type: beneficial_update
+  intervention_status: proposed
 - edge_id: httpx_tA_to_tB
   from: httpx_tA
   to: httpx_tB

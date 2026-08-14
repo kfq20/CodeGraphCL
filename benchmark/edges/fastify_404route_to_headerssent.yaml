@@ -1,0 +1,40 @@
+schema_version: 1
+edge_id: fastify_404route_to_headerssent
+from: fastify_route_404_to_handler
+to: fastify_reply_headerssent
+edge_type: beneficial_update
+
+# Producer 63fce75e (route 404 errors to notFound handler) established the error-path routing
+# convention: a status-code error in handleError() is intercepted early and routed to the
+# appropriate handler, not left to generic serialization. Consumer fd8fb5e55aa7 (headersSent
+# guard) applies the same early-intercept pattern: guard the header-setting loop in send() with
+# !res.headersSent before attempting to set headers, routing to a warn instead. Both share the
+# "intercept the error/send path early, don't fall through to the default" convention.
+experience:
+  statement: >
+    In the reply error/send path, intercept early when a special condition (a specific status
+    code, or headers already sent) applies — don't fall through to the default serialization or
+    header-setting. The early-intercept + route-to-handler (or warn) pattern is the convention;
+    falling through causes the wrong behavior (JSON body instead of notFound handler, or a
+    headers-already-sent crash).
+  type: error_path_early_intercept
+  scope: lib/reply.js handleError + send
+  provenance:
+    repository: fastify
+    commit: 63fce75e
+  validity: valid_for_consumer
+
+conditions:
+  reset: null
+  correct: correct
+  irrelevant: irrelevant
+  stale: wrong
+
+expected_effect:
+  correctness: possible
+  efficiency: possible
+  negative_transfer: possible
+
+status:
+  semantic_audit: passed
+  causal_verification: proposed

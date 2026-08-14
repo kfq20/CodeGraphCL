@@ -1,0 +1,40 @@
+schema_version: 1
+edge_id: fastify_responsetime_to_headercase
+from: fastify_loggr_responsetime
+to: fastify_header_case_validation
+edge_type: beneficial_update
+
+# Producer 288903a3 (fix responseTime regression) established the request-lifecycle invariant:
+    # the onResponse callback must be wired correctly (hasLogger boolean not inverted) and the
+# _startTime must be set when logging is active, so responseTime is recorded. Consumer
+# 2907be7c5352 (header case validation) operates in the same request-lifecycle surface:
+# required-header validation must normalize header names to lowercase before comparing, so
+# case-mismatched headers don't falsely fail. Both share the "normalize/fix the request-
+# processing path so the right behavior is observed" convention.
+experience:
+  statement: >
+    In the request-processing lifecycle, the framework must normalize/fix the processing path so
+    the right behavior is observed: wire the onResponse callback correctly (not inverted) so
+    responseTime is recorded, and normalize header names to lowercase so case-mismatched
+    required headers don't falsely fail validation. Both are request-lifecycle normalizations.
+  type: request_lifecycle_normalization
+  scope: fastify.js + lib/logger.js + lib/validation.js
+  provenance:
+    repository: fastify
+    commit: 288903a3
+  validity: valid_for_consumer
+
+conditions:
+  reset: null
+  correct: correct
+  irrelevant: irrelevant
+  stale: wrong
+
+expected_effect:
+  correctness: possible
+  efficiency: possible
+  negative_transfer: possible
+
+status:
+  semantic_audit: passed
+  causal_verification: proposed

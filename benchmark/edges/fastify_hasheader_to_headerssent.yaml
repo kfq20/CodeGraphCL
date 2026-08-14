@@ -1,0 +1,38 @@
+schema_version: 1
+edge_id: fastify_hasheader_to_headerssent
+from: fastify_reply_hasheader
+to: fastify_reply_headerssent
+edge_type: beneficial_update
+
+# Producer 31c5f7e259d1 (hasHeader/getHeader) established the header-accessor convention:
+# header names are case-insensitive (lowercase the key), and the reply's header surface uses
+# guarded access (check before acting). Consumer fd8fb5e55aa7 (headersSent guard) applies the
+# same guarded-access pattern: guard the header-setting loop with !res.headersSent before
+# touching _headers, so a header-set after send doesn't crash. Both share the "guard header
+# access, don't touch _headers unconditionally" convention.
+experience:
+  statement: >
+    The reply's header surface uses guarded access: check whether a header is present (hasHeader)
+    or whether headers have been sent (headersSent) before acting. The guard-before-act convention
+    prevents crashes (KeyError on missing header, or headers-already-sent on a post-send set).
+  type: header_guarded_access
+  scope: lib/reply.js header accessors + send
+  provenance:
+    repository: fastify
+    commit: 31c5f7e259d1
+  validity: valid_for_consumer
+
+conditions:
+  reset: null
+  correct: correct
+  irrelevant: irrelevant
+  stale: wrong
+
+expected_effect:
+  correctness: possible
+  efficiency: possible
+  negative_transfer: possible
+
+status:
+  semantic_audit: passed
+  causal_verification: proposed
