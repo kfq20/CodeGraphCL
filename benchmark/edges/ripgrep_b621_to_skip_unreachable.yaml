@@ -1,9 +1,16 @@
 schema_version: 1
 edge_id: ripgrep_b621_to_skip_unreachable
-from: ripgrep_skip_unreachable_ignore   # the consumer task carries the atoms; producer b621e65 is
-                                       # the architecture-establishing commit (not a separate node —
-                                       # it predates the bank's c2/c3/c4/c5 nodes).
-to: ripgrep_skip_unreachable_ignore
+# NOTE (reviewer correction): this is NOT a Task-Graph edge in the strict sense (from/to must
+# resolve to two distinct Task Nodes). The producer is commit b621e65, which predates the bank's
+# c2/c3/c4/c5 nodes and is not itself a materialized executable Task Node (it's the architecture-
+# establishing commit, not a base-fail task). It is recorded here as EXTERNAL PROVENANCE: the
+# experience statement's provenance.commit points at the real producer commit, but the edge does
+# not count as a Task-Graph edge for stream construction. To promote it to a real edge, a producer
+# Task Node for b621e65 would need to be materialized (base-fail/gold-pass) — left as a follow-up.
+provenance_type: external_commit   # b621e65 is real commit provenance, NOT a Task Node
+producer_commit: b621e65           # the architecture-establishing producer (external)
+from: b621e65                      # external commit provenance (not a Task Node — see note above)
+to: ripgrep_skip_unreachable_ignore   # the consumer Task Node
 edge_type: beneficial_update
 
 # Producer b621e65 (ignore: add incremental checking) established the per-directory matcher cache
