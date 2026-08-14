@@ -1,0 +1,15 @@
+family_id: viper_unmarshal
+repository: viper
+
+# Unmarshal / UnmarshalExact env-surfacing. When AutomaticEnv is on, Unmarshal and UnmarshalExact
+# must derive struct-field keys and decode via the env-aware settings lookup (getSettings) so
+# env-backed fields populate. Direct-motif (env-layer-surfacing). Two standalone nodes (same motif,
+# applied to two methods; fb6eb1e builds on 73dfb94's machinery but is an independent base).
+nodes:
+  - viper_unmarshal_automaticenv
+  - viper_unmarshal_exact_merge
+
+structure:
+  type: standalone
+
+diagnostic_targets: []

@@ -1,0 +1,34 @@
+From 864a85aadadbaa4dce1e474714457ed37c553ce1 Mon Sep 17 00:00:00 2001
+From: "alex.lew" <alex.lew@observeinc.com>
+Date: Mon, 22 Jul 2024 20:14:28 +0000
+Subject: [PATCH] feat: copy keydelim from parent chart in viper.Sub()
+
+---
+ viper_test.go | 11 +++++++++++
+ 1 file changed, 11 insertions(+)
+
+diff --git a/viper_test.go b/viper_test.go
+index 1419113..2eab0ea 100644
+--- a/viper_test.go
++++ b/viper_test.go
+@@ -1681,6 +1681,17 @@ func TestSub(t *testing.T) {
+ 	assert.Equal(t, []string{"clothing", "pants"}, subv.parents)
+ }
+ 
++func TestSubWithKeyDelimiter(t *testing.T) {
++	v := NewWithOptions(KeyDelimiter("::"))
++	v.SetConfigType("yaml")
++	r := strings.NewReader(string(yamlExampleWithDot))
++	err := v.unmarshalReader(r, v.config)
++	require.NoError(t, err)
++
++	subv := v.Sub("emails")
++	assert.Equal(t, "01/02/03", subv.Get("steve@hacker.com::created"))
++}
++
+ var jsonWriteExpected = []byte(`{
+   "batters": {
+     "batter": [
+-- 
+2.34.1
+

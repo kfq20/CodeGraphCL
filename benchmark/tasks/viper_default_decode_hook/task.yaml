@@ -1,0 +1,82 @@
+schema_version: 1
+task_id: viper_default_decode_hook
+family_id: viper_decode_hook
+
+repository:
+  url: https://github.com/spf13/viper
+  base_commit: "5964efa262fa03ea9866953d734f04be97d0b7c4"
+  gold_commit: "d2458a2abcf9c9af10f033aef75dad8b063a1789"
+  language: go
+
+instruction:
+  path: instruction.md
+
+environment:
+  image: codegraphcl-viper:go
+  dockerfile: harbor_task/environment/Dockerfile.viper
+  workdir: /workspace/repo
+  build_timeout_sec: 900
+  extra_mounts:
+    gomod: /pool/gomod
+
+patches:
+  gold: gold.patch                   # viper.go (decodeHook field + WithDecodeHook + defaultDecoderConfig method)
+  verifier: verifier/verifier.patch   # viper_test.go (TestUnmarshalWithDefaultDecodeHook)
+
+verifier:
+  command: bash verifier/test.sh
+  timeout_sec: 300
+  hermetic: false
+  fail_to_pass:
+    - "TestUnmarshalWithDefaultDecodeHook"
+  pass_to_pass: []
+  pass_to_pass_not_applicable: true
+  near_miss_base: gold
+  near_miss:
+    - near_miss/nearmiss_ignore_field.py
+    - near_miss/nearmiss_wrong_store.py
+
+separability:
+  banned_words: banned_words.txt
+  checklist: separability.checklist.yaml
+
+mechanism_audit:
+  reusable_decision: >
+    Producer: a Viper instance must be able to carry a default mapstructure decode hook supplied
+    via an option, used by all Unmarshal entry points unless overridden. The decision: add a
+    decodeHook field, a WithDecodeHook option that stores the hook (nil-guarded), and convert the
+    shared decoder-config builder from a package-level function into a method that prefers
+    v.decodeHook when set and falls back to the default composed hook otherwise.
+  plausible_path_correct: >
+    Add `decodeHook mapstructure.DecodeHookFunc` field; add `WithDecodeHook(h)` option that
+    no-ops on nil and stores into v.decodeHook; convert defaultDecoderConfig to
+    `func (v *Viper) defaultDecoderConfig(...)` that sets DecodeHook = v.decodeHook when non-nil
+    else the default ComposeDecodeHookFunc(...); update all three Unmarshal call sites to
+    v.defaultDecoderConfig.
+  plausible_path_competing: >
+    Add the option/field but never read it in the decoder-config builder (always use the default
+    composed hook), OR store the option into the wrong field / invert the nil-guard so the hook is
+    never stored — both leave the user hook unused.
+  why_instruction_does_not_disambiguate: >
+    The instruction states the symptom (no per-instance default decode hook), the expectation (new
+    option, nil is a no-op, used by all three Unmarshal entry points unless overridden), and that
+    the fix wires into the shared decoder-config builder. It does NOT name decodeHook, WithDecodeHook,
+    the method conversion, or the call-site updates.
+  why_correct_history_selects_path: >
+    Converting the shared builder to a method that reads v.decodeHook is the single chokepoint that
+    covers all three Unmarshal entry points; nil-guarding the option matches the existing option
+    conventions.
+  why_wrong_history_is_plausible: >
+    "Add the option and field" and "store the hook on the Viper" are reasonable partial framings
+    that never wire the hook into the decode path.
+
+status:
+  semantic_audit: passed
+  separability_gate: passed
+  executable_gate: passed         # materialized 4/4 (base-fail, gold-pass, 2 near-miss caught)
+  verification_tier: executable_candidate
+  intervention_preflight: pending
+
+notes: >
+  viper_decode_hook family (standalone). Motif: option-wiring (new default decode hook option wired
+  into the shared decoder-config builder). 28-line source patch (viper.go). Commit d2458a2.

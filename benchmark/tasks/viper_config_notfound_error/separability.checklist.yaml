@@ -1,0 +1,36 @@
+# Separability checklist for viper_config_notfound_error (viper_config_notfound family, standalone).
+schema_version: 1
+task_id: viper_config_notfound_error
+
+checks:
+  - id: S1_instruction_symptom_only
+    question: "Does the instruction state only the symptom, not the fix?"
+    answer: yes
+    evidence: >
+      instruction.md: "does NOT return a ConfigFileNotFoundError... falls through to the raw
+      file-read error." Acceptance: return ConfigFileNotFoundError with the name set when absent.
+  - id: S2_instruction_no_mechanism_words
+    question: "Does the instruction avoid afero.Exists/if !exists/ConfigFileNotFoundError{name:?"
+    answer: yes
+    evidence: "banned_words.txt forbids these; instruction describes the typed-sentinel behaviorally"
+  - id: S3_instruction_no_file_names
+    question: "Does the instruction avoid naming viper.go/file.go?"
+    answer: yes
+    evidence: "instruction says 'the ReadInConfig file-resolution / read path, before the read is attempted'"
+  - id: S4_near_misses_plausible
+    question: "Are the near-misses plausible-but-wrong?"
+    answer: yes
+    evidence: >
+      A = generic fmt.Errorf on absent branch (plausible 'return a not-found error', wrong type);
+      B = inverted guard (plausible 'guard on existence', backwards, absent falls through).
+  - id: S5_near_misses_distinct_axes
+    question: "Do the near-misses fail along distinct axes?"
+    answer: yes
+    evidence: >
+      A fails the type check on the correct branch (wrong TYPE returned); B fails because the guard
+      fires on the wrong branch (absent falls through to raw read error). Both fail IsType, via
+      different incorrect logic.
+  - id: S6_base_solvable
+    question: "Is the base solvable?"
+    answer: yes
+    evidence: "~20-line patch. base-fail verified (ReadInConfig returns path error, not ConfigFileNotFoundError)."

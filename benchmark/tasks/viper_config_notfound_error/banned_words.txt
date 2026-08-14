@@ -1,0 +1,13 @@
+# Banned MECHANISM words for viper_config_notfound_error instruction.
+# The fix: in ReadInConfig, call afero.Exists(v.fs, filename); if !exists return
+# ConfigFileNotFoundError{name: filename, locations: ""}. Also the ConfigFileNotFoundError.Error()
+# message + named-field struct literals in file.go. The concept "not found" is symptom-level; the
+# mechanism (afero.Exists, the guard, the named struct literal) is banned.
+afero.Exists
+v.fs, filename
+if !exists
+ConfigFileNotFoundError{name:
+name: filename
+locations: ""
+findConfigFileWithFinder
+findConfigFileOld

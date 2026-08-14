@@ -1,0 +1,35 @@
+# Separability checklist for viper_default_decode_hook (viper_decode_hook family, standalone).
+schema_version: 1
+task_id: viper_default_decode_hook
+
+checks:
+  - id: S1_instruction_symptom_only
+    question: "Does the instruction state only the symptom, not the fix?"
+    answer: yes
+    evidence: >
+      instruction.md: "There is no way to supply a custom decode hook that applies by default."
+      Acceptance: new option to set a default hook, used by all three Unmarshal entry points.
+  - id: S2_instruction_no_mechanism_words
+    question: "Does the instruction avoid v.decodeHook/WithDecodeHook/defaultDecoderConfig?"
+    answer: yes
+    evidence: "banned_words.txt forbids these; instruction describes the option behaviorally"
+  - id: S3_instruction_no_file_names
+    question: "Does the instruction avoid naming viper.go?"
+    answer: yes
+    evidence: "instruction says 'the shared decoder-config builder used by all three Unmarshal entry points'"
+  - id: S4_near_misses_plausible
+    question: "Are the near-misses plausible-but-wrong?"
+    answer: yes
+    evidence: >
+      A = method ignores v.decodeHook, always uses default (plausible 'use the standard hook chain');
+      B = inverted nil-guard, hook never stored (plausible 'guard the option', backwards).
+  - id: S5_near_misses_distinct_axes
+    question: "Do the near-misses fail along distinct axes?"
+    answer: yes
+    evidence: >
+      A fails in the METHOD (hook stored but never read); B fails in the SETTER (hook never stored).
+      Both leave the custom hook unused, via different incorrect logic.
+  - id: S6_base_solvable
+    question: "Is the base solvable?"
+    answer: yes
+    evidence: "28-line patch. base-fail verified (WithDecodeHook undefined -> compile error on base)."

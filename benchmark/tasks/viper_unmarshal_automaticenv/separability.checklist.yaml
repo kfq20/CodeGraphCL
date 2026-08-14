@@ -1,0 +1,38 @@
+# Separability checklist for viper_unmarshal_automaticenv (viper_unmarshal family, standalone).
+schema_version: 1
+task_id: viper_unmarshal_automaticenv
+
+checks:
+  - id: S1_instruction_symptom_only
+    question: "Does the instruction state only the symptom, not the fix?"
+    answer: yes
+    evidence: >
+      instruction.md: "Unmarshal does NOT populate the fields from the environment... struct comes
+      back with zero values for env-backed fields." Acceptance: derive struct keys, feed into
+      env-aware lookup.
+  - id: S2_instruction_no_mechanism_words
+    question: "Does the instruction avoid decodeStructKeys/getSettings/append/AllSettings?"
+    answer: yes
+    evidence: "banned_words.txt forbids these; instruction describes the env-surfacing behaviorally"
+  - id: S3_instruction_no_file_names
+    question: "Does the instruction avoid naming viper.go?"
+    answer: yes
+    evidence: "instruction says 'the Unmarshal method's decode-source selection'"
+  - id: S4_near_misses_plausible
+    question: "Are the near-misses plausible-but-wrong?"
+    answer: yes
+    evidence: >
+      A = derive struct keys but keep AllSettings source (plausible 'I added the struct-key step',
+      env still ignored); B = use getSettings but drop structKeys (plausible 'use the env-aware
+      getter with existing keys', struct keys still missed).
+  - id: S5_near_misses_distinct_axes
+    question: "Do the near-misses fail along distinct axes?"
+    answer: yes
+    evidence: >
+      A fails because the SOURCE (AllSettings) ignores env vars; B fails because the KEY SET
+      (dropped structKeys) misses struct-field env vars. Both leave env-backed fields zero, via
+      different incorrect logic.
+  - id: S6_base_solvable
+    question: "Is the base solvable?"
+    answer: yes
+    evidence: "27-line patch. base-fail verified (env-backed fields zero, expected 1313/Steve/etc.)."

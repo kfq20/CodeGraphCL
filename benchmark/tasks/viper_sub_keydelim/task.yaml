@@ -1,0 +1,78 @@
+schema_version: 1
+task_id: viper_sub_keydelim
+family_id: viper_sub
+
+repository:
+  url: https://github.com/spf13/viper
+  base_commit: "ae564f05cb912ebe4642ff28b81b9c4cf8302071"
+  gold_commit: "864a85aadadbaa4dce1e474714457ed37c553ce1"
+  language: go
+
+instruction:
+  path: instruction.md
+
+environment:
+  image: codegraphcl-viper:go
+  dockerfile: harbor_task/environment/Dockerfile.viper
+  workdir: /workspace/repo
+  build_timeout_sec: 900
+  extra_mounts:
+    gomod: /pool/gomod
+
+patches:
+  gold: gold.patch                   # viper.go (Sub copies subv.keyDelim = v.keyDelim)
+  verifier: verifier/verifier.patch   # viper_test.go (TestSubWithKeyDelimiter)
+
+verifier:
+  command: bash verifier/test.sh
+  timeout_sec: 300
+  hermetic: false
+  fail_to_pass:
+    - "TestSubWithKeyDelimiter"
+  pass_to_pass: []
+  pass_to_pass_not_applicable: true
+  near_miss_base: gold
+  near_miss:
+    - near_miss/nearmiss_wrong_field.py
+    - near_miss/nearmiss_reversed.py
+
+separability:
+  banned_words: banned_words.txt
+  checklist: separability.checklist.yaml
+
+mechanism_audit:
+  reusable_decision: >
+    Producer: Viper.Sub(key) builds a sub-viper that must inherit the parent's configuration
+    context. The decision: the custom key delimiter (keyDelim) is one of the parent's fields that
+    must be copied into the sub-viper so that keyed lookups on the sub-viper honor the same
+    delimiter as the parent.
+  plausible_path_correct: >
+    In Sub(), alongside the existing copied fields (automaticEnvApplied, envPrefix,
+    envKeyReplacer), add `subv.keyDelim = v.keyDelim` before returning the sub-viper.
+  plausible_path_competing: >
+    Copy a different parent field into the sub-viper, or assign in the reversed direction
+    (parent <- sub), both of which look like "propagate a delimiter-related field" but leave
+    subv.keyDelim at its empty default.
+  why_instruction_does_not_disambiguate: >
+    The instruction states the symptom (sub-viper does not honor the custom delimiter), the
+    expectation (sub-viper inherits the parent's key delimiter), and that the fix belongs in the
+    sub-viper construction path inside Sub(). It does NOT name keyDelim, the assignment, or which
+    existing copied fields sit next to it.
+  why_correct_history_selects_path: >
+    keyDelim is the field that stores the configured delimiter; copying it parent->sub is the
+    minimal change that makes the sub-viper honor the same delimiter, mirroring how the other
+    parent fields are already propagated.
+  why_wrong_history_is_plausible: >
+    "Copy a parent field into the sub" and "set the delimiter on the sub" are both reasonable
+    framings; copying the wrong field or reversing the assignment are easy mistakes.
+
+status:
+  semantic_audit: passed
+  separability_gate: passed
+  executable_gate: passed         # materialized 4/4 (base-fail, gold-pass, 2 near-miss caught)
+  verification_tier: executable_candidate
+  intervention_preflight: pending
+
+notes: >
+  viper_sub family (standalone). Motif: context-propagation (Sub() must copy parent's keyDelim).
+  1-line source patch (viper.go). Commit 864a85a.

@@ -1,0 +1,12 @@
+family_id: viper_sub
+repository: viper
+
+# Viper.Sub() context propagation. The sub-viper must inherit the parent's key delimiter so keyed
+# lookups honor the same delimiter. Direct-motif (context-propagation).
+nodes:
+  - viper_sub_keydelim
+
+structure:
+  type: standalone
+
+diagnostic_targets: []

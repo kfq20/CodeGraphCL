@@ -13,15 +13,20 @@ nodes:
 - fastify_404_unsupported_method
 - fastify_bodylimit_perparser
 - fastify_clean_schema_id
+- fastify_close_blocks_requests
 - fastify_contenttype_array
 - fastify_contenttype_emptybody
 - fastify_decorate_null
 - fastify_decorator_getter
+- fastify_delete_body_check
+- fastify_error_headers_404
 - fastify_get_shared_schemas
 - fastify_header_case_validation
+- fastify_log_after_error_handler
 - fastify_loggr_responsetime
 - fastify_onsend_hook_runner
 - fastify_per_parser_bodylimit
+- fastify_prefix_trailing_slash
 - fastify_redirect_statuscode
 - fastify_reply_hasheader
 - fastify_reply_headerssent
@@ -51,6 +56,11 @@ nodes:
 - ripgrep_look_around_panic
 - ripgrep_min_depth_option
 - ripgrep_skip_unreachable_ignore
+- viper_config_notfound_error
+- viper_default_decode_hook
+- viper_sub_keydelim
+- viper_unmarshal_automaticenv
+- viper_unmarshal_exact_merge
 edges:
 - edge_id: clap_help_newline_to_newline
   from: clap_error_help_newline

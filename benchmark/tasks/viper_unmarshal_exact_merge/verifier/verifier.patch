@@ -1,0 +1,49 @@
+From fb6eb1e8e9fbaa424b113248af35f048c5d86dea Mon Sep 17 00:00:00 2001
+From: Filip Krakowski <krakowski@hhu.de>
+Date: Wed, 6 Dec 2023 22:20:47 +0100
+Subject: [PATCH] fix: merge missing struct keys inside UnmarshalExact
+
+---
+ viper_test.go | 26 ++++++++++++++++++++++++++
+ 1 file changed, 26 insertions(+)
+
+diff --git a/viper_test.go b/viper_test.go
+index 98c379d..4dc52ac 100644
+--- a/viper_test.go
++++ b/viper_test.go
+@@ -1052,6 +1052,32 @@ func TestUnmarshalWithAutomaticEnv(t *testing.T) {
+ 
+ 		assert.Error(t, err, "expected viper.Unmarshal to return error due to unset field 'FLAG'")
+ 	})
++
++	t.Run("Exact", func(t *testing.T) {
++		var config Configuration
++
++		v.Set("port", 1234)
++		if err := v.UnmarshalExact(&config); err != nil {
++			t.Fatalf("unable to decode into struct, %v", err)
++		}
++
++		assert.Equal(
++			t,
++			Configuration{
++				Name:     "Steve",
++				Port:     1234,
++				Duration: time.Second + time.Millisecond,
++				Modes:    []int{1, 2, 3},
++				Authentication: AuthConfig{
++					Secret: "42",
++				},
++				Storage: StorageConfig{
++					Size: 4096,
++				},
++			},
++			config,
++		)
++	})
+ }
+ 
+ func TestBindPFlags(t *testing.T) {
+-- 
+2.34.1
+

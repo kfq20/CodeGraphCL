@@ -1,0 +1,78 @@
+schema_version: 1
+task_id: viper_unmarshal_automaticenv
+family_id: viper_unmarshal
+
+repository:
+  url: https://github.com/spf13/viper
+  base_commit: "6ea31ae4ca569f048d53a06e91574f1ebe4b0225"
+  gold_commit: "73dfb94c57ad48bcdf3d40b7f47d69c2962d800d"
+  language: go
+
+instruction:
+  path: instruction.md
+
+environment:
+  image: codegraphcl-viper:go
+  dockerfile: harbor_task/environment/Dockerfile.viper
+  workdir: /workspace/repo
+  build_timeout_sec: 900
+  extra_mounts:
+    gomod: /pool/gomod
+
+patches:
+  gold: gold.patch                   # viper.go (Unmarshal derives struct keys, decodes via getSettings)
+  verifier: verifier/verifier.patch   # viper_test.go (TestUnmarshalWithAutomaticEnv)
+
+verifier:
+  command: bash verifier/test.sh
+  timeout_sec: 300
+  hermetic: false
+  fail_to_pass:
+    - "TestUnmarshalWithAutomaticEnv"
+  pass_to_pass: []
+  pass_to_pass_not_applicable: true
+  near_miss_base: gold
+  near_miss:
+    - near_miss/nearmiss_allsettings_source.py
+    - near_miss/nearmiss_drop_structkeys.py
+
+separability:
+  banned_words: banned_words.txt
+  checklist: separability.checklist.yaml
+
+mechanism_audit:
+  reusable_decision: >
+    Producer: Unmarshal must surface environment-variable values for struct fields when
+    AutomaticEnv is enabled. The decision: derive the set of struct-field keys from the
+    destination struct, then decode from the settings lookup that consults the env layer
+    (getSettings) over the union of all known keys plus the struct-derived keys, rather than
+    decoding from the static all-settings map.
+  plausible_path_correct: >
+    In Unmarshal, call decodeStructKeys(rawVal, opts...) to get struct-field keys, then
+    `decode(v.getSettings(append(v.AllKeys(), structKeys...)), defaultDecoderConfig(rawVal, opts...))`.
+  plausible_path_competing: >
+    Derive the struct keys but keep decoding from AllSettings() (the env layer is never consulted),
+    OR call getSettings but drop structKeys from the lookup set (env vars shadowed by struct names
+    are still missed).
+  why_instruction_does_not_disambiguate: >
+    The instruction states the symptom (env-backed fields are zero after Unmarshal), the expectation
+    (struct-field keys derived and fed into the env-aware lookup), and that the fix belongs in
+    Unmarshal's decode-source selection. It does NOT name decodeStructKeys, getSettings, or the
+    append union.
+  why_correct_history_selects_path: >
+    getSettings is the layer that consults env vars per-key; unioning struct-derived keys with
+    AllKeys() ensures every struct field is looked up through the env-aware path.
+  why_wrong_history_is_plausible: >
+    "Add a struct-key derivation step" and "use the env-aware getter" are both reasonable partial
+    framings; each alone leaves the env var unconsulted.
+
+status:
+  semantic_audit: passed
+  separability_gate: passed
+  executable_gate: passed         # materialized 4/4 (base-fail, gold-pass, 2 near-miss caught)
+  verification_tier: executable_candidate
+  intervention_preflight: pending
+
+notes: >
+  viper_unmarshal family (standalone). Motif: env-layer-surfacing (Unmarshal must consult the env
+  layer via struct-derived keys). 27-line source patch (viper.go). Commit 73dfb94.

@@ -1,0 +1,12 @@
+# Banned MECHANISM words for viper_unmarshal_automaticenv instruction.
+# The fix: in Unmarshal, derive struct keys via decodeStructKeys, then decode from
+# v.getSettings(append(v.AllKeys(), structKeys...)). The concept "env/struct keys" is symptom-level;
+# the mechanism (the helper name, the getSettings call, the append) is banned.
+decodeStructKeys
+v.getSettings
+getSettings(append
+append(v.AllKeys()
+structKeys
+AllSettings()
+defaultDecoderConfig
+flattenAndMergeMap

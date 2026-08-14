@@ -121,7 +121,7 @@ def _resolve_pool(cname: str | None) -> str:
                 cands.append(d)
         vepfs = "/vePFS-Mindverse/user/intern/fanqi/cgcl_pools"
         if _op.isdir(vepfs):
-            for sub in ("fs", "rg", "httpx", "mat"):
+            for sub in ("fs", "rg", "httpx", "mat", "viper"):
                 d = f"{vepfs}/{sub}"
                 if _op.isdir(d) and os.access(d, os.W_OK):
                     cands.append(d)

@@ -1,0 +1,13 @@
+family_id: viper_config_notfound
+repository: viper
+
+# Config-not-found typed sentinel. ReadInConfig must return ConfigFileNotFoundError (not a raw read
+# error) when the configured config file is absent, so callers can distinguish missing-vs-malformed.
+# Direct-motif (typed-sentinel via existence check before read).
+nodes:
+  - viper_config_notfound_error
+
+structure:
+  type: standalone
+
+diagnostic_targets: []

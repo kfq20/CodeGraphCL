@@ -1,0 +1,13 @@
+# Banned MECHANISM words for viper_default_decode_hook instruction.
+# The fix: add a decodeHook field on Viper, a WithDecodeHook option that stores it (nil-guarded),
+# and convert defaultDecoderConfig to a method that uses v.decodeHook when set (else the default
+# composed hook). The concept "decode hook" is symptom-level; the mechanism is banned.
+v.decodeHook
+decodeHook = v.decodeHook
+WithDecodeHook
+func (v *Viper) defaultDecoderConfig
+defaultDecoderConfig
+optionFunc
+mapstructure.ComposeDecodeHookFunc
+StringToTimeDurationHookFunc
+stringToWeakSliceHookFunc

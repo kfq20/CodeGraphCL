@@ -1,0 +1,13 @@
+family_id: viper_decode_hook
+repository: viper
+
+# Default decode-hook option. A Viper instance can carry a default mapstructure decode hook supplied
+# via WithDecodeHook, used by all Unmarshal entry points unless overridden. Direct-motif
+# (option-wiring into the shared decoder-config builder).
+nodes:
+  - viper_default_decode_hook
+
+structure:
+  type: standalone
+
+diagnostic_targets: []

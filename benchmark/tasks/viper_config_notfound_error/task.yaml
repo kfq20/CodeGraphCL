@@ -1,0 +1,79 @@
+schema_version: 1
+task_id: viper_config_notfound_error
+family_id: viper_config_notfound
+
+repository:
+  url: https://github.com/spf13/viper
+  base_commit: "2da50fe98c7e48a260c3f87156473344cb423849"
+  gold_commit: "0afb0456be931163b9b402905160c3999b929c7f"
+  language: go
+
+instruction:
+  path: instruction.md
+
+environment:
+  image: codegraphcl-viper:go
+  dockerfile: harbor_task/environment/Dockerfile.viper
+  workdir: /workspace/repo
+  build_timeout_sec: 900
+  extra_mounts:
+    gomod: /pool/gomod
+
+patches:
+  gold: gold.patch                   # file.go (named struct literals) + viper.go (afero.Exists guard in ReadInConfig + Error() message)
+  verifier: verifier/verifier.patch   # viper_test.go (TestWrongConfigWithSetConfigFileNotFound + existing-test named-literal fixups)
+
+verifier:
+  command: bash verifier/test.sh
+  timeout_sec: 300
+  hermetic: false
+  fail_to_pass:
+    - "TestWrongConfigWithSetConfigFileNotFound"
+  pass_to_pass: []
+  pass_to_pass_not_applicable: true
+  near_miss_base: gold
+  near_miss:
+    - near_miss/nearmiss_wrong_errtype.py
+    - near_miss/nearmiss_inverted_guard.py
+
+separability:
+  banned_words: banned_words.txt
+  checklist: separability.checklist.yaml
+
+mechanism_audit:
+  reusable_decision: >
+    Producer: ReadInConfig must report a missing config file as a ConfigFileNotFoundError (the typed
+    sentinel callers use to distinguish missing-vs-malformed), not a raw read error. The decision:
+    before attempting the read, check existence on the configured filesystem and, when absent, return
+    ConfigFileNotFoundError with the file name set; only when present does the read proceed.
+  plausible_path_correct: >
+    In ReadInConfig after resolving `filename`, call afero.Exists(v.fs, filename); on error return
+    it; if !exists return `ConfigFileNotFoundError{name: filename, locations: ""}`; otherwise
+    ReadFile proceeds as before. (file.go struct literals are switched to named fields for clarity.)
+  plausible_path_competing: >
+    Return a generic fmt.Errorf on the absent branch (wrong concrete type), OR invert the guard so
+    the error fires when the file EXISTS and the absent branch falls through to the raw read error.
+  why_instruction_does_not_disambiguate: >
+    The instruction states the symptom (raw read error, not ConfigFileNotFoundError), the expectation
+    (return ConfigFileNotFoundError with the name set when absent, keep other behavior), and that
+    the fix belongs in ReadInConfig before the read is attempted. It does NOT name afero.Exists, the
+    !exists guard, or the named struct literal.
+  why_correct_history_selects_path: >
+    An existence check before the read is the minimal way to convert the absent-file case into the
+    typed sentinel; ConfigFileNotFoundError is the established sentinel type for missing config.
+  why_wrong_history_is_plausible: >
+    "Return an error when the file is missing" and "guard on existence" are reasonable framings where
+    the wrong type or inverted guard are easy mistakes.
+
+status:
+  semantic_audit: passed
+  separability_gate: passed
+  executable_gate: passed         # materialized 4/4 (base-fail, gold-pass, 2 near-miss caught)
+  verification_tier: executable_candidate
+  intervention_preflight: pending
+
+notes: >
+  viper_config_notfound family (standalone). Motif: typed-sentinel (ReadInConfig returns
+  ConfigFileNotFoundError on absent file). ~20-line source patch (file.go + viper.go). Commit 0afb045.
+  The verifier patch also fixups two pre-existing test assertions to named-field struct literals
+  (positional -> named; value-equivalent, passes on both base and gold).

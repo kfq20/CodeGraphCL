@@ -1,0 +1,59 @@
+From d2458a2abcf9c9af10f033aef75dad8b063a1789 Mon Sep 17 00:00:00 2001
+From: Mark Sagi-Kazar <mark.sagikazar@gmail.com>
+Date: Mon, 24 Jun 2024 18:20:56 +0200
+Subject: [PATCH] feat: allow setting a default decode hook
+
+Signed-off-by: Mark Sagi-Kazar <mark.sagikazar@gmail.com>
+---
+ viper_test.go | 35 +++++++++++++++++++++++++++++++++++
+ 1 file changed, 35 insertions(+)
+
+diff --git a/viper_test.go b/viper_test.go
+index a4df402..1419113 100644
+--- a/viper_test.go
++++ b/viper_test.go
+@@ -894,6 +894,41 @@ func TestUnmarshal(t *testing.T) {
+ 	)
+ }
+ 
++func TestUnmarshalWithDefaultDecodeHook(t *testing.T) {
++	opt := mapstructure.ComposeDecodeHookFunc(
++		mapstructure.StringToTimeDurationHookFunc(),
++		mapstructure.StringToSliceHookFunc(","),
++		// Custom Decode Hook Function
++		func(rf reflect.Kind, rt reflect.Kind, data any) (any, error) {
++			if rf != reflect.String || rt != reflect.Map {
++				return data, nil
++			}
++			m := map[string]string{}
++			raw := data.(string)
++			if raw == "" {
++				return m, nil
++			}
++			err := json.Unmarshal([]byte(raw), &m)
++			return m, err
++		},
++	)
++
++	v := NewWithOptions(WithDecodeHook(opt))
++	v.Set("credentials", "{\"foo\":\"bar\"}")
++
++	type config struct {
++		Credentials map[string]string
++	}
++
++	var C config
++
++	require.NoError(t, v.Unmarshal(&C), "unable to decode into struct")
++
++	assert.Equal(t, &config{
++		Credentials: map[string]string{"foo": "bar"},
++	}, &C)
++}
++
+ func TestUnmarshalWithDecoderOptions(t *testing.T) {
+ 	v := New()
+ 	v.Set("credentials", "{\"foo\":\"bar\"}")
+-- 
+2.34.1
+

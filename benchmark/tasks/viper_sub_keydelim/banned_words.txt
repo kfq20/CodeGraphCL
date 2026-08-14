@@ -1,0 +1,9 @@
+# Banned MECHANISM words for viper_sub_keydelim instruction.
+# The fix: in Sub(), add `subv.keyDelim = v.keyDelim` (copy the parent's keyDelim field into the
+# sub-viper). "keyDelim"/"KeyDelimiter" as the concept is symptom-level; the mechanism (exact field
+# name + assignment) is banned.
+subv.keyDelim
+v.keyDelim
+subv.keyDelim = v.keyDelim
+keyDelim = v
+subv.configName

@@ -1,0 +1,52 @@
+From 73dfb94c57ad48bcdf3d40b7f47d69c2962d800d Mon Sep 17 00:00:00 2001
+From: Mark Sagi-Kazar <mark.sagikazar@gmail.com>
+Date: Tue, 5 Dec 2023 15:40:27 +0100
+Subject: [PATCH] feat: make Unmarshal work with AutomaticEnv
+
+Co-authored-by: Filip Krakowski <krakowski@hhu.de>
+Signed-off-by: Mark Sagi-Kazar <mark.sagikazar@gmail.com>
+---
+ viper.go | 27 ++++++++++++++++++++++++++-
+ 1 file changed, 26 insertions(+), 1 deletion(-)
+
+diff --git a/viper.go b/viper.go
+index 5cbcc9f..53ded8a 100644
+--- a/viper.go
++++ b/viper.go
+@@ -1111,7 +1111,32 @@ func Unmarshal(rawVal any, opts ...DecoderConfigOption) error {
+ }
+ 
+ func (v *Viper) Unmarshal(rawVal any, opts ...DecoderConfigOption) error {
+-	return decode(v.AllSettings(), defaultDecoderConfig(rawVal, opts...))
++	// TODO: make this optional?
++	structKeys, err := v.decodeStructKeys(rawVal, opts...)
++	if err != nil {
++		return err
++	}
++
++	// TODO: struct keys should be enough?
++	return decode(v.getSettings(append(v.AllKeys(), structKeys...)), defaultDecoderConfig(rawVal, opts...))
++}
++
++func (v *Viper) decodeStructKeys(input any, opts ...DecoderConfigOption) ([]string, error) {
++	var structKeyMap map[string]any
++
++	err := decode(input, defaultDecoderConfig(&structKeyMap, opts...))
++	if err != nil {
++		return nil, err
++	}
++
++	flattenedStructKeyMap := v.flattenAndMergeMap(map[string]bool{}, structKeyMap, "")
++
++	r := make([]string, 0, len(flattenedStructKeyMap))
++	for v := range flattenedStructKeyMap {
++		r = append(r, v)
++	}
++
++	return r, nil
+ }
+ 
+ // defaultDecoderConfig returns default mapstructure.DecoderConfig with support
+-- 
+2.34.1
+

@@ -1,0 +1,74 @@
+From 0afb0456be931163b9b402905160c3999b929c7f Mon Sep 17 00:00:00 2001
+From: Matthew Coleman <matthew.e.coleman@gmail.com>
+Date: Sun, 15 Jun 2025 17:35:14 -0400
+Subject: [PATCH] fix: return not found error if setting config
+
+---
+ file.go  |  6 ++++--
+ viper.go | 15 +++++++++++++--
+ 2 files changed, 17 insertions(+), 4 deletions(-)
+
+diff --git a/file.go b/file.go
+index 50a4058..63c7f34 100644
+--- a/file.go
++++ b/file.go
+@@ -50,7 +50,8 @@ func (v *Viper) findConfigFileWithFinder(finder Finder) (string, error) {
+ 	}
+ 
+ 	if len(results) == 0 {
+-		return "", ConfigFileNotFoundError{v.configName, fmt.Sprintf("%s", v.configPaths)}
++		return "", ConfigFileNotFoundError{
++			name: v.configName, locations: fmt.Sprintf("%s", v.configPaths)}
+ 	}
+ 
+ 	// We call clean on the final result to ensure that the path is in its canonical form.
+@@ -69,7 +70,8 @@ func (v *Viper) findConfigFileOld() (string, error) {
+ 			return file, nil
+ 		}
+ 	}
+-	return "", ConfigFileNotFoundError{v.configName, fmt.Sprintf("%s", v.configPaths)}
++	return "", ConfigFileNotFoundError{
++		name: v.configName, locations: fmt.Sprintf("%s", v.configPaths)}
+ }
+ 
+ func (v *Viper) searchInPath(in string) (filename string) {
+diff --git a/viper.go b/viper.go
+index 34a9479..5d68802 100644
+--- a/viper.go
++++ b/viper.go
+@@ -76,7 +76,12 @@ type ConfigFileNotFoundError struct {
+ 
+ // Error returns the formatted configuration error.
+ func (fnfe ConfigFileNotFoundError) Error() string {
+-	return fmt.Sprintf("Config File %q Not Found in %q", fnfe.name, fnfe.locations)
++	message := fmt.Sprintf("Config file %q Not Found", fnfe.name)
++	if fnfe.locations != "" {
++		message += fmt.Sprintf(" in %q", fnfe.locations)
++	}
++
++	return message
+ }
+ 
+ // ConfigFileAlreadyExistsError denotes failure to write new configuration file.
+@@ -1527,11 +1532,17 @@ func (v *Viper) ReadInConfig() error {
+ 	}
+ 
+ 	v.logger.Debug("reading file", "file", filename)
++	exists, err := afero.Exists(v.fs, filename)
++	if err != nil {
++		return err
++	}
++	if !exists {
++		return ConfigFileNotFoundError{name: filename, locations: ""}
++	}
+ 	file, err := afero.ReadFile(v.fs, filename)
+ 	if err != nil {
+ 		return err
+ 	}
+-
+ 	config := make(map[string]any)
+ 
+ 	err = v.unmarshalReader(bytes.NewReader(file), config)
+-- 
+2.34.1
+
