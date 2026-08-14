@@ -1,0 +1,38 @@
+# Separability checklist for fastify_close_blocks_requests (fastify_lifecycle, Phase 4).
+schema_version: 1
+task_id: fastify_close_blocks_requests
+
+checks:
+  - id: S1_instruction_symptom_only
+    question: "Does the instruction state only the symptom, not the fix?"
+    answer: yes
+    evidence: >
+      instruction.md: "incoming requests that arrive before the server has fully closed still
+      go through the entire request lifecycle... a new request still receives a normal 200
+      response." Acceptance: reject with 503, close the connection, destroy the request.
+  - id: S2_instruction_no_mechanism_words
+    question: "Does the instruction avoid closing/preReady/routeHandler/res.writeHead(503)?"
+    answer: yes
+    evidence: "banned_words.txt forbids these; instruction says 'the server lifecycle and the request handler entry point'"
+  - id: S3_instruction_no_file_names
+    question: "Does the instruction avoid naming fastify.js?"
+    answer: yes
+    evidence: "instruction says 'the server lifecycle and the request handler entry point'"
+  - id: S4_near_misses_plausible
+    question: "Are the near-misses plausible-but-wrong?"
+    answer: yes
+    evidence: >
+      A = set the closing flag but don't check it in routeHandler (real 'I added the flag, the
+      handler checks it' incomplete fix); B = check closing but send 500 not 503 (real 'I reject
+      closing requests' wrong-status slip).
+  - id: S5_near_misses_distinct_axes
+    question: "Do the near-misses fail along distinct axes?"
+    answer: yes
+    evidence: >
+      A fails via the second request getting 200 (flag set but never consulted); B fails via
+      the second request getting 500 not 503 (consulted but wrong status). Different failure
+      mode. (pending empirical confirm.)
+  - id: S6_base_solvable
+    question: "Is the base solvable?"
+    answer: yes
+    evidence: "21-line patch across three sites. base-fail expected (second request after close() gets 200, not 503)."

@@ -1,0 +1,12 @@
+# Banned MECHANISM words for fastify_middleware_encapsulation instruction.
+# The fix: replace the shared live _middie with a per-context buildMiddie() that snapshots the
+# _middlewares array at context-creation time, copy _middlewares via .slice() in override, and
+# drop the this._middie.use() call from use(). "middleware"/"plugin"/"encapsulated" are
+# symptom-level; the snapshot/inheritance mechanism is banned.
+buildMiddie
+_middie
+_middlewares.slice
+state.context._middie
+onRunMiddlewares
+Middie(onRunMiddlewares)
+fastify.js

@@ -1,0 +1,89 @@
+From 3c920f94b1ce857da5d4356f59ae16b67a6503ce Mon Sep 17 00:00:00 2001
+From: Dustin Deus <deusdustin@gmail.com>
+Date: Mon, 11 Jun 2018 22:02:40 +0200
+Subject: [PATCH] support for error headers in 404 handler (#966)
+
+support for error headers in 404 handler
+---
+ test/404s.test.js | 51 ++++++++++++++++++++++++++++++++++++++++++++++-
+ 1 file changed, 50 insertions(+), 1 deletion(-)
+
+diff --git a/test/404s.test.js b/test/404s.test.js
+index e42a940f..989725d6 100644
+--- a/test/404s.test.js
++++ b/test/404s.test.js
+@@ -52,7 +52,7 @@ test('default 404', t => {
+ })
+ 
+ test('customized 404', t => {
+-  t.plan(4)
++  t.plan(5)
+ 
+   const test = t.test
+   const fastify = Fastify()
+@@ -65,6 +65,12 @@ test('customized 404', t => {
+     reply.send(new errors.NotFound())
+   })
+ 
++  fastify.get('/with-error-custom-header', function (req, reply) {
++    const err = new errors.NotFound()
++    err.headers = { 'x-foo': 'bar' }
++    reply.send(err)
++  })
++
+   fastify.setNotFoundHandler(function (req, reply) {
+     reply.code(404).send('this was not found')
+   })
+@@ -111,6 +117,49 @@ test('customized 404', t => {
+         t.strictEqual(body.toString(), 'this was not found')
+       })
+     })
++
++    test('error object with headers property', t => {
++      t.plan(4)
++      sget({
++        method: 'GET',
++        url: 'http://localhost:' + fastify.server.address().port + '/with-error-custom-header'
++      }, (err, response, body) => {
++        t.error(err)
++        t.strictEqual(response.statusCode, 404)
++        t.strictEqual(response.headers['x-foo'], 'bar')
++        t.strictEqual(body.toString(), 'this was not found')
++      })
++    })
++  })
++})
++
++test('custom header in notFound handler', t => {
++  t.plan(2)
++
++  const test = t.test
++  const fastify = Fastify()
++
++  fastify.setNotFoundHandler(function (req, reply) {
++    reply.code(404).header('x-foo', 'bar').send('this was not found')
++  })
++
++  t.tearDown(fastify.close.bind(fastify))
++
++  fastify.listen(0, err => {
++    t.error(err)
++
++    test('not found with custom header', t => {
++      t.plan(4)
++      sget({
++        method: 'GET',
++        url: 'http://localhost:' + fastify.server.address().port + '/notSupported'
++      }, (err, response, body) => {
++        t.error(err)
++        t.strictEqual(response.statusCode, 404)
++        t.strictEqual(response.headers['x-foo'], 'bar')
++        t.strictEqual(body.toString(), 'this was not found')
++      })
++    })
+   })
+ })
+ 
+-- 
+2.34.1
+

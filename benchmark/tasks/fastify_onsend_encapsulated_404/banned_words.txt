@@ -1,0 +1,16 @@
+# Banned MECHANISM words for fastify_onsend_encapsulated_404 instruction.
+# The fix: in the route's preReady context-finalization hook, build a COPY of the root 404 context
+# and assign the route's own onSend hook list onto the copy, then store the copy on the route
+# context (instead of storing the shared root 404 context by reference).
+# "onSend"/"404"/"not-found"/"NotFound" are symptom-level (the user's hook type and the status);
+# the copy-and-assign mechanism is banned.
+_404Context
+_fastify._404Context
+context._404Context
+Object.assign
+_404Context.onSend
+context.onSend
+preReady
+basic404
+fourOhFourFallBack
+fastify.js

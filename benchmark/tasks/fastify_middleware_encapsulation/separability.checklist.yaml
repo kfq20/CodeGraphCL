@@ -1,0 +1,40 @@
+# Separability checklist for fastify_middleware_encapsulation (fastify_middleware, Phase 4).
+schema_version: 1
+task_id: fastify_middleware_encapsulation
+
+checks:
+  - id: S1_instruction_symptom_only
+    question: "Does the instruction state only the symptom, not the fix?"
+    answer: yes
+    evidence: >
+      instruction.md: "the middleware still runs for that route on request... the middleware
+      registry is a single live object shared across all contexts — registrations after the
+      route leak into it." Acceptance: middleware must not run for routes registered before the
+      plugin; encapsulated children must inherit parent middleware.
+  - id: S2_instruction_no_mechanism_words
+    question: "Does the instruction avoid buildMiddie/_middie/_middlewares.slice/onRunMiddlewares?"
+    answer: yes
+    evidence: "banned_words.txt forbids these; instruction says 'the framework's middleware and plugin-encapsulation code'"
+  - id: S3_instruction_no_file_names
+    question: "Does the instruction avoid naming fastify.js?"
+    answer: yes
+    evidence: "instruction says 'the framework's middleware and plugin-encapsulation code'"
+  - id: S4_near_misses_plausible
+    question: "Are the near-misses plausible-but-wrong?"
+    answer: yes
+    evidence: >
+      A = re-add this._middie.use(url, fn) to use() but leave buildMiddie/snapshot in place
+      (real 'I still need to register on the instance' incomplete-removal trap); B = buildMiddie
+      returns an empty Middie without registering middleware (real 'I created the instance, the
+      middleware is in the array' wrong-wiring trap).
+  - id: S5_near_misses_distinct_axes
+    question: "Do the near-misses fail along distinct axes?"
+    answer: yes
+    evidence: >
+      A fails via TypeError crash in use() (this._middie is undefined after gold removed the
+      shared instance); B fails via wrong value (middleware never runs, midval is null not 10).
+      Both test fails, different reason. (empirically confirmed.)
+  - id: S6_base_solvable
+    question: "Is the base solvable?"
+    answer: yes
+    evidence: "33-line patch. base-fail verified (BF_RC=1, non-encapsulated test fails: second middleware t.fail fires)."

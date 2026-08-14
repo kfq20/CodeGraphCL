@@ -1,0 +1,12 @@
+# Banned MECHANISM words for fastify_log_after_error_handler instruction.
+# The fix: move the res.log.error/info block AFTER the customErrorHandler check block,
+# so the log line is emitted only after the handler has run (or when there is no handler).
+# "log"/"error"/"customErrorHandler" are symptom-level; the move mechanism is banned.
+customErrorHandler
+res.log.error
+res.log.info
+statusCode >= 500
+statusCode >= 400
+reply.context.errorHandler
+reply._customError
+reply.js

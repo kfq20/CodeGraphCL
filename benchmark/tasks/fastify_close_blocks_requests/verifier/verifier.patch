@@ -1,0 +1,108 @@
+From cbd08afdf55c029cc2e8a1d12cdd55cb298c4185 Mon Sep 17 00:00:00 2001
+From: Tomas Della Vedova <delvedor@users.noreply.github.com>
+Date: Fri, 25 May 2018 10:46:12 +0200
+Subject: [PATCH] Block new incoming requests once close has been called (#886)
+
+Currently, if a user calls `fastify.close` and the server is under a heavy load, the server will not close until there is an open TCP connection, so every new request will execute the entire request lifecycle.
+
+With this change once `fastify.close` is invoked, Fastify will automatically start to respond with a `503` error, closing every new connection as soon as possible.
+
+There are not sensible changes in the benchmarks.
+---
+ test/close-pipelining.test.js | 35 ++++++++++++++++++++++++++++++
+ test/close.test.js            | 40 +++++++++++++++++++++++++++++++++++
+ 2 files changed, 75 insertions(+)
+ create mode 100644 test/close-pipelining.test.js
+
+diff --git a/test/close-pipelining.test.js b/test/close-pipelining.test.js
+new file mode 100644
+index 00000000..ed0e722a
+--- /dev/null
++++ b/test/close-pipelining.test.js
+@@ -0,0 +1,35 @@
++'use strict'
++
++const t = require('tap')
++const test = t.test
++const Fastify = require('..')
++const autocannon = require('autocannon')
++
++test('Should return 503 while closing - pipelining', t => {
++  const fastify = Fastify()
++
++  fastify.get('/', (req, reply) => {
++    fastify.close()
++    reply.send({ hello: 'world' })
++  })
++
++  fastify.listen(0, err => {
++    t.error(err)
++
++    const instance = autocannon({
++      url: 'http://localhost:' + fastify.server.address().port,
++      pipelining: 1,
++      connections: 1,
++      amount: 10
++    })
++
++    const codes = [200, 503]
++    instance.on('response', (client, statusCode) => {
++      t.strictEqual(statusCode, codes.shift())
++    })
++
++    instance.on('done', () => t.end('Done'))
++    instance.on('reqError', () => t.deepEqual(codes.shift(), null))
++    instance.on('error', err => t.fail(err))
++  })
++})
+diff --git a/test/close.test.js b/test/close.test.js
+index a338c993..49d13e52 100644
+--- a/test/close.test.js
++++ b/test/close.test.js
+@@ -113,3 +113,43 @@ test('onClose should keep the context', t => {
+     t.error(err)
+   })
+ })
++
++test('Should return 503 while closing - injection', t => {
++  t.plan(8)
++  const fastify = Fastify()
++
++  fastify.addHook('onClose', (instance, done) => {
++    setTimeout(done, 150)
++  })
++
++  fastify.get('/', (req, reply) => {
++    reply.send({ hello: 'world' })
++  })
++
++  fastify.inject({
++    method: 'GET',
++    url: '/'
++  }, (err, res) => {
++    t.error(err)
++    t.strictEqual(res.statusCode, 200)
++    fastify.close()
++
++    setTimeout(() => {
++      fastify.inject({
++        method: 'GET',
++        url: '/'
++      }, (err, res) => {
++        t.error(err)
++        t.strictEqual(res.statusCode, 503)
++        t.strictEqual(res.headers['content-type'], 'application/json')
++        t.strictEqual(res.headers['content-length'], '80')
++        t.strictEqual(res.headers['connection'], 'close')
++        t.deepEqual(JSON.parse(res.payload), {
++          error: 'Service Unavailable',
++          message: 'Service Unavailable',
++          statusCode: 503
++        })
++      })
++    }, 100)
++  })
++})
+-- 
+2.34.1
+

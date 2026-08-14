@@ -1,0 +1,14 @@
+# Banned MECHANISM words for fastify_header_schema_case instruction.
+# The fix: before compiling the header schema, build a copy of it and re-key its `properties` map
+# with lower-cased property names, then compile the copy instead of the original.
+# "header"/"schema"/"case-insensitive"/"RFC 2616" are symptom-level (the user-visible contract);
+# the copy-and-re-key mechanism is banned.
+headersSchema
+headersSchemaLowerCase
+context.schema.headers
+toLowerCase
+hasOwnProperty
+.properties[
+compile(
+lib/validation.js
+validation.js

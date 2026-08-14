@@ -2,6 +2,7 @@ family_id: fastify_validation
 repository: fastify
 nodes:
 - fastify_header_case_validation
+- fastify_header_schema_case
 edges: []
 structure:
   type: single_node_collection

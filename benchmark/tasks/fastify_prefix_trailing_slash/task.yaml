@@ -1,0 +1,81 @@
+schema_version: 1
+task_id: fastify_prefix_trailing_slash
+family_id: fastify_routing
+
+repository:
+  url: https://github.com/fastify/fastify
+  base_commit: 14a1e9d1a8ef24da2716ea38fc65a6715da498d8^
+  gold_commit: 14a1e9d1a8ef24da2716ea38fc65a6715da498d8
+  language: javascript
+
+instruction:
+  path: instruction.md
+
+environment:
+  image: codegraphcl-fastify:node
+  dockerfile: harbor_task/environment/Dockerfile.fastify
+  workdir: /workspace/repo
+  build_timeout_sec: 900
+  extra_mounts: {}
+
+patches:
+  gold: gold.patch                 # fastify.js (strip leading '/' in buildRoutePrefix + afterRouteAdded)
+  verifier: verifier/verifier.patch # test/route-prefix.test.js (Prefix with trailing / test)
+
+verifier:
+  command: bash verifier/test.sh   # tap test/route-prefix.test.js --grep 'Prefix with trailing'
+  timeout_sec: 300
+  hermetic: false
+  fail_to_pass:
+    - "test: Prefix with trailing / (outer '/v1/route' and nested '/v1/inner/route2' match)"
+  pass_to_pass: []
+  pass_to_pass_not_applicable: true
+  near_miss_base: gold
+  near_miss:
+    - near_miss/nearmiss_pts_buildonly.py
+    - near_miss/nearmiss_pts_routeonly.py
+
+separability:
+  banned_words: banned_words.txt
+  checklist: separability.checklist.yaml
+
+mechanism_audit:
+  reusable_decision: >
+    Producer: the prefix-join contract — when a plugin's prefix ends with '/', concatenating a
+    route path (or a nested prefix) that starts with '/' yields a double slash, which the
+    router treats as a different path. The decision: strip the leading '/' from the right-hand
+    operand (the route path, or the nested plugin prefix) when the left-hand prefix ends with '/'.
+  plausible_path_correct: >
+    Fix BOTH join sites: in buildRoutePrefix, when instancePrefix ends with '/' and
+    pluginPrefix starts with '/', strip the leading '/' from pluginPrefix; in afterRouteAdded,
+    when the route path starts with '/' and the prefix ends with '/', strip the leading '/'
+    from the path. Both the outer route and the nested plugin's routes get correct URLs.
+  plausible_path_competing: >
+    Fix only one of the two join sites. The base behavior (no stripping) yields double slashes;
+    fixing one site fixes half the URLs but the other half still has double slashes. Looks
+    correct (you did strip) but misses the second join point.
+  why_instruction_does_not_disambiguate: >
+    The instruction says the symptom (double-slash URLs under a trailing-slash prefix) and the
+    expectation (strip so the join has a single slash). It does NOT name buildRoutePrefix,
+    afterRouteAdded, slice(1), or that BOTH sites need the fix — a reset agent can't tell which
+    join to fix or that there are two.
+  why_correct_history_selects_path: >
+    The prefix-join contract (the join must produce a single slash) points at the "fix both
+    sites" path: the nested plugin's prefix is joined in buildRoutePrefix, and the route path
+    is joined in afterRouteAdded. Both must strip.
+  why_wrong_history_is_plausible: >
+    The wrong prior — "only the route path needs stripping, the prefix join is fine" — is a
+    reasonable partial fix (the route path is the more visible join). Not absurd.
+
+status:
+  semantic_audit: passed
+  separability_gate: passed
+  executable_gate: passed         # 4/4 gates, 2 near-miss caught
+  verification_tier: executable_candidate
+  intervention_preflight: pending
+
+notes: >
+  fastify_routing family (1st node). Motif: path normalization — strip the leading '/' from the
+  right-hand operand at both join sites (buildRoutePrefix + afterRouteAdded) when the parent
+  prefix ends with '/'. base-fail expected (double-slash '/v1//route' doesn't match '/v1/route').
+  13-line source patch across two functions. Phase 4 task.

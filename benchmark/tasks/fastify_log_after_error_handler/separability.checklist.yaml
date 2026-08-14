@@ -1,0 +1,36 @@
+# Separability checklist for fastify_log_after_error_handler (fastify_error_lifecycle, Phase 4).
+schema_version: 1
+task_id: fastify_log_after_error_handler
+
+checks:
+  - id: S1_instruction_symptom_only
+    question: "Does the instruction state only the symptom, not the fix?"
+    answer: yes
+    evidence: >
+      instruction.md: "the framework logs the error... BEFORE the custom error handler has a
+      chance to process it." Acceptance: log after handler, reflect final status.
+  - id: S2_instruction_no_mechanism_words
+    question: "Does the instruction avoid customErrorHandler/res.log.error/statusCode>=500?"
+    answer: yes
+    evidence: "banned_words.txt forbids these; instruction says 'the reply's error-handling path'"
+  - id: S3_instruction_no_file_names
+    question: "Does the instruction avoid naming reply.js?"
+    answer: yes
+    evidence: "instruction says 'the reply's error-handling path'"
+  - id: S4_near_misses_plausible
+    question: "Are the near-misses plausible-but-wrong?"
+    answer: yes
+    evidence: >
+      A = move only the 500 block, leave the 400 block before the handler (real 'I moved the
+      important one' incomplete fix); B = move only the 400 block, leave 500 before (same
+      partial-fix trap, different status axis).
+  - id: S5_near_misses_distinct_axes
+    question: "Do the near-misses fail along distinct axes?"
+    answer: yes
+    evidence: >
+      A fails via the 400-level test (400 block still before handler); B fails via the
+      500-level test (500 block still before handler). Both wrong level, different status.
+  - id: S6_base_solvable
+    question: "Is the base solvable?"
+    answer: yes
+    evidence: "6-line move. base-fail expected (log-before-handler leaks 500 level for 400 response)."

@@ -1,0 +1,38 @@
+# Separability checklist for fastify_header_schema_case (fastify_validation, Phase 4).
+schema_version: 1
+task_id: fastify_header_schema_case
+
+checks:
+  - id: S1_instruction_symptom_only
+    question: "Does the instruction state only the symptom, not the fix?"
+    answer: yes
+    evidence: >
+      instruction.md: "a header schema is silently skipped unless spelled lower case, so a
+      declared type never coerces." Acceptance: all spellings must match; property-less schemas
+      and other schema keywords must survive.
+  - id: S2_instruction_no_mechanism_words
+    question: "Does the instruction avoid headersSchemaLowerCase/k.toLowerCase()/hasOwnProperty/compile?"
+    answer: yes
+    evidence: "banned_words.txt forbids these; instruction says 'the schema preparation path'"
+  - id: S3_instruction_no_file_names
+    question: "Does the instruction avoid naming validation.js?"
+    answer: yes
+    evidence: "instruction says 'the schema preparation path'"
+  - id: S4_near_misses_plausible
+    question: "Are the near-misses plausible-but-wrong?"
+    answer: yes
+    evidence: >
+      A = copy top-level keys but don't lowercase .properties keys (real 'I copied the schema'
+      incomplete fix); B = lowercase to wrong case (toUpperCase) - real 'I normalized the case'
+      wrong direction.
+  - id: S5_near_misses_distinct_axes
+    question: "Do the near-misses fail along distinct axes?"
+    answer: yes
+    evidence: >
+      A fails because properties keys are still case-sensitive (Y-Test doesn't match y-test);
+      B fails because properties keys are uppercased (Y-TEST doesn't match y-test). Both wrong
+      case, different normalization. Empirically confirmed (mat_hsc_1: both rc=1, caught).
+  - id: S6_base_solvable
+    question: "Is the base solvable?"
+    answer: yes
+    evidence: "16-line patch. base-fail expected (schema 'Y-Test' never matches request 'y-test')."

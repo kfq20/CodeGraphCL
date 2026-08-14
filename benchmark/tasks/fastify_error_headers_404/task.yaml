@@ -1,0 +1,83 @@
+schema_version: 1
+task_id: fastify_error_headers_404
+family_id: fastify_error_lifecycle
+
+repository:
+  url: https://github.com/fastify/fastify
+  base_commit: 3c920f94b1ce857da5d4356f59ae16b67a6503ce^
+  gold_commit: 3c920f94b1ce857da5d4356f59ae16b67a6503ce
+  language: javascript
+
+instruction:
+  path: instruction.md
+
+environment:
+  image: codegraphcl-fastify:node
+  dockerfile: harbor_task/environment/Dockerfile.fastify
+  workdir: /workspace/repo
+  build_timeout_sec: 900
+  extra_mounts: {}
+
+patches:
+  gold: gold.patch                 # lib/reply.js (move error.headers before status checks)
+  verifier: verifier/verifier.patch # test/404s.test.js (error headers in 404 handler)
+
+verifier:
+  command: bash verifier/test.sh   # tap test/404s.test.js --grep 'header'
+  timeout_sec: 300
+  hermetic: false
+  fail_to_pass:
+    - "test: error object with headers property"
+  pass_to_pass:
+    - "test: custom header in notFound handler"
+  pass_to_pass_not_applicable: false
+  near_miss_base: gold
+  near_miss:
+    - near_miss/nearmiss_eh404_nomove.py
+    - near_miss/nearmiss_eh404_wrongbranch.py
+
+separability:
+  banned_words: banned_words.txt
+  checklist: separability.checklist.yaml
+
+mechanism_audit:
+  reusable_decision: >
+    Producer: the error-headers contract — error.headers must be applied to the reply BEFORE
+    the not-found routing decision, because notFound() sends the response. If headers are set
+    after the status-code routing (which calls notFound and returns for 404 errors), the
+    not-found handler's response is already sent without the error's custom headers. The
+    decision: move the reply.headers(error.headers) call from after the log block to inside
+    the `if (error != null)` block, before the status-code checks.
+  plausible_path_correct: >
+    Move reply.headers(error.headers) to the top of the `if (error != null)` block, before
+    the error.status / error.statusCode checks. This ensures notFound() (called for 404
+    status) sends the response with the error's headers already set.
+  plausible_path_competing: >
+    Leave reply.headers(error.headers) in the original position (after the log block, before
+    customErrorHandler). For 404 errors, notFound() is called in the status-code check and
+    returns before this line runs, so the response is sent without the error's headers. Looks
+    correct (the headers ARE set for non-404 errors) but misses the 404 case.
+  why_instruction_does_not_disambiguate: >
+    The instruction says the symptom (404 response missing custom error headers) and the
+    expectation (set headers before the not-found handler sends). It does NOT name
+    notFound, the status-code check block, the move, or where "before" is — a reset agent
+    cannot tell what routing step sends the response or where to place the headers call.
+  why_correct_history_selects_path: >
+    The error-headers contract (headers must be set before the response is sent) points at
+    the early-move path: place the headers call before the routing that sends the 404.
+  why_wrong_history_is_plausible: >
+    The wrong prior — "set error headers right before the custom error handler" — is the
+    base behavior and a reasonable default (headers are set before the handler). Not absurd.
+
+status:
+  semantic_audit: passed
+  separability_gate: passed
+  executable_gate: passed         # 4/4 gates, 2 near-miss caught
+  verification_tier: executable_candidate
+  intervention_preflight: pending
+
+notes: >
+  fastify_error_lifecycle family (3rd node). Motif: ordering — error.headers must be applied
+  before the not-found routing (which sends the 404 response), not after. base-fail expected
+  (404 response sent without error's custom headers because notFound() returns before the
+  headers line). 4-line source move. Phase 4 task.

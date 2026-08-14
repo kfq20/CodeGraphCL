@@ -1,0 +1,86 @@
+schema_version: 1
+task_id: fastify_middleware_encapsulation
+family_id: fastify_middleware
+
+repository:
+  url: https://github.com/fastify/fastify
+  base_commit: ef2215711ca4e348f91b32c8c413d1779692bebd^
+  gold_commit: ef2215711ca4e348f91b32c8c413d1779692bebd
+  language: javascript
+
+instruction:
+  path: instruction.md
+
+environment:
+  image: codegraphcl-fastify:node
+  dockerfile: harbor_task/environment/Dockerfile.fastify
+  workdir: /workspace/repo
+  build_timeout_sec: 900
+  extra_mounts: {}
+
+patches:
+  gold: gold.patch                 # fastify.js (per-context buildMiddie + _middlewares.slice inheritance)
+  verifier: verifier/verifier.patch # test/middleware.test.js (non-encapsulated plugin middleware test)
+
+verifier:
+  command: bash verifier/test.sh   # tap test/middleware.test.js --grep 'non-encapsulated'
+  timeout_sec: 300
+  hermetic: false
+  fail_to_pass:
+    - "test: middlewares should support non-encapsulated plugins"
+  pass_to_pass: []
+  pass_to_pass_not_applicable: true
+  near_miss_base: gold
+  near_miss:
+    - near_miss/nearmiss_fme_readd_middie_use.py
+    - near_miss/nearmiss_fme_empty_middie.py
+
+separability:
+  banned_words: banned_words.txt
+  checklist: separability.checklist.yaml
+
+mechanism_audit:
+  reusable_decision: >
+    Producer: the middleware-scoping contract — middleware registered in a non-encapsulated
+    plugin (fastify-plugin) applies to the contexts that exist at registration time, not to
+    later-built ones, and not to routes built before the plugin. The decision: replace the
+    single shared live Middie instance with a per-context Middie built (snapshotted) from the
+    _middlewares array at context-creation time, and copy _middlewares via .slice() in the
+    encapsulation override so child instances inherit the parent's middleware.
+  plausible_path_correct: >
+    Add a buildMiddie(middlewares) factory that creates a Middie from a snapshot of the
+    _middlewares array (registering each entry), returning null when empty; call it in the
+    Context constructor instead of passing the live _middie; add a null-check in the runner
+    (call onRunMiddlewares directly when _middie is null); copy _middlewares with .slice() in
+    override; drop the this._middie.use() call from use() (only push to the array now).
+  plausible_path_competing: >
+    Keep the live shared _middie instance (base behavior). Middleware registered after a route
+    still applies to that route because _middie is a live object. Looks correct (middleware IS
+    registered) but leaks later middleware into earlier routes and loses parent middleware in
+    encapsulated instances.
+  why_instruction_does_not_disambiguate: >
+    The instruction says the symptom (middleware registered in a later non-encapsulated plugin
+    runs for a route registered before it) and the expectation (it should NOT run). It does NOT
+    name buildMiddie, _middlewares.slice(), the null-check, or the removal of _middie.use() — a
+    reset agent can't tell whether to snapshot, copy, or what the runner guard is.
+  why_correct_history_selects_path: >
+    The middleware-scoping contract (middleware applies to contexts at registration time, not
+    later) points at the snapshot path: build the Middie per-context from the array, so later
+    registrations don't leak into already-built contexts.
+  why_wrong_history_is_plausible: >
+    The wrong prior — "middleware is registered on a shared instance, so it applies everywhere"
+    — is the base behavior and a reasonable model (middleware IS global). Not absurd.
+
+status:
+  semantic_audit: passed
+  separability_gate: passed
+  executable_gate: passed         # gold=pass, base=fail, near-miss A=crash(TypeError), near-miss B=wrong-value
+  verification_tier: executable_candidate
+  intervention_preflight: pending
+
+notes: >
+  fastify_middleware family (1st node). Motif: encapsulation/snapshot — middleware is scoped
+  per-context via buildMiddie() and inherited via _middlewares.slice(), so a non-encapsulated
+  plugin's middleware does not leak into routes registered before it. base-fail VERIFIED
+  (non-encapsulated test fails on base: the second fp's middleware is called via the live
+  shared _middie). 33-line source patch. Phase 4 task.

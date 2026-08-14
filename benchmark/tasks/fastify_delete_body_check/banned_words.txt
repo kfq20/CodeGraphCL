@@ -1,0 +1,11 @@
+# Banned MECHANISM words for fastify_delete_body_check instruction.
+# The fix: invert the contentType check to also require body indicators (transfer-encoding
+# or content-length) before parsing. If no body indicator, skip parsing and call handler.
+# "Content-Type"/"DELETE"/"OPTIONS" are symptom-level; the body-indicator mechanism is banned.
+transfer-encoding
+content-length
+contentType !== undefined
+contentType === undefined
+contentTypeParser.run
+handleRequest
+handleRequest.js

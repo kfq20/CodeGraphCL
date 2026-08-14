@@ -1,0 +1,89 @@
+schema_version: 1
+task_id: fastify_onsend_encapsulated_404
+family_id: fastify_error_lifecycle
+
+repository:
+  url: https://github.com/fastify/fastify
+  base_commit: "cc2f9c9c6683a46c80ef72b1b81d6ca03dea506d^"
+  gold_commit: cc2f9c9c6683a46c80ef72b1b81d6ca03dea506d
+  language: javascript
+
+instruction:
+  path: instruction.md
+
+environment:
+  image: codegraphcl-fastify:node
+  dockerfile: harbor_task/environment/Dockerfile.fastify
+  workdir: /workspace/repo
+  build_timeout_sec: 900
+  extra_mounts: {}
+
+patches:
+  gold: gold.patch                 # fastify.js (per-route 404-context copy + 'Not Found' casing)
+  verifier: verifier/verifier.patch # test/404s.test.js (encapsulated onSend + 'Not Found' strings),
+                                    # test/internals/logger.test.js, test/internals/reply.test.js,
+                                    # test/logger.test.js ('Not found' -> 'Not Found')
+
+verifier:
+  command: bash verifier/test.sh   # tap test/404s.test.js --grep 'onSend hooks run when an encapsulated'
+  timeout_sec: 300
+  hermetic: false
+  fail_to_pass:
+    - "test: onSend hooks run when an encapsulated route invokes the notFound handler"
+  pass_to_pass: []
+  pass_to_pass_not_applicable: true
+  near_miss_base: gold
+  near_miss:
+    - near_miss/nearmiss_oe404_copyonly.py
+    - near_miss/nearmiss_oe404_wrongslot.py
+
+separability:
+  banned_words: banned_words.txt
+  checklist: separability.checklist.yaml
+
+mechanism_audit:
+  reusable_decision: >
+    Producer: the encapsulation contract — hooks registered inside a plugin apply to that plugin's
+    routes and no others. The decision: the 404 context a route delegates to must be per-route
+    (a copy carrying that route's own send-time hooks), not the single shared root 404 context
+    held by reference. Encapsulation is preserved by copying at context-finalization time, when
+    all plugins and routes are known.
+  plausible_path_correct: >
+    In the preReady hook that finalizes each route's context, build a copy of the root 404 context
+    and assign that route's own send-time hook list onto the copy, then store the copy on the route
+    context. The 404 handler still owns the response, but serialization now runs the route's hooks.
+  plausible_path_competing: >
+    Keep storing the shared root 404 context by reference (base behavior) and treat the missing
+    hooks as correct — the 404 handler is a root-level construct, so it "should" run root-level
+    hooks only. Looks principled (the not-found handler is not part of the plugin) but violates
+    the encapsulation contract for the response the plugin's own route produced.
+  why_instruction_does_not_disambiguate: >
+    The instruction states the symptom (a plugin's send-time hooks skipped for a not-found error
+    raised by that plugin's route) and the expectation (hooks in scope must run; encapsulation must
+    not leak). It does NOT name the 404 context field, the copy, the hook-slot assignment, or the
+    context-finalization hook — a reset agent cannot tell whether to copy, to mutate the shared
+    context, to re-run hooks from the reply path, or to change the not-found handler itself.
+  why_correct_history_selects_path: >
+    The encapsulation contract (plugin-scoped hooks belong to that plugin's routes) points at the
+    per-route copy: mutating the shared 404 context would leak one route's hooks onto every other
+    route, so the fix must materialize a distinct context per route.
+  why_wrong_history_is_plausible: >
+    The wrong prior — "the not-found handler is root-level, so it runs root-level hooks; a plugin's
+    hooks legitimately don't apply" — is the base behavior and a defensible reading of
+    encapsulation. Not absurd.
+
+status:
+  semantic_audit: passed
+  separability_gate: passed
+  executable_gate: passed         # mat_oe404_1: 4/4 gates, 2 near-miss caught (copyonly + wrongslot)
+  verification_tier: executable_candidate
+  intervention_preflight: pending
+
+notes: >
+  fastify_error_lifecycle family (4th node). Motif: encapsulation — the 404 context must be copied
+  per route so it carries that route's own send-time hooks, instead of sharing the root context by
+  reference. base-fail expected (the shared root 404 context has no plugin hooks, so the test's
+  t.plan(3) sees only 2 assertions). 5-line source patch (plus two 'Not found' -> 'Not Found'
+  message-casing changes, which the verifier's other test files assert). pass_to_pass is
+  not_applicable: the casing change intentionally alters assertions in three other test files, so
+  no unmodified test file in this repo is a stable p2p witness for this commit. Phase 4 task.

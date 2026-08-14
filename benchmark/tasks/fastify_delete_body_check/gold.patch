@@ -1,0 +1,39 @@
+From ef873bf04ba8fbc0ed151008b694ccc1d057a4df Mon Sep 17 00:00:00 2001
+From: Akos Kovacs <lependu@protonmail.com>
+Date: Sun, 22 Jul 2018 21:50:42 +0200
+Subject: [PATCH] Resolves issue #936 (#1027)
+
+* Resolves issue #936
+
+* Restores empty bodies custom-parser test with DELETE method
+---
+ lib/handleRequest.js | 12 +++++++++---
+ 1 file changed, 9 insertions(+), 3 deletions(-)
+
+diff --git a/lib/handleRequest.js b/lib/handleRequest.js
+index 5bc1c973..0a4a23d8 100644
+--- a/lib/handleRequest.js
++++ b/lib/handleRequest.js
+@@ -38,10 +38,16 @@ function handleRequest (req, res, params, context) {
+   }
+ 
+   if (method === 'OPTIONS' || method === 'DELETE') {
+-    if (contentType === undefined) {
+-      handler(reply)
+-    } else {
++    if (
++      contentType !== undefined &&
++      (
++        headers['transfer-encoding'] !== undefined ||
++        headers['content-length'] !== undefined
++      )
++    ) {
+       context.contentTypeParser.run(contentType, handler, request, reply)
++    } else {
++      handler(reply)
+     }
+     return
+   }
+-- 
+2.34.1
+

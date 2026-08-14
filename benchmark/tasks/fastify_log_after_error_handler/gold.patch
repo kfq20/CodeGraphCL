@@ -1,0 +1,49 @@
+From 01b09784f7bd051736e708ccf9442c6ac3ee073d Mon Sep 17 00:00:00 2001
+From: Ricardo <gomnaz@gmail.com>
+Date: Fri, 17 Aug 2018 12:24:04 +0200
+Subject: [PATCH] Log error after customErrorHandler (#1073)
+
+* Log request detail along with handled error at INFO level
+
+* Move Error logging after customErrorHandler (#1072)
+
+This way the Error is logged only if there is no customErrorHandler or if customErrorHandler has already been called
+
+* Add tests to validate error logging after being handled by custom error handler
+---
+ lib/reply.js | 12 ++++++------
+ 1 file changed, 6 insertions(+), 6 deletions(-)
+
+diff --git a/lib/reply.js b/lib/reply.js
+index a93e9917..5c8ff4b9 100644
+--- a/lib/reply.js
++++ b/lib/reply.js
+@@ -287,12 +287,6 @@ function handleError (reply, error, cb) {
+ 
+   res.statusCode = statusCode
+ 
+-  if (statusCode >= 500) {
+-    res.log.error({ req: reply.request.raw, res: res, err: error }, error && error.message)
+-  } else if (statusCode >= 400) {
+-    res.log.info({ res: res, err: error }, error && error.message)
+-  }
+-
+   var customErrorHandler = reply.context.errorHandler
+   if (customErrorHandler && reply._customError === false) {
+     reply.sent = false
+@@ -307,6 +301,12 @@ function handleError (reply, error, cb) {
+     return
+   }
+ 
++  if (statusCode >= 500) {
++    res.log.error({ req: reply.request.raw, res: res, err: error }, error && error.message)
++  } else if (statusCode >= 400) {
++    res.log.info({ req: reply.request.raw, res: res, err: error }, error && error.message)
++  }
++
+   var payload = serializeError({
+     error: statusCodes[statusCode + ''],
+     message: error ? error.message : '',
+-- 
+2.34.1
+

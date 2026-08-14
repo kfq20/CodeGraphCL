@@ -1,0 +1,42 @@
+# Separability checklist for fastify_onsend_encapsulated_404 (fastify_error_lifecycle, Phase 4).
+schema_version: 1
+task_id: fastify_onsend_encapsulated_404
+
+checks:
+  - id: S1_instruction_symptom_only
+    question: "Does the instruction state only the symptom, not the fix?"
+    answer: yes
+    evidence: >
+      instruction.md: "a plugin registers an onSend hook and a route inside that same plugin sends a
+      not-found error... the plugin's onSend hooks never run." Acceptance: hooks in scope must run;
+      hooks must stay encapsulated. No copy/assign mechanism stated.
+  - id: S2_instruction_no_mechanism_words
+    question: "Does the instruction avoid _404Context/Object.assign/context.onSend/preReady?"
+    answer: yes
+    evidence: >
+      banned_words.txt forbids these; the instruction says only "where a route's request context is
+      finalized once all plugins and routes have loaded".
+  - id: S3_instruction_no_file_names
+    question: "Does the instruction avoid naming fastify.js (and basic404/fourOhFourFallBack)?"
+    answer: yes
+    evidence: "banned_words.txt forbids fastify.js/basic404/fourOhFourFallBack; instruction names no file"
+  - id: S4_near_misses_plausible
+    question: "Are the near-misses plausible-but-wrong?"
+    answer: yes
+    evidence: >
+      A = copy the 404 context but never assign the route's hooks (real "the bug is the shared
+      reference; copying fixes it" reasoning); B = copy and assign, but onto the onResponse slot
+      instead of onSend (real "hooks should run when the response is produced" slot confusion).
+  - id: S5_near_misses_distinct_axes
+    question: "Do the near-misses fail along distinct axes?"
+    answer: yes
+    evidence: >
+      A fails via missing assignment (copy carries the root's null onSend); B fails via wrong
+      destination slot (the 404 send path reads onSend, not onResponse). Both leave the hook
+      un-run, for different reasons. Empirically confirmed (mat_oe404_1: both rc=1, caught).
+  - id: S6_base_solvable
+    question: "Is the base solvable?"
+    answer: yes
+    evidence: >
+      5-line source patch in the route context-finalization hook, plus two message-casing changes.
+      base-fail expected (shared root 404 context carries no plugin hooks).

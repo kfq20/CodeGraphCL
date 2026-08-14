@@ -1,0 +1,80 @@
+schema_version: 1
+task_id: fastify_log_after_error_handler
+family_id: fastify_error_lifecycle
+
+repository:
+  url: https://github.com/fastify/fastify
+  base_commit: 01b09784f7bd051736e708ccf9442c6ac3ee073d^
+  gold_commit: 01b09784f7bd051736e708ccf9442c6ac3ee073d
+  language: javascript
+
+instruction:
+  path: instruction.md
+
+environment:
+  image: codegraphcl-fastify:node
+  dockerfile: harbor_task/environment/Dockerfile.fastify
+  workdir: /workspace/repo
+  build_timeout_sec: 900
+  extra_mounts: {}
+
+patches:
+  gold: gold.patch                 # lib/reply.js (move log block after customErrorHandler)
+  verifier: verifier/verifier.patch # test/logger.test.js (error logging after handler)
+
+verifier:
+  command: bash verifier/test.sh
+  timeout_sec: 300
+  hermetic: false
+  fail_to_pass:
+    - "test: should log the error if custom error handler does not handle it"
+    - "test: should log the error after custom error handler handled it"
+  pass_to_pass: []
+  pass_to_pass_not_applicable: true
+  near_miss_base: gold
+  near_miss:
+    - near_miss/nearmiss_laeh_move500only.py
+    - near_miss/nearmiss_laeh_move400only.py
+
+separability:
+  banned_words: banned_words.txt
+  checklist: separability.checklist.yaml
+
+mechanism_audit:
+  reusable_decision: >
+    Producer: the custom-error-handler contract — when a custom error handler is registered,
+    it owns the error's resolution; logging should reflect the handler's outcome, not the
+    pre-handler state. The decision: emit the error log AFTER the customErrorHandler block
+    (not before it), so the log captures the final status, not the original.
+  plausible_path_correct: >
+    Move the statusCode >= 500 / >= 400 log block to AFTER the customErrorHandler check+return
+    block. The handler gets first dibs on the error; if it sends a response, the log block
+    doesn't run (return); if not, the log reflects the original error.
+  plausible_path_competing: >
+    Leave the log block BEFORE the handler (base behavior). The error is logged as soon as
+    handleError receives it. Looks correct (the error IS logged) but leaks the wrong status
+    level when the handler transforms the error.
+  why_instruction_does_not_disambiguate: >
+    The instruction says the symptom (error logged before handler, wrong level) and the
+    expectation (log after handler, reflect final status). It does NOT name customErrorHandler,
+    the log block, or the move — a reset agent can't tell where to put the log or what
+    condition gates it.
+  why_correct_history_selects_path: >
+    The custom-error-handler contract (the handler owns the error resolution) points at the
+    "log after" path: emit the log only after the handler has had a chance to transform.
+  why_wrong_history_is_plausible: >
+    The wrong prior — "log the error immediately on receipt" — is the base behavior and a
+    reasonable default (fail-fast logging). Not absurd.
+
+status:
+  semantic_audit: passed
+  separability_gate: passed
+  executable_gate: passed         # 4/4 gates, 2 near-miss caught
+  verification_tier: executable_candidate
+  intervention_preflight: pending
+
+notes: >
+  fastify_error_lifecycle family (2nd node). Motif: ordering — the error log must be emitted
+  after the custom error handler, not before, so the log reflects the handler's resolution.
+  base-fail expected (log-before-handler leaks 500 level for a 400 response). 6-line source
+  move. Phase 4 task.

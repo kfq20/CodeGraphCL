@@ -1,0 +1,13 @@
+# Banned MECHANISM words for fastify_prefix_trailing_slash instruction.
+# The fix: in buildRoutePrefix, when instancePrefix ends with '/' and pluginPrefix starts
+# with '/', strip the leading '/' from pluginPrefix; in afterRouteAdded, when the route path
+# starts with '/' and the prefix ends with '/', strip the leading '/' from the path.
+# "prefix"/"trailing slash"/"double slash" are symptom-level; the stripping mechanism is banned.
+endsWith('/')
+pluginPrefix.slice(1)
+path.slice(1)
+instancePrefix.endsWith
+prefix.endsWith
+buildRoutePrefix
+afterRouteAdded
+fastify.js

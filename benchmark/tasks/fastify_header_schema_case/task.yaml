@@ -1,0 +1,89 @@
+schema_version: 1
+task_id: fastify_header_schema_case
+family_id: fastify_validation
+
+repository:
+  url: https://github.com/fastify/fastify
+  base_commit: 746e307cc4b6fa7cbccc0a590d93844afd7bf548^
+  gold_commit: 746e307cc4b6fa7cbccc0a590d93844afd7bf548
+  language: javascript
+
+instruction:
+  path: instruction.md
+
+environment:
+  image: codegraphcl-fastify:node
+  dockerfile: harbor_task/environment/Dockerfile.fastify
+  workdir: /workspace/repo
+  build_timeout_sec: 900
+  extra_mounts: {}
+
+patches:
+  gold: gold.patch                 # lib/validation.js (copy header schema + lower-case property keys)
+  verifier: verifier/verifier.patch # test/get.test.js ('Y-Test' schema property + mixed-case request header)
+
+verifier:
+  command: bash verifier/test.sh   # tap test/get.test.js --grep 'headers'
+  timeout_sec: 300
+  hermetic: false
+  fail_to_pass:
+    - "test: shorthand - request get headers schema"
+  pass_to_pass: []
+  pass_to_pass_not_applicable: true
+  near_miss_base: gold
+  near_miss:
+    - near_miss/nearmiss_hsc_copyonly.py
+    - near_miss/nearmiss_hsc_uppercase.py
+
+separability:
+  banned_words: banned_words.txt
+  checklist: separability.checklist.yaml
+
+mechanism_audit:
+  reusable_decision: >
+    Producer: the HTTP case-insensitivity contract for header names (RFC 2616 §4.2) meeting a
+    case-SENSITIVE JSON-Schema property lookup. The decision: normalize at schema-preparation time —
+    re-key the header schema's property map to the case the runtime actually delivers (lower) before
+    compiling — rather than normalizing at request time or asking users to spell headers lower-case.
+    Normalizing on a copy keeps the user's schema object unmutated.
+  plausible_path_correct: >
+    Where a route's schemas are prepared for validation, copy the header schema's own keys onto a
+    fresh object, then re-key its properties map with lower-cased names, and compile the copy. The
+    properties branch is guarded so schemas without properties are untouched.
+  plausible_path_competing: >
+    Normalize the other direction — lower-case (or otherwise rewrite) the incoming request's header
+    keys to match whatever the schema declares, or leave it to the user to spell schema keys in
+    lower case. Looks correct (the request is the thing that "arrived in the wrong case") but the
+    runtime's lower-cased header keys are the canonical form; rewriting requests to fit the schema
+    inverts the contract and cannot resolve two schemas declaring the same header in different cases.
+  why_instruction_does_not_disambiguate: >
+    The instruction states the symptom (a header schema is silently skipped unless spelled lower
+    case, so a declared type never coerces) and the expectation (all spellings must match, and
+    property-less schemas plus other schema keywords must survive). It does NOT name the schema
+    copy, the properties re-key, the lower-casing, or which side of the comparison to normalize —
+    a reset agent cannot tell whether to touch the schema, the request, or the compiler.
+  why_correct_history_selects_path: >
+    The case-insensitivity contract, combined with the fact that the runtime hands over already
+    lower-cased header names, selects lower-casing the SCHEMA's property keys: the request side is
+    already canonical, so the schema is the side that must be normalized to it.
+  why_wrong_history_is_plausible: >
+    The wrong prior — "the schema is the user's declaration of truth; normalize the incoming request
+    to match it" — is a common validation-layer instinct and is not absurd; it merely picks the
+    wrong side of an asymmetry that only the HTTP contract resolves.
+
+status:
+  semantic_audit: passed
+  separability_gate: passed
+  executable_gate: passed         # mat_hsc_1: 4/4 gates, 2 near-miss caught (copyonly + uppercase)
+  verification_tier: executable_candidate
+  intervention_preflight: pending
+
+notes: >
+  fastify_validation family (2nd node; sibling of fastify_header_case_validation, which later
+  lower-cases the REQUIRED array on top of this same block). Motif: normalization — the header
+  schema's property keys must be re-keyed to the runtime's lower-cased header names before
+  compiling. base-fail expected (schema 'Y-Test' never matches request 'y-test', so ajv's
+  coerceTypes leaves the value as the string '3' and strictEqual(body['y-test'], 3) fails).
+  16-line source patch. pass_to_pass is not_applicable: the verifier patch rewrites the existing
+  header-schema assertions in the same test file, so there is no unmodified stable witness test
+  for this commit. Phase 4 task.

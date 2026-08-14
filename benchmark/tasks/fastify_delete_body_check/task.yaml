@@ -1,0 +1,80 @@
+schema_version: 1
+task_id: fastify_delete_body_check
+family_id: fastify_contenttype
+
+repository:
+  url: https://github.com/fastify/fastify
+  base_commit: ef873bf04ba8fbc0ed151008b694ccc1d057a4df^
+  gold_commit: ef873bf04ba8fbc0ed151008b694ccc1d057a4df
+  language: javascript
+
+instruction:
+  path: instruction.md
+
+environment:
+  image: codegraphcl-fastify:node
+  dockerfile: harbor_task/environment/Dockerfile.fastify
+  workdir: /workspace/repo
+  build_timeout_sec: 900
+  extra_mounts: {}
+
+patches:
+  gold: gold.patch                 # lib/handleRequest.js (body-indicator check for DELETE/OPTIONS)
+  verifier: verifier/verifier.patch # test/delete.test.js + test/custom-parser.test.js + test/helper.js + test/internals/handleRequest.test.js
+
+verifier:
+  command: bash verifier/test.sh   # tap test/delete.test.js --grep 'shorthand - delete ...'
+  timeout_sec: 300
+  hermetic: false
+  fail_to_pass:
+    - "test: shorthand - delete with application/json Content-Type header and without body"
+  pass_to_pass: []
+  pass_to_pass_not_applicable: true
+  near_miss_base: gold
+  near_miss:
+    - near_miss/nearmiss_dbc_negatebody.py
+    - near_miss/nearmiss_dbc_revertcheck.py
+
+separability:
+  banned_words: banned_words.txt
+  checklist: separability.checklist.yaml
+
+mechanism_audit:
+  reusable_decision: >
+    Producer: the body-parsing contract — for DELETE and OPTIONS requests, body parsing should
+    only run when a body is actually present (indicated by transfer-encoding or content-length
+    headers), not merely when a Content-Type header is set. The decision: check for body
+    indicators (transfer-encoding OR content-length) alongside contentType before invoking the
+    parser; if no body indicator, skip parsing and call the handler directly.
+  plausible_path_correct: >
+    Invert the condition: instead of "if contentType === undefined, handler; else, parser",
+    use "if contentType !== undefined and (transfer-encoding or content-length), parser;
+    else, handler". This skips parsing when Content-Type is set but no body is present.
+  plausible_path_competing: >
+    Keep the original check (contentType === undefined, handler; else, parser). A DELETE with
+    Content-Type: application/json but no body triggers the parser, which fails. Looks correct
+    (Content-Type IS set, so parse) but ignores the body-presence contract.
+  why_instruction_does_not_disambiguate: >
+    The instruction says the symptom (DELETE with Content-Type but no body fails) and the
+    expectation (skip parsing, call handler). It does NOT name transfer-encoding, content-length,
+    the condition inversion, or handleRequest — a reset agent cannot tell what indicators to
+    check or how to restructure the condition.
+  why_correct_history_selects_path: >
+    The body-parsing contract (parse only when a body is present) points at the body-indicator
+    path: check transfer-encoding/content-length before parsing.
+  why_wrong_history_is_plausible: >
+    The wrong prior — "if Content-Type is set, parse the body" — is the base behavior and a
+    reasonable default (Content-Type indicates the body format). Not absurd.
+
+status:
+  semantic_audit: passed
+  separability_gate: passed
+  executable_gate: passed         # 4/4 gates, 2 near-miss caught
+  verification_tier: executable_candidate
+  intervention_preflight: pending
+
+notes: >
+  fastify_contenttype family (1st node). Motif: body-presence gating — DELETE/OPTIONS body
+  parsing should be gated on body indicators (transfer-encoding/content-length), not just
+  Content-Type. base-fail expected (DELETE with Content-Type but no body triggers parser,
+  415/parse error). 9-line source change. Phase 4 task.

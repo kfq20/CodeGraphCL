@@ -1,0 +1,82 @@
+schema_version: 1
+task_id: fastify_close_blocks_requests
+family_id: fastify_lifecycle
+
+repository:
+  url: https://github.com/fastify/fastify
+  base_commit: cbd08afdf55c029cc2e8a1d12cdd55cb298c4185^
+  gold_commit: cbd08afdf55c029cc2e8a1d12cdd55cb298c4185
+  language: javascript
+
+instruction:
+  path: instruction.md
+
+environment:
+  image: codegraphcl-fastify:node
+  dockerfile: harbor_task/environment/Dockerfile.fastify
+  workdir: /workspace/repo
+  build_timeout_sec: 900
+  extra_mounts: {}
+
+patches:
+  gold: gold.patch                 # fastify.js (closing flag + preReady onClose + 503 in routeHandler)
+  verifier: verifier/verifier.patch # test/close.test.js + test/close-pipelining.test.js
+
+verifier:
+  command: bash verifier/test.sh   # tap test/close.test.js --grep 'Should return 503 while closing - injection'
+  timeout_sec: 300
+  hermetic: false
+  fail_to_pass:
+    - "test: Should return 503 while closing - injection (second request after close() gets 503)"
+  pass_to_pass: []
+  pass_to_pass_not_applicable: true
+  near_miss_base: gold
+  near_miss:
+    - near_miss/nearmiss_cbr_nocheck.py
+    - near_miss/nearmiss_cbr_wrongstatus.py
+
+separability:
+  banned_words: banned_words.txt
+  checklist: separability.checklist.yaml
+
+mechanism_audit:
+  reusable_decision: >
+    Producer: the graceful-shutdown contract — once close() is called, the server should stop
+    accepting new work immediately, not wait for the full request lifecycle. The decision: set
+    a `closing` flag when close() fires, and check it at the top of the request handler to
+    short-circuit new requests with a 503.
+  plausible_path_correct: >
+    Add a `closing` flag, wrap the onClose registration in app.once('preReady', ...) so the
+    flag is set when close() fires, and check `if (closing === true)` at the top of
+    routeHandler to respond with 503 + Connection: close and destroy the request. The onClose
+    registration must be deferred to preReady because it depends on the server being created.
+  plausible_path_competing: >
+    Set the closing flag but don't check it in routeHandler (or check it but send the wrong
+    status). Looks correct (the flag IS set) but the handler never consults it, so requests
+    still go through — or they get rejected with the wrong status.
+  why_instruction_does_not_disambiguate: >
+    The instruction says the symptom (requests go through after close) and the expectation
+    (reject with 503). It does NOT name the `closing` flag, preReady, the routeHandler check,
+    or the 503 status — a reset agent can't tell where to set the flag, where to check it, or
+    what status to send.
+  why_correct_history_selects_path: >
+    The graceful-shutdown contract (stop new work immediately) points at the "flag + check at
+    handler entry" path: set the flag in the close hook, check it before any route work.
+  why_wrong_history_is_plausible: >
+    The wrong prior — "just set a flag, the handler will figure it out" — is a reasonable
+    half-implementation (the flag is the obvious part; the check is the easy-to-miss part).
+    Not absurd.
+
+status:
+  semantic_audit: passed
+  separability_gate: passed
+  executable_gate: passed         # 4/4 gates, 2 near-miss caught
+  verification_tier: executable_candidate
+  intervention_preflight: pending
+
+notes: >
+  fastify_lifecycle family (1st node). Motif: graceful shutdown — set a `closing` flag in the
+  onClose hook (wrapped in preReady), check it at the top of routeHandler to short-circuit new
+  requests with 503 and destroy the connection. base-fail expected (second request after close()
+  gets 200, not 503). 21-line source patch across three sites (flag decl + preReady onClose +
+  routeHandler check). Phase 4 task.

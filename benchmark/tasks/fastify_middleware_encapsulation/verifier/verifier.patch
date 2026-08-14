@@ -1,0 +1,71 @@
+From ef2215711ca4e348f91b32c8c413d1779692bebd Mon Sep 17 00:00:00 2001
+From: Nathan Woltman <nwoltman@outlook.com>
+Date: Tue, 23 Jan 2018 11:20:31 -0500
+Subject: [PATCH] Add middleware to routes the same as hooks (#698)
+
+This makes adding middleware to routes consistent with how hooks are added to routes.
+---
+ test/middleware.test.js | 40 ++++++++++++++++++++++++++++++++++++++++
+ 1 file changed, 40 insertions(+)
+
+diff --git a/test/middleware.test.js b/test/middleware.test.js
+index 43af556c..1e096f86 100644
+--- a/test/middleware.test.js
++++ b/test/middleware.test.js
+@@ -4,6 +4,7 @@ const t = require('tap')
+ const test = t.test
+ const sget = require('simple-get').concat
+ const fastify = require('..')
++const fp = require('fastify-plugin')
+ const cors = require('cors')
+ const helmet = require('helmet')
+ const serveStatic = require('serve-static')
+@@ -513,6 +514,45 @@ test('middlewares should support encapsulation with prefix', t => {
+   })
+ })
+ 
++test('middlewares should support non-encapsulated plugins', t => {
++  t.plan(5)
++
++  const instance = fastify()
++
++  instance.register(fp(function (i, opts, done) {
++    i.use(function (req, res, next) {
++      t.ok('middleware called')
++      req.midval = 10
++      next()
++    })
++
++    done()
++  }))
++
++  instance.get('/', function (request, reply) {
++    t.strictEqual(request.raw.midval, 10)
++    reply.send({ hello: 'world' })
++  })
++
++  instance.register(fp(function (i, opts, done) {
++    i.use(function (req, res, next) {
++      t.fail('middleware should not be called')
++      next()
++    })
++
++    done()
++  }))
++
++  instance.inject({
++    method: 'GET',
++    url: '/'
++  }, (err, res) => {
++    t.error(err)
++    t.strictEqual(res.statusCode, 200)
++    t.deepEqual(JSON.parse(res.payload), { hello: 'world' })
++  })
++})
++
+ test('use serve-static', t => {
+   t.plan(2)
+ 
+-- 
+2.34.1
+

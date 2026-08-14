@@ -1,0 +1,38 @@
+# Separability checklist for fastify_prefix_trailing_slash (fastify_routing, Phase 4).
+schema_version: 1
+task_id: fastify_prefix_trailing_slash
+
+checks:
+  - id: S1_instruction_symptom_only
+    question: "Does the instruction state only the symptom, not the fix?"
+    answer: yes
+    evidence: >
+      instruction.md: "the combined URL becomes '/v1//route' — a double slash... Incoming
+      requests to the intended '/v1/route' don't match." Acceptance: strip the leading '/'
+      at the join point; same for nested prefixes.
+  - id: S2_instruction_no_mechanism_words
+    question: "Does the instruction avoid endsWith/slice(1)/buildRoutePrefix/afterRouteAdded?"
+    answer: yes
+    evidence: "banned_words.txt forbids these; instruction says 'the route-prefix construction and the route path construction'"
+  - id: S3_instruction_no_file_names
+    question: "Does the instruction avoid naming fastify.js?"
+    answer: yes
+    evidence: "instruction says 'the route-prefix construction and the route path construction'"
+  - id: S4_near_misses_plausible
+    question: "Are the near-misses plausible-but-wrong?"
+    answer: yes
+    evidence: >
+      A = fix only buildRoutePrefix (real 'I fixed the prefix join' incomplete fix); B = fix
+      only afterRouteAdded (real 'I fixed the route path join' incomplete fix). Both are
+      partial fixes a developer might ship.
+  - id: S5_near_misses_distinct_axes
+    question: "Do the near-misses fail along distinct axes?"
+    answer: yes
+    evidence: >
+      A fails on the outer route ('/v1//route' — route path join unfixed); B fails on the
+      nested route ('/v1//inner/route2' — prefix join unfixed). Different paths, different
+      join site. (pending empirical confirm.)
+  - id: S6_base_solvable
+    question: "Is the base solvable?"
+    answer: yes
+    evidence: "13-line patch across two functions. base-fail expected (double-slash URLs don't match incoming requests)."

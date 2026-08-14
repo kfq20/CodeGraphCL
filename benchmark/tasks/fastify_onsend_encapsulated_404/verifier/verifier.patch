@@ -1,0 +1,119 @@
+From cc2f9c9c6683a46c80ef72b1b81d6ca03dea506d Mon Sep 17 00:00:00 2001
+From: Nathan Woltman <nwoltman@outlook.com>
+Date: Tue, 3 Apr 2018 03:33:04 -0400
+Subject: [PATCH] Run onSend hooks when an encapsulated handler invokes the
+ notFound handler (#870)
+
+* Run onSend hooks when an encapsulated handler invokes the notFound handler
+
+* Build the right 404 context during boot
+
+* Use capital 'F' in 'Not Found'
+---
+ test/404s.test.js             | 30 +++++++++++++++++++++++++++---
+ test/internals/logger.test.js |  2 +-
+ test/internals/reply.test.js  |  2 +-
+ test/logger.test.js           |  2 +-
+ 4 files changed, 30 insertions(+), 6 deletions(-)
+
+diff --git a/test/404s.test.js b/test/404s.test.js
+index 1929179e..40c69ea3 100644
+--- a/test/404s.test.js
++++ b/test/404s.test.js
+@@ -919,7 +919,7 @@ test('log debug for 404', t => {
+ 
+       const INFO_LEVEL = 30
+       t.strictEqual(JSON.parse(logStream.logs[0]).msg, 'incoming request')
+-      t.strictEqual(JSON.parse(logStream.logs[1]).msg, 'Not found')
++      t.strictEqual(JSON.parse(logStream.logs[1]).msg, 'Not Found')
+       t.strictEqual(JSON.parse(logStream.logs[1]).level, INFO_LEVEL)
+       t.strictEqual(JSON.parse(logStream.logs[2]).msg, 'request completed')
+       t.strictEqual(logStream.logs.length, 3)
+@@ -953,7 +953,7 @@ test('recognizes errors from the http-errors module', t => {
+         const obj = JSON.parse(body.toString())
+         t.strictDeepEqual(obj, {
+           error: 'Not Found',
+-          message: 'Not found',
++          message: 'Not Found',
+           statusCode: 404
+         })
+       })
+@@ -979,7 +979,7 @@ test('the default 404 handler can be invoked inside a prefixed plugin', t => {
+     t.strictEqual(res.statusCode, 404)
+     t.strictDeepEqual(JSON.parse(res.payload), {
+       error: 'Not Found',
+-      message: 'Not found',
++      message: 'Not Found',
+       statusCode: 404
+     })
+   })
+@@ -1163,3 +1163,27 @@ test('Not found on unsupported method (should return a 404)', t => {
+     })
+   })
+ })
++
++// https://github.com/fastify/fastify/issues/868
++test('onSend hooks run when an encapsulated route invokes the notFound handler', t => {
++  t.plan(3)
++  const fastify = Fastify()
++
++  fastify.register((instance, options, done) => {
++    instance.addHook('onSend', (request, reply, payload, next) => {
++      t.pass('onSend hook called')
++      next()
++    })
++
++    instance.get('/', (request, reply) => {
++      reply.send(new errors.NotFound())
++    })
++
++    done()
++  })
++
++  fastify.inject('/', (err, res) => {
++    t.error(err)
++    t.strictEqual(res.statusCode, 404)
++  })
++})
+diff --git a/test/internals/logger.test.js b/test/internals/logger.test.js
+index 8de57057..8f7b22d4 100644
+--- a/test/internals/logger.test.js
++++ b/test/internals/logger.test.js
+@@ -91,7 +91,7 @@ test('The logger should add a timestamp if logging to stdout', t => {
+   stream.once('data', (line) => {
+     t.equal(line.msg, 'incoming request')
+     stream.once('data', (line) => {
+-      t.equal(line.msg, 'Not found')
++      t.equal(line.msg, 'Not Found')
+       stream.once('data', (line) => {
+         t.equal(line.msg, 'request completed')
+         t.ok(line.responseTime, 'responseTime exists')
+diff --git a/test/internals/reply.test.js b/test/internals/reply.test.js
+index 06490a86..cd692e2c 100644
+--- a/test/internals/reply.test.js
++++ b/test/internals/reply.test.js
+@@ -491,7 +491,7 @@ test('reply.send(new NotFound()) should invoke the 404 handler', t => {
+       t.deepEqual(JSON.parse(body.toString()), {
+         statusCode: 404,
+         error: 'Not Found',
+-        message: 'Not found'
++        message: 'Not Found'
+       })
+     })
+ 
+diff --git a/test/logger.test.js b/test/logger.test.js
+index b456c81b..e69a28e1 100644
+--- a/test/logger.test.js
++++ b/test/logger.test.js
+@@ -640,7 +640,7 @@ test('Should set a custom log level for a specific route', t => {
+ test('The default 404 handler logs the incoming request', t => {
+   t.plan(5)
+ 
+-  const expectedMessages = ['incoming request', 'Not found', 'request completed']
++  const expectedMessages = ['incoming request', 'Not Found', 'request completed']
+ 
+   const splitStream = split(JSON.parse)
+   splitStream.on('data', (line) => {
+-- 
+2.34.1
+

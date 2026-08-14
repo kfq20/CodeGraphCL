@@ -1,0 +1,51 @@
+From cc2f9c9c6683a46c80ef72b1b81d6ca03dea506d Mon Sep 17 00:00:00 2001
+From: Nathan Woltman <nwoltman@outlook.com>
+Date: Tue, 3 Apr 2018 03:33:04 -0400
+Subject: [PATCH] Run onSend hooks when an encapsulated handler invokes the
+ notFound handler (#870)
+
+* Run onSend hooks when an encapsulated handler invokes the notFound handler
+
+* Build the right 404 context during boot
+
+* Use capital 'F' in 'Not Found'
+---
+ fastify.js | 8 +++++---
+ 1 file changed, 5 insertions(+), 3 deletions(-)
+
+diff --git a/fastify.js b/fastify.js
+index 485bbbc3..873ca823 100644
+--- a/fastify.js
++++ b/fastify.js
+@@ -551,7 +551,9 @@ function build (options) {
+ 
+         // Must store the 404 Context in 'preReady' because it is only guaranteed to
+         // be available after all of the plugins and routes have been loaded.
+-        context._404Context = _fastify._404Context
++        const _404Context = Object.assign({}, _fastify._404Context)
++        _404Context.onSend = context.onSend
++        context._404Context = _404Context
+       })
+ 
+       done(notHandledErr)
+@@ -686,7 +688,7 @@ function build (options) {
+   }
+ 
+   function basic404 (req, reply) {
+-    reply.code(404).send(new Error('Not found'))
++    reply.code(404).send(new Error('Not Found'))
+   }
+ 
+   function fourOhFourFallBack (req, res) {
+@@ -708,7 +710,7 @@ function build (options) {
+     req.log.warn(fourOhFour.prettyPrint())
+     const request = new Request(null, req, null, req.headers, req.log)
+     const reply = new Reply(res, { onSend: [] }, request)
+-    reply.code(404).send(new Error('Not found'))
++    reply.code(404).send(new Error('Not Found'))
+   }
+ 
+   function setNotFoundHandler (opts, handler) {
+-- 
+2.34.1
+

@@ -1,0 +1,69 @@
+From cbd08afdf55c029cc2e8a1d12cdd55cb298c4185 Mon Sep 17 00:00:00 2001
+From: Tomas Della Vedova <delvedor@users.noreply.github.com>
+Date: Fri, 25 May 2018 10:46:12 +0200
+Subject: [PATCH] Block new incoming requests once close has been called (#886)
+
+Currently, if a user calls `fastify.close` and the server is under a heavy load, the server will not close until there is an open TCP connection, so every new request will execute the entire request lifecycle.
+
+With this change once `fastify.close` is invoked, Fastify will automatically start to respond with a `503` error, closing every new connection as soon as possible.
+
+There are not sensible changes in the benchmarks.
+---
+ fastify.js | 27 +++++++++++++++++++++------
+ 1 file changed, 21 insertions(+), 6 deletions(-)
+
+diff --git a/fastify.js b/fastify.js
+index 6f1bbabb..000ad401 100644
+--- a/fastify.js
++++ b/fastify.js
+@@ -85,6 +85,7 @@ function build (options) {
+   app.override = override
+ 
+   var listening = false
++  var closing = false
+   // true when Fastify is ready to go
+   var started = false
+   app.on('start', () => {
+@@ -111,12 +112,15 @@ function build (options) {
+     server = http.createServer(httpHandler)
+   }
+ 
+-  fastify.onClose((instance, done) => {
+-    if (listening) {
+-      instance.server.close(done)
+-    } else {
+-      done(null)
+-    }
++  app.once('preReady', () => {
++    fastify.onClose((instance, done) => {
++      closing = true
++      if (listening) {
++        instance.server.close(done)
++      } else {
++        done(null)
++      }
++    })
+   })
+ 
+   if (Number(process.version.match(/v(\d+)/)[1]) >= 6) {
+@@ -204,6 +208,17 @@ function build (options) {
+   return fastify
+ 
+   function routeHandler (req, res, params, context) {
++    if (closing === true) {
++      res.writeHead(503, {
++        'Content-Type': 'application/json',
++        'Content-Length': '80',
++        'Connection': 'close'
++      })
++      res.end('{"error":"Service Unavailable","message":"Service Unavailable","statusCode":503}')
++      setImmediate(() => req.destroy())
++      return
++    }
++
+     req.id = genReqId(req)
+     req.log = res.log = log.child({ reqId: req.id, level: context.logLevel })
+     req.originalUrl = req.url
+-- 
+2.34.1
+

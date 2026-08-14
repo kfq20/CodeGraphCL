@@ -1,0 +1,11 @@
+# Banned MECHANISM words for fastify_error_headers_404 instruction.
+# The fix: move reply.headers(error.headers) from after the log block to inside the
+# `if (error != null)` block, before the status-code checks (which call notFound for 404).
+# "headers"/"404"/"error" are symptom-level; the move mechanism is banned.
+error.headers
+reply.headers(error.headers)
+error.status === 404
+notFound(reply)
+error != null
+handleError
+reply.js

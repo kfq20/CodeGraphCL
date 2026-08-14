@@ -1,0 +1,118 @@
+From 01b09784f7bd051736e708ccf9442c6ac3ee073d Mon Sep 17 00:00:00 2001
+From: Ricardo <gomnaz@gmail.com>
+Date: Fri, 17 Aug 2018 12:24:04 +0200
+Subject: [PATCH] Log error after customErrorHandler (#1073)
+
+* Log request detail along with handled error at INFO level
+
+* Move Error logging after customErrorHandler (#1072)
+
+This way the Error is logged only if there is no customErrorHandler or if customErrorHandler has already been called
+
+* Add tests to validate error logging after being handled by custom error handler
+---
+ test/logger.test.js | 91 +++++++++++++++++++++++++++++++++++++++++++++
+ 1 file changed, 91 insertions(+)
+
+diff --git a/test/logger.test.js b/test/logger.test.js
+index 8520655d..7cbeff5f 100644
+--- a/test/logger.test.js
++++ b/test/logger.test.js
+@@ -786,3 +786,94 @@ test('Do not wrap IPv4 address', t => {
+     })
+   })
+ })
++
++t.test('should log the error if custom error handler does not handle it', t => {
++  t.plan(8)
++
++  const stream = split(JSON.parse)
++  const fastify = Fastify({
++    logger: {
++      stream: stream,
++      level: 'info'
++    }
++  })
++
++  fastify.get('/error', function (req, reply) {
++    t.ok(req.log)
++    reply.send(new Error('a 500 error'))
++  })
++
++  fastify.setErrorHandler((err, req, reply) => {
++    reply.send(err)
++  })
++
++  fastify.listen(0, err => {
++    t.error(err)
++    fastify.server.unref()
++
++    http.get('http://localhost:' + fastify.server.address().port + '/error')
++    stream.once('data', listenAtLogLine => {
++      t.ok(listenAtLogLine, 'listen at log message is ok')
++
++      stream.once('data', line => {
++        t.equal(line.msg, 'incoming request', 'message is set')
++
++        stream.once('data', line => {
++          t.equal(line.level, 50, 'level is correct')
++          t.equal(line.msg, 'a 500 error', 'message is set')
++
++          stream.once('data', line => {
++            t.equal(line.msg, 'request completed', 'message is set')
++            t.deepEqual(line.res, { statusCode: 500 }, 'status code is set')
++          })
++        })
++      })
++    })
++  })
++})
++
++t.test('should log the error after custom error handler handled it', t => {
++  t.plan(7)
++
++  const stream = split(JSON.parse)
++  const fastify = Fastify({
++    logger: {
++      stream: stream,
++      level: 'info'
++    }
++  })
++
++  fastify.get('/error', function (req, reply) {
++    t.ok(req.log)
++    reply.send(new Error('bad request'))
++  })
++
++  fastify.setErrorHandler((err, req, reply) => {
++    const msg = err.message
++    if (msg === 'bad request') {
++      reply.code(400).send({ message: msg })
++    } else {
++      reply.send(err)
++    }
++  })
++
++  fastify.listen(0, err => {
++    t.error(err)
++    fastify.server.unref()
++
++    http.get('http://localhost:' + fastify.server.address().port + '/error')
++    stream.once('data', listenAtLogLine => {
++      t.ok(listenAtLogLine, 'listen at log message is ok')
++
++      stream.once('data', line => {
++        t.equal(line.msg, 'incoming request', 'message is set')
++
++        stream.once('data', line => {
++          t.equal(line.level, 30, 'level is correct')
++          t.equal(line.msg, 'request completed', 'message is set')
++          t.deepEqual(line.res, { statusCode: 400 }, 'status code is set')
++        })
++      })
++    })
++  })
++})
+-- 
+2.34.1
+

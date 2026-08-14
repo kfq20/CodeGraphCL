@@ -4,6 +4,7 @@ nodes:
 - fastify_404_route_handler
 - fastify_log_after_error_handler
 - fastify_error_headers_404
+- fastify_onsend_encapsulated_404
 edges: []
 structure:
   type: single_node_collection

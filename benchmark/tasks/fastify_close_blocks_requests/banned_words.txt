@@ -1,0 +1,15 @@
+# Banned MECHANISM words for fastify_close_blocks_requests instruction.
+# The fix: add a `closing` flag, wrap the onClose registration in app.once('preReady', ...)
+# to set closing=true when close() fires, and check `if (closing === true)` at the top of
+# routeHandler to respond with 503 and destroy the request.
+# "close"/"503"/"closing" are symptom-level; the flag-and-check mechanism is banned.
+closing
+closing === true
+preReady
+app.once('preReady'
+res.writeHead(503
+req.destroy
+setImmediate(() => req.destroy())
+fastify.onClose
+routeHandler
+fastify.js

@@ -1,0 +1,59 @@
+From 14a1e9d1a8ef24da2716ea38fc65a6715da498d8 Mon Sep 17 00:00:00 2001
+From: Nathan Woltman <nwoltman@outlook.com>
+Date: Wed, 17 Jan 2018 13:57:37 -0500
+Subject: [PATCH] Normalize route paths with a prefix that has a trailing slash
+
+---
+ test/route-prefix.test.js | 36 ++++++++++++++++++++++++++++++++++++
+ 1 file changed, 36 insertions(+)
+
+diff --git a/test/route-prefix.test.js b/test/route-prefix.test.js
+index 6f30abd2..a45bfd72 100644
+--- a/test/route-prefix.test.js
++++ b/test/route-prefix.test.js
+@@ -177,6 +177,42 @@ test('Prefix without /', t => {
+   })
+ })
+ 
++test('Prefix with trailing /', t => {
++  t.plan(4)
++  const fastify = Fastify()
++
++  fastify.register(function (fastify, opts, next) {
++    fastify.get('/route', (req, reply) => {
++      reply.send({ hello: 'world' })
++    })
++
++    fastify.register(function (fastify, opts, next) {
++      fastify.get('/route2', (req, reply) => {
++        reply.send({ hello: 'world2' })
++      })
++      next()
++    }, { prefix: '/inner/' })
++
++    next()
++  }, { prefix: '/v1/' })
++
++  fastify.inject({
++    method: 'GET',
++    url: '/v1/route'
++  }, (err, res) => {
++    t.error(err)
++    t.same(JSON.parse(res.payload), { hello: 'world' })
++  })
++
++  fastify.inject({
++    method: 'GET',
++    url: '/v1/inner/route2'
++  }, (err, res) => {
++    t.error(err)
++    t.same(JSON.parse(res.payload), { hello: 'world2' })
++  })
++})
++
+ test('Prefix works multiple levels deep', t => {
+   t.plan(2)
+   const fastify = Fastify()
+-- 
+2.34.1
+

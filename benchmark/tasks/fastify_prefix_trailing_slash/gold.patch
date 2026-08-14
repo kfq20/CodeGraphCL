@@ -1,0 +1,49 @@
+From 14a1e9d1a8ef24da2716ea38fc65a6715da498d8 Mon Sep 17 00:00:00 2001
+From: Nathan Woltman <nwoltman@outlook.com>
+Date: Wed, 17 Jan 2018 13:57:37 -0500
+Subject: [PATCH] Normalize route paths with a prefix that has a trailing slash
+
+---
+ fastify.js | 16 +++++++++++++---
+ 1 file changed, 13 insertions(+), 3 deletions(-)
+
+diff --git a/fastify.js b/fastify.js
+index 58170792..cf37b6d9 100644
+--- a/fastify.js
++++ b/fastify.js
+@@ -338,9 +338,14 @@ function build (options) {
+       return instancePrefix
+     }
+ 
+-    if (pluginPrefix[0] !== '/') {
++    if (instancePrefix.endsWith('/')) {
++      if (pluginPrefix[0] === '/') {
++        pluginPrefix = pluginPrefix.slice(1)
++      }
++    } else if (pluginPrefix[0] !== '/') {
+       pluginPrefix = '/' + pluginPrefix
+     }
++
+     return instancePrefix + pluginPrefix
+   }
+ 
+@@ -417,9 +422,14 @@ function build (options) {
+     validateBodyLimitOption(opts.jsonBodyLimit)
+ 
+     _fastify.after(function afterRouteAdded (notHandledErr, done) {
+-      const path = opts.url || opts.path
+       const prefix = _fastify._routePrefix
+-      const url = prefix + (path === '/' && prefix.length > 0 ? '' : path)
++      var path = opts.url || opts.path
++      if (path === '/' && prefix.length > 0) {
++        path = ''
++      } else if (path[0] === '/' && prefix.endsWith('/')) {
++        path = path.slice(1)
++      }
++      const url = prefix + path
+ 
+       opts.url = url
+       opts.path = url
+-- 
+2.34.1
+
