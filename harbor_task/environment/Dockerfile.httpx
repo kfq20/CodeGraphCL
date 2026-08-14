@@ -1,0 +1,18 @@
+# CodeGraphCL python task image (httpx-full / viper). python:3.11-slim + pip deps installed at
+# runtime in the worktree (pip install -e .[dev] or -r requirements) — image stays generic, deps
+# travel with the repo snapshot. Same DinD/host-applies-patch pattern as fastify/ripgrep.
+FROM python:3.11-slim
+
+ENV DEBIAN_FRONTEND=noninteractive \
+    PIP_NO_CACHE_DIR=1 \
+    PIP_DISABLE_PIP_VERSION_CHECK=1
+
+# python:3.11-slim has no git — patches applied on HOST, then cp'd in (same as ripgrep/fastify).
+# No apt layer (deb.debian.org unreachable on this DinD host); python:3.11-slim has pip + gcc for
+# any C-extension builds (cryptography/h11 may need it — if a build fails, add build-essential).
+
+RUN mkdir -p /workspace
+WORKDIR /workspace
+
+# keep the container alive (cgcl-rg-box pattern)
+CMD ["sleep", "infinity"]

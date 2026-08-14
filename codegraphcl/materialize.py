@@ -92,44 +92,55 @@ def _ensure_container(image: str, mounts: list[tuple[str, str]], workdir: str) -
 def _resolve_pool(cname: str | None) -> str:
     """Return the host-side directory that the container `cname` binds at /pool.
 
-    Why this exists: each long-lived task container (cgcl-rg-box, cgcl-mat-box,
-    cgcl-fs-box) binds /pool to a *different* host directory
-    (/tmp/cgcl_box_pool vs /tmp/cgcl_fs_pool). materialize must write the work
-    tree into the SAME host dir the container sees, or the container can't read
-    the worktree, the command never starts, and the sentinel never appears
-    (the "TIMEOUT (sentinel never appeared)" red herring that blocked fastify).
-    Default CGCL_POOL=/tmp/cgcl_box_pool only matches the ripgrep/httpx boxes.
+    Why this exists: each long-lived task container binds /pool to a *different* host directory.
+    materialize must write the work tree into the SAME host dir the container sees, or the
+    container can't read the worktree and the sentinel never appears.
+
+    The daemon reports bind sources under /bindfs-mapped/<hash> (a daemon-internal path that is
+    NOT writable from this shell), so we can't use docker inspect's Source directly. Instead we
+    probe: have the container touch a unique file at /pool, then find which known host pool dir
+    received it. Known pool dirs: /tmp/cgcl_*_pool and /vePFS-Mindverse/.../cgcl_pools/* (the
+    latter is where pools live now that the root disk is tight).
 
     Resolution order:
       1. explicit CGCL_POOL env (caller override — highest precedence)
-      2. inspect the container's /pool bind-mount source (correct per-container)
+      2. probe the container's /pool against known candidate dirs (correct per-container)
       3. fall back to /tmp/cgcl_box_pool (legacy default)
     """
     env_pool = os.environ.get("CGCL_POOL")
     if env_pool:
         return env_pool
+    import os.path as _op
+    import uuid as _uuid
     if cname:
-        r = subprocess.run(
-            ["docker", "inspect", cname,
-             "--format", "{{range .Mounts}}{{if eq .Destination \"/pool\"}}{{.Source}}{{end}}{{end}}"],
-            capture_output=True, text=True, timeout=20)
-        src = r.stdout.strip() if r.returncode == 0 else ""
-        if src:
-            # docker inspect reports the bind source from the DAEMON's view, which on this
-            # containerized host is under /bindfs-mapped/ebs/rootfs/... — a path that is NOT
-            # writable from this shell. The same directory is reachable from our process at
-            # /tmp/... (the daemon path with the /bindfs-mapped/ebs/rootfs prefix stripped).
-            # e.g. /bindfs-mapped/ebs/rootfs/tmp/cgcl_fs_pool  ->  /tmp/cgcl_fs_pool
-            #      /bindfs-mapped/ebs/rootfs/tmp/cgcl_box_pool ->  /tmp/cgcl_box_pool
-            DAEMON_PREFIX = "/bindfs-mapped/ebs/rootfs"
-            if src.startswith(DAEMON_PREFIX):
-                mapped = src[len(DAEMON_PREFIX):]
-                if mapped.startswith("/"):
-                    src = mapped
-            # only trust the inspected path if it is actually writable from here
-            import os.path as _op
-            if _op.isdir(src) and os.access(src, os.W_OK):
-                return src
+        # candidate pool dirs (root-disk legacy + vePFS). dedup, keep writable ones.
+        cands = []
+        for d in ["/tmp/cgcl_box_pool", "/tmp/cgcl_fs_pool", "/tmp/cgcl_httpx_pool",
+                  "/tmp/cgcl_mat_pool"]:
+            if _op.isdir(d) and os.access(d, os.W_OK):
+                cands.append(d)
+        vepfs = "/vePFS-Mindverse/user/intern/fanqi/cgcl_pools"
+        if _op.isdir(vepfs):
+            for sub in ("fs", "rg", "httpx", "mat"):
+                d = f"{vepfs}/{sub}"
+                if _op.isdir(d) and os.access(d, os.W_OK):
+                    cands.append(d)
+        if cands:
+            probe = f".poolprobe_{_uuid.uuid4().hex[:8]}"
+            # container writes the probe into /pool
+            try:
+                subprocess.run(["docker", "exec", cname, "bash", "-c",
+                                f"touch /pool/{probe}; sync"],
+                               capture_output=True, text=True, timeout=20)
+            except Exception:
+                pass
+            import time as _t
+            _t.sleep(0.5)
+            for d in cands:
+                if _op.exists(f"{d}/{probe}"):
+                    try: os.remove(f"{d}/{probe}")
+                    except Exception: pass
+                    return d
     return "/tmp/cgcl_box_pool"
 
 
