@@ -47,6 +47,12 @@ def main() -> int:
 
     vb = sub.add_parser("validate-benchmark", help="build index+graph, validate the full benchmark, report Phase 4 gaps")
 
+    rs = sub.add_parser("run-stream", help="Phase 5: run a stream of tasks in Reset/Stateful mode")
+    rs.add_argument("--stream-id", required=True)
+    rs.add_argument("--model", required=True)
+    rs.add_argument("--condition", required=True, choices=["reset","stateful"])
+    rs.add_argument("--seed", type=int, default=42)
+
     ms = sub.add_parser("make-splits", help="build dev/test/cross_repo/temporal/integrated splits")
     ms.add_argument("--seed", type=int, default=42)
 
@@ -88,6 +94,9 @@ def main() -> int:
     elif args.cmd == "validate-benchmark":
         from .validate_benchmark import cmd_validate_benchmark
         return cmd_validate_benchmark()
+    elif args.cmd == "run-stream":
+        from .run_stream import cmd_run_stream
+        return cmd_run_stream(args)
     elif args.cmd == "make-splits":
         from .make_splits import cmd_make_splits
         return cmd_make_splits(args.seed)
