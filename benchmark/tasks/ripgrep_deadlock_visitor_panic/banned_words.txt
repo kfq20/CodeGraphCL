@@ -1,0 +1,14 @@
+# Banned MECHANISM words for ripgrep_deadlock_visitor_panic instruction.
+# The fix: (1) collect Worker structs BEFORE spawning threads (so builder.build() panic propagates
+# before any spawn); (2) add a Drop impl for Worker that calls quit_now() when thread::panicking();
+# (3) check is_quit_now() at the top of the idle receive loop so a poisoned worker exits instead
+# of blocking.
+# "visitor"/"panic"/"parallel" are symptom-level; the Drop/quit_now/is_quit_now mechanism is banned.
+std::thread::panicking
+self.quit_now
+is_quit_now
+Drop for Worker
+quit_now.store
+sleep_for_a_bit
+walk.rs
+mod tests

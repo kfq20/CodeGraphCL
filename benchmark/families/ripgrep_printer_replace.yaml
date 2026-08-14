@@ -1,0 +1,24 @@
+family_id: ripgrep_printer_replace
+repository: ripgrep
+
+# The ripgrep printer-replace family: bugs in the printer's replacement path
+# (crates/printer/src/util.rs). Nodes cover line-terminator loss on replace (crlf_preserve) and
+# the look-around panic (slice inversion when last_match > range.end). Both touch util.rs but on
+# distinct axes (state-loss vs invariant-violation-panic).
+nodes:
+  - ripgrep_crlf_preserve_terminator
+  - ripgrep_look_around_panic
+
+edges: []
+
+structure:
+  type: independent
+  order:
+    - ripgrep_crlf_preserve_terminator
+    - ripgrep_look_around_panic
+
+diagnostic_targets: []
+
+rejection_log: []
+
+screening_log: []

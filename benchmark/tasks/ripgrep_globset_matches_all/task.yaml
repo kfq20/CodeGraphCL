@@ -1,0 +1,90 @@
+schema_version: 1
+task_id: ripgrep_globset_matches_all
+family_id: ripgrep_globset_match
+
+repository:
+  url: https://github.com/BurntSushi/ripgrep
+  base_commit: "f55548b^"
+  gold_commit: "f55548b"
+  language: rust
+
+instruction:
+  path: instruction.md
+
+environment:
+  image: codegraphcl-ripgrep:rust
+  dockerfile: harbor_task/environment/Dockerfile.ripgrep
+  workdir: /workspace/repo
+  build_timeout_sec: 900
+  extra_mounts:
+    cargo_cache: /tmp/cgcl_cargo_cache
+    target: /tmp/cgcl_target
+
+patches:
+  gold: gold.patch                 # crates/globset/src/lib.rs source (per-strategy matches_all)
+  verifier: verifier/verifier.patch # crates/globset/src/lib.rs test hunk (inline matches_all_* tests)
+
+verifier:
+  command: bash verifier/test.sh   # cargo test -p globset matches_all
+  timeout_sec: 300
+  hermetic: false
+  fail_to_pass:
+    - "test: matches_all_literals"
+    - "test: matches_all_basename_literals"
+    - "test: matches_all_extensions"
+    - "test: matches_all_required_extensions"
+    - "test: matches_all_prefix"
+    - "test: matches_all_suffix"
+    - "test: matches_all_regex"
+  pass_to_pass: []
+  pass_to_pass_not_applicable: true  # the tests are new (inline in lib.rs mod tests)
+  near_miss_base: gold               # near-miss corrupts gold's source change
+  near_miss:
+    - near_miss/nearmiss_matches_all_count_only.py
+    - near_miss/nearmiss_matches_all_any_literal.py
+
+separability:
+  banned_words: banned_words.txt
+  checklist: separability.checklist.yaml
+
+mechanism_audit:
+  reusable_decision: >
+    Producer (the GlobSet architecture) buckets globs by match strategy (Literal, BasenameLiteral,
+    Extension, Prefix, Suffix, RequiredExtension, Regex) to speed up matching. A path matches the
+    set if ANY glob matches (is_match) — checked by asking each strategy bucket "any match?".
+    matches_all_candidate asks "ALL globs match?" but reused is_match, which only checks "each
+    bucket has >=1 match" — so two distinct globs in the same bucket fooled it into reporting
+    "all matched" when only one matched.
+  plausible_path_correct: >
+    Add a per-strategy matches_all method that requires EVERY glob in that bucket to match:
+    Literal/BasenameLiteral/Extension: map.len()==1 && is_match (a bucket holds >=2 globs ->
+    can't all be the same one path); Prefix/Suffix: count overlapping matches anchored at
+    start/end == map.len; RequiredExtension: all regexes in the bucket match; Regex:
+    patset.is_full(). Call strat.matches_all in matches_all_candidate.
+  plausible_path_competing: >
+    Keep calling strat.is_match (the any-match check) — plausible "matches_all = all buckets
+    match" but misses the within-bucket distinction. Or: allocate a Vec to count per-glob matches
+    (works but the producer explicitly avoided allocation).
+  why_instruction_does_not_disambiguate: >
+    The instruction says the symptom (false "all matched") and the rule (every glob must match).
+    It does NOT name the strategy buckets, the per-strategy method, is_match vs matches_all, or
+    the no-allocate constraint.
+  why_correct_history_selects_path: >
+    The producer's bucket architecture points at a per-bucket all-match check; the no-allocate
+    constraint rules out the counting approach.
+  why_wrong_history_is_plausible: >
+    The wrong prior ("matches_all = every bucket has a match") is literally the base code's
+    interpretation — a reset agent reading is_match as "the bucket matched" would not see the
+    within-bucket gap.
+
+status:
+  semantic_audit: passed
+  separability_gate: passed
+  executable_gate: passed         # base-fail + gold-pass + near-miss VERIFIED by hand
+  verification_tier: executable_candidate
+  intervention_preflight: pending
+
+notes: >
+  New ripgrep_globset_match family. Motif: quantifier-confusion (any vs all within a bucket).
+  ~90-line source patch (lib.rs). Inline tests in lib.rs mod tests (split: gold = source hunks,
+  verifier = test hunks incl. build_glob_set helper + set_works assertions). Phase 4 task.

@@ -1,0 +1,12 @@
+# Banned MECHANISM words for ripgrep_look_around_panic instruction.
+# The fix: in replace_with_captures_in_context, compute end = if last_match > range.end {
+# bytes.len() } else { min(bytes.len(), range.end) } so the trailing slice bytes[last_match..end]
+# never has end < last_match.
+# "look-around"/"multiline"/"replace"/"slice" are symptom-level; the clamp mechanism is banned.
+last_match > range.end
+bytes.len()
+std::cmp::min
+replace_with_captures_in_context
+find_iter_at_in_context
+util.rs
+regression.rs

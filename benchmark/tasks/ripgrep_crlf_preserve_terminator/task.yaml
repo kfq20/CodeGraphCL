@@ -1,0 +1,82 @@
+schema_version: 1
+task_id: ripgrep_crlf_preserve_terminator
+family_id: ripgrep_printer_replace
+
+repository:
+  url: https://github.com/BurntSushi/ripgrep
+  base_commit: "64174b8^"
+  gold_commit: "64174b8"
+  language: rust
+
+instruction:
+  path: instruction.md
+
+environment:
+  image: codegraphcl-ripgrep:rust
+  dockerfile: harbor_task/environment/Dockerfile.ripgrep
+  workdir: /workspace/repo
+  build_timeout_sec: 900
+  extra_mounts:
+    cargo_cache: /tmp/cgcl_cargo_cache
+    target: /tmp/cgcl_target
+
+patches:
+  gold: gold.patch                   # crates/printer/src/util.rs (trim_line_terminator returns slice)
+  verifier: verifier/verifier.patch  # crates/printer/src/standard.rs (inline regression_crlf_preserve test)
+
+verifier:
+  command: bash verifier/test.sh   # cargo test -p grep-printer regression_crlf_preserve
+  timeout_sec: 300
+  hermetic: false
+  fail_to_pass:
+    - "test: regression_crlf_preserve"
+  pass_to_pass: []
+  pass_to_pass_not_applicable: true  # the test is new (inline in standard.rs mod tests)
+  near_miss_base: gold               # near-miss corrupts gold's source change
+  near_miss:
+    - near_miss/nearmiss_crlf_wrong_term.py
+    - near_miss/nearmiss_crlf_unconditional.py
+
+separability:
+  banned_words: banned_words.txt
+  checklist: separability.checklist.yaml
+
+mechanism_audit:
+  reusable_decision: >
+    Producer (the printer's Replacer abstraction) established that, to run a regex on a single
+    line without the line terminator confusing look-around, trim_line_terminator removes the
+    terminator from the end of the matched line BEFORE the regex/replacement runs, narrowing the
+    haystack. The replacement then writes into a dst buffer. The bug: the trimmed terminator was
+    discarded — never re-appended — so the replace path emitted lines missing their terminator.
+    The non-replace path (find_iter_at_in_context) also trims but doesn't care (it doesn't emit
+    the line itself).
+  plausible_path_correct: >
+    Make trim_line_terminator RETURN the removed terminator slice (empty if none). The Replacer
+    captures it and threads it through replace_with_captures_in_context, which does
+    dst.extend(line_terminator) after the replacement bytes. The non-replace path ignores the
+    return value.
+  plausible_path_competing: >
+    Append a hard-coded "\r\n" (wrong: only correct for CRLF, breaks \n and none). Or append the
+    terminator unconditionally even when none was trimmed (double-appends / adds a terminator to
+    lines that had none).
+  why_instruction_does_not_disambiguate: >
+    The instruction says the symptom (terminator lost on replace) and the rule (re-append what was
+    trimmed). It does NOT name trim_line_terminator, the return value, or dst.extend.
+  why_correct_history_selects_path: >
+    The producer's "trim-before-regex" design points at capturing the trimmed slice and
+    re-appending it — the fix is symmetric to the trim.
+  why_wrong_history_is_plausible: >
+    The wrong priors ("append \r\n" / "append always") are real plausible shortcuts a reset agent
+    would take when told "put the terminator back."
+
+status:
+  semantic_audit: passed
+  separability_gate: passed
+  executable_gate: passed         # base-fail + gold-pass + near-miss VERIFIED by hand
+  verification_tier: executable_candidate
+  intervention_preflight: pending
+
+notes: >
+  New ripgrep_printer_replace family. Motif: state-loss-on-transform (the trim discards state the
+  emitter needs). 59-line source patch (util.rs). Inline test in standard.rs mod tests (file-level
+  split: gold = util.rs, verifier = standard.rs). Phase 4 task.

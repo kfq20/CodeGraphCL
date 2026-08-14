@@ -1,0 +1,71 @@
+From 2924d0c4c0c87a147623d9254fbdbe7b28e7f872 Mon Sep 17 00:00:00 2001
+From: Alvaro Parker <aparkerdf@protonmail.com>
+Date: Sun, 28 Sep 2025 19:15:18 -0300
+Subject: [PATCH] ignore: add `min_depth` option
+
+This mimics the eponymous option in `walkdir`.
+
+Closes #3158, PR #3162
+---
+ crates/ignore/src/walk.rs | 96 +++++++++++++++++++++++++++++++++++++--
+ 1 file changed, 92 insertions(+), 4 deletions(-)
+
+diff --git a/crates/ignore/src/walk.rs b/crates/ignore/src/walk.rs
+index 4856351..3e06fb3 100644
+--- a/crates/ignore/src/walk.rs
++++ b/crates/ignore/src/walk.rs
+@@ -2156,6 +2199,51 @@ mod tests {
+         );
+     }
+ 
++    #[test]
++    fn min_depth() {
++        let td = tmpdir();
++        mkdirp(td.path().join("a/b/c"));
++        wfile(td.path().join("foo"), "");
++        wfile(td.path().join("a/foo"), "");
++        wfile(td.path().join("a/b/foo"), "");
++        wfile(td.path().join("a/b/c/foo"), "");
++
++        let builder = WalkBuilder::new(td.path());
++        assert_paths(
++            td.path(),
++            &builder,
++            &["a", "a/b", "a/b/c", "foo", "a/foo", "a/b/foo", "a/b/c/foo"],
++        );
++        let mut builder = WalkBuilder::new(td.path());
++        assert_paths(
++            td.path(),
++            &builder.min_depth(Some(0)),
++            &["a", "a/b", "a/b/c", "foo", "a/foo", "a/b/foo", "a/b/c/foo"],
++        );
++        assert_paths(
++            td.path(),
++            &builder.min_depth(Some(1)),
++            &["a", "a/b", "a/b/c", "foo", "a/foo", "a/b/foo", "a/b/c/foo"],
++        );
++        assert_paths(
++            td.path(),
++            builder.min_depth(Some(2)),
++            &["a/b", "a/b/c", "a/b/c/foo", "a/b/foo", "a/foo"],
++        );
++        assert_paths(
++            td.path(),
++            builder.min_depth(Some(3)),
++            &["a/b/c", "a/b/c/foo", "a/b/foo"],
++        );
++        assert_paths(td.path(), builder.min_depth(Some(10)), &[]);
++
++        assert_paths(
++            td.path(),
++            builder.min_depth(Some(2)).max_depth(Some(1)),
++            &["a/b", "a/foo"],
++        );
++    }
++
+     #[test]
+     fn max_filesize() {
+         let td = tmpdir();
+-- 
+2.34.1
+

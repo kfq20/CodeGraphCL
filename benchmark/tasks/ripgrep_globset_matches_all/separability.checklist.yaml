@@ -1,0 +1,28 @@
+# Separability checklist for ripgrep_globset_matches_all (ripgrep_globset_match, Phase 4).
+schema_version: 1
+task_id: ripgrep_globset_matches_all
+
+checks:
+  - id: S1_instruction_symptom_only
+    question: "Does the instruction state only the symptom, not the fix?"
+    answer: yes
+    evidence: "instruction.md: glob set reports all-matched when only one matches. Acceptance: every glob must match."
+  - id: S2_instruction_no_mechanism_words
+    question: "Does the instruction avoid matches_all_candidate/strat.matches_all/GlobSetMatchStrategy/lib.rs?"
+    answer: yes
+    evidence: "banned_words.txt forbids; instruction says 'glob-set matching strategies'"
+  - id: S3_instruction_no_file_names
+    question: "Does the instruction avoid naming lib.rs?"
+    answer: yes
+  - id: S4_near_misses_plausible
+    question: "Are the near-misses plausible-but-wrong?"
+    answer: yes
+    evidence: "A = count-only (allocate a Vec to count matches — works but banned by producer); B = any-literal (use is_match for literal buckets, matches_all for others). Both real partial fixes."
+  - id: S5_near_misses_distinct_axes
+    question: "Do the near-misses fail along distinct axes?"
+    answer: yes
+    evidence: "A = wrong approach (allocation, may pass the test but violates the no-allocate constraint / or wrong count semantics); B = wrong bucket (literal bucket uses any-match). Different residual."
+  - id: S6_base_solvable
+    question: "Is the base solvable?"
+    answer: yes
+    evidence: "~90-line patch. base-fail = assertion (matches_all(\"abc\")=true for {abc,def})."

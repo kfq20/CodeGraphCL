@@ -5,7 +5,9 @@
     "fastify_per_parser_bodylimit",
     "fastify_reply_headerssent",
     "fastify_reply_removeheader",
-    "fastify_reply_sendstream"
+    "fastify_reply_sendstream",
+    "ripgrep_globset_matches_all",
+    "ripgrep_look_around_panic"
   ],
   "description": "20% newest commits (future-task generalization)"
 }

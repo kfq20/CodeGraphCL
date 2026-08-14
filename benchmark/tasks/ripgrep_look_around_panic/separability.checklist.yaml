@@ -1,0 +1,28 @@
+# Separability checklist for ripgrep_look_around_panic (ripgrep_printer_replace, Phase 4).
+schema_version: 1
+task_id: ripgrep_look_around_panic
+
+checks:
+  - id: S1_instruction_symptom_only
+    question: "Does the instruction state only the symptom, not the fix?"
+    answer: yes
+    evidence: "instruction.md: search crashes with multiline+replace on look-around. Acceptance: clamp the trailing slice to buffer end."
+  - id: S2_instruction_no_mechanism_words
+    question: "Does the instruction avoid last_match > range.end/bytes.len()/replace_with_captures_in_context/util.rs?"
+    answer: yes
+    evidence: "banned_words.txt forbids; instruction says 'printer's replacement helper'"
+  - id: S3_instruction_no_file_names
+    question: "Does the instruction avoid naming util.rs/regression.rs?"
+    answer: yes
+  - id: S4_near_misses_plausible
+    question: "Are the near-misses plausible-but-wrong?"
+    answer: yes
+    evidence: "A = clamp to range.end (still inverts); B = no clamp (base panic). Both real 'fix the slice' attempts."
+  - id: S5_near_misses_distinct_axes
+    question: "Do the near-misses fail along distinct axes?"
+    answer: yes
+    evidence: "A = wrong clamp target (range.end, still < last_match); B = no clamp at all (base). Different residual, same panic."
+  - id: S6_base_solvable
+    question: "Is the base solvable?"
+    answer: yes
+    evidence: "10-line patch. base-fail = panic (slice index out of bounds)."

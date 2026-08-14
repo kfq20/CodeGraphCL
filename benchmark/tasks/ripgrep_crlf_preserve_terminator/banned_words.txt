@@ -1,0 +1,14 @@
+# Banned MECHANISM words for ripgrep_crlf_preserve_terminator instruction.
+# The fix: trim_line_terminator now RETURNS the removed terminator slice; the Replacer captures it
+# and passes it to replace_with_captures_in_context, which dst.extend(line_terminator) after the
+# replacement bytes.
+# "line terminator"/"CRLF"/"replace"/"trim" are symptom-level; the return-value/extend mechanism
+# is banned.
+trim_line_terminator
+line_terminator
+replace_with_captures_in_context
+dst.extend
+orig_end
+with_end
+util.rs
+standard.rs

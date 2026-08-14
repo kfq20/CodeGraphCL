@@ -1,0 +1,126 @@
+From f55548ba9f24dda192880d4a3da2b52e90f6e194 Mon Sep 17 00:00:00 2001
+From: Thayne McCombs <astrothayne@gmail.com>
+Date: Wed, 27 May 2026 23:26:10 -0600
+Subject: [PATCH] globset: fix `matches_all` false positives
+
+Make sure that we correctly check that all globs are matched, even if
+multiple globs use the same strategy.
+
+Previously we only checked that all strategies matched, but didn't
+check with the strategies themselves.
+
+This now adds a `matches_all` method to each strategy to check all
+globs within a strategy.
+
+This avoids allocating for tracking the number of matches.
+
+Fixes #3290, Closes #3302
+---
+ crates/globset/src/lib.rs | 188 ++++++++++++++++++++++++++++++++++++--
+ 1 file changed, 178 insertions(+), 10 deletions(-)
+
+diff --git a/crates/globset/src/lib.rs b/crates/globset/src/lib.rs
+index ac74715..ebd6a79 100644
+--- a/crates/globset/src/lib.rs
++++ b/crates/globset/src/lib.rs
+@@ -1072,6 +1156,9 @@ mod tests {
+         assert!(set.is_match("src/foo.rs"));
+         assert!(set.is_match("src/grep/src/main.rs"));
+ 
++        assert!(!set.matches_all("src/lib.rs"));
++        assert!(!set.matches_all("src/a/b.c"));
++
+         let matches = set.matches("src/lib.rs");
+         assert_eq!(2, matches.len());
+         assert_eq!(0, matches[0]);
+@@ -1086,6 +1173,87 @@ mod tests {
+         assert!(set.matches_all("a"));
+     }
+ 
++    #[test]
++    fn matches_all_literals() {
++        let set = build_glob_set(&["abc", "def"]);
++
++        assert!(!set.matches_all("abc"));
++        assert!(!set.matches_all("def"));
++
++        let set = build_glob_set(&["abc"]);
++
++        assert!(set.matches_all("abc"));
++    }
++
++    #[test]
++    fn matches_all_basename_literals() {
++        let set = build_glob_set(&["**/abc", "**/a.c"]);
++
++        assert!(!set.matches_all("foo/abc"));
++        assert!(!set.matches_all("foo/a.c"));
++
++        let set = build_glob_set(&["**/a.c"]);
++        assert!(set.matches_all("foo/a.c"));
++    }
++
++    #[test]
++    fn matches_all_extensions() {
++        let set = build_glob_set(&["**/*.rs", "**/*.c"]);
++
++        assert!(!set.matches_all("foo/a.rs"));
++        assert!(!set.matches_all("foo/a.c"));
++
++        let set = build_glob_set(&["**/*.rs", "*.rs"]);
++        assert!(set.matches_all("foo/a.rs"));
++    }
++
++    #[test]
++    fn matches_all_required_extensions() {
++        let set = build_glob_set(&["*.rs", "**/m*.rs", "a/*.rs"]);
++
++        assert!(set.matches_all("a/main.rs"));
++
++        assert!(!set.matches_all("main.rs"));
++        assert!(!set.matches_all("a/lib.rs"));
++    }
++
++    #[test]
++    fn matches_all_prefix() {
++        let set = build_glob_set(&["a*", "ab*", "ab/c*"]);
++
++        assert!(set.matches_all("ab/c/def"));
++        assert!(set.matches_all("ab/cd"));
++
++        assert!(!set.matches_all("abc"));
++        assert!(!set.matches_all("ab/x"));
++        assert!(!set.matches_all("a"));
++    }
++
++    #[test]
++    fn matches_all_suffix() {
++        let set = build_glob_set(&["*.rs", "*s", "*/main.rs"]);
++
++        assert!(set.matches_all("a/b/c/main.rs"));
++
++        assert!(!set.matches_all("foo.rs"));
++        assert!(!set.matches_all("as"));
++    }
++
++    #[test]
++    fn matches_all_regex() {
++        let set = GlobSet::new(&[
++            GlobBuilder::new("c*").case_insensitive(true).build().unwrap(),
++            Glob::new("*{rs,c}").unwrap(),
++        ])
++        .unwrap();
++
++        assert!(set.matches_all("c/main.rs"));
++        assert!(set.matches_all("C/main.c"));
++
++        assert!(!set.matches_all("Ca"));
++        assert!(!set.matches_all("foo.c"));
++    }
++
+     #[test]
+     fn default_set_is_empty_works() {
+         let set: GlobSet = Default::default();
+-- 
+2.34.1
+

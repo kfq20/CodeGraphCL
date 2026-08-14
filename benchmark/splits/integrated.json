@@ -1,4 +1,8 @@
 {
-  "stream_ids": [],
+  "stream_ids": [
+    "update_000_seed42",
+    "update_001_seed42",
+    "update_002_seed42"
+  ],
   "description": "complex combination streams"
 }

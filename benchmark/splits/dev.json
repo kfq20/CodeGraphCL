@@ -1,5 +1,7 @@
 {
   "task_ids": [
+    "clap_complete_fish_quote",
+    "clap_complete_value_index",
     "clap_conflict_usage",
     "clap_derive_default_value_os",
     "clap_derive_type_alias",
@@ -11,15 +13,18 @@
     "fastify_clean_schema_id",
     "fastify_contenttype_array",
     "fastify_contenttype_emptybody",
+    "fastify_decorate_null",
+    "fastify_decorator_getter",
     "fastify_get_shared_schemas",
-    "fastify_header_case_validation",
     "fastify_loggr_responsetime",
+    "fastify_onsend_hook_runner",
     "fastify_per_parser_bodylimit",
     "fastify_redirect_statuscode",
     "fastify_reply_hasheader",
     "fastify_reply_headerssent",
     "fastify_reply_json_charset",
     "fastify_reply_removeheader",
+    "fastify_reply_sendstream",
     "fastify_route_404_to_handler",
     "httpx_tA",
     "httpx_tB",
@@ -28,8 +33,10 @@
     "ripgrep_c3",
     "ripgrep_c4",
     "ripgrep_c5",
+    "ripgrep_crlf_preserve_terminator",
     "ripgrep_gitignore_skip_bom",
-    "ripgrep_skip_unreachable_ignore"
+    "ripgrep_globset_matches_all",
+    "ripgrep_look_around_panic"
   ],
   "description": "public instruction + verifier + gold; ~80% by family"
 }

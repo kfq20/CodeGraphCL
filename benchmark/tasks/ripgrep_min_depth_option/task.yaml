@@ -1,0 +1,85 @@
+schema_version: 1
+task_id: ripgrep_min_depth_option
+family_id: ripgrep_walk_lifecycle
+
+repository:
+  url: https://github.com/BurntSushi/ripgrep
+  base_commit: "2924d0c^"
+  gold_commit: "2924d0c"
+  language: rust
+
+instruction:
+  path: instruction.md
+
+environment:
+  image: codegraphcl-ripgrep:rust
+  dockerfile: harbor_task/environment/Dockerfile.ripgrep
+  workdir: /workspace/repo
+  build_timeout_sec: 900
+  extra_mounts:
+    cargo_cache: /tmp/cgcl_cargo_cache
+    target: /tmp/cgcl_target
+
+patches:
+  gold: gold.patch                 # crates/ignore/src/walk.rs source (min_depth field + setter + gate)
+  verifier: verifier/verifier.patch # crates/ignore/src/walk.rs test hunk (inline in mod tests)
+
+verifier:
+  command: bash verifier/test.sh   # cargo test -p ignore min_depth
+  timeout_sec: 300
+  hermetic: false
+  fail_to_pass:
+    - "test: walk::tests::min_depth"
+  pass_to_pass: []
+  pass_to_pass_not_applicable: true  # the test is new (inline in walk.rs mod tests)
+  near_miss_base: gold               # near-miss corrupts gold's source change
+  near_miss:
+    - near_miss/nearmiss_min_depth_offbyone.py
+    - near_miss/nearmiss_min_depth_no_descend.py
+
+separability:
+  banned_words: banned_words.txt
+  checklist: separability.checklist.yaml
+
+mechanism_audit:
+  reusable_decision: >
+    Producer (the walk architecture) established the WalkBuilder -> Walk (serial) and
+    WalkParallel -> Worker (parallel) pipeline. Each Worker visits a directory entry via
+    visitor.visit(Ok(work.dent)) and, for directories, reads the dir and recurses. The max_depth
+    option already exists and gates descending (a dir at the depth boundary is listed but not
+    descended into). The min_depth option is the symmetric gate on VISITING: an entry shallower
+    than min_depth is skipped from the output but the descent still happens so deeper entries
+    appear. The gate must be applied in both the serial iterator and the parallel Worker's
+    run_one (which handles both the non-dir leaf case and the dir case).
+  plausible_path_correct: >
+    Add a min_depth: Option<usize> field to WalkBuilder, WalkParallel, and Worker. In Worker's
+    run_one, compute should_visit = min_depth.map(|d| work.dent.depth() >= d).unwrap_or(true)
+    and gate BOTH visitor.visit call sites (the non-dir return and the dir visit) on it. Add the
+    setter and clamp min/max against each other.
+  plausible_path_competing: >
+    Gate only the non-dir visit (forget the dir visit), so shallow directories are still yielded
+    even though shallow files are skipped — plausible "I'll filter files but not dirs" but the
+    test expects shallow dirs to be absent too. Or: gate on depth == min_depth (off-by-one)
+    instead of >=, so the boundary depth itself is skipped.
+  why_instruction_does_not_disambiguate: >
+    The instruction says the symptom (shallow entries skipped) and the rule (skip depth < min,
+    descend regardless, both walkers). It does NOT name should_visit, the two visit call sites,
+    the >= comparison, or the field plumbing through WalkParallel.
+  why_correct_history_selects_path: >
+    The producer's symmetric-to-max_depth framing (min_depth mirrors max_depth) points at gating
+    BOTH visit sites with a >= comparison.
+  why_wrong_history_is_plausible: >
+    The wrong priors ("gate only files" / "use == not >=") are real plausible mistakes a reset
+    agent would make when translating "skip shallow entries" into code.
+
+status:
+  semantic_audit: passed
+  separability_gate: passed
+  executable_gate: passed         # base-fail + gold-pass + near-miss VERIFIED by hand
+  verification_tier: executable_candidate
+  intervention_preflight: pending
+
+notes: >
+  New node in ripgrep_walk_lifecycle family. Motif: option-parity (min_depth mirrors walkdir's
+  eponymous option). 92-line source patch. Inline test in walk.rs mod tests (split: gold =
+  source hunks, verifier = test hunk). Phase 4 task.

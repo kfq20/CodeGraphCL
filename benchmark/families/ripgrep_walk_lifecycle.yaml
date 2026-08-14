@@ -1,0 +1,26 @@
+family_id: ripgrep_walk_lifecycle
+repository: ripgrep
+
+# The ripgrep walk-lifecycle family: options and worker-lifecycle bugs in the ignore-crate
+# directory walker (crates/ignore/src/walk.rs). Nodes cover min_depth (depth-gate option) and
+# deadlock-on-panic (worker poison-propagation). Distinct from ripgrep_ignore_path (which covers
+# the dir.rs parent-gitignore-stripping chain c2->c3->c4->c5).
+nodes:
+  - ripgrep_skip_unreachable_ignore
+  - ripgrep_min_depth_option
+  - ripgrep_deadlock_visitor_panic
+
+edges: []
+
+structure:
+  type: independent
+  order:
+    - ripgrep_skip_unreachable_ignore
+    - ripgrep_min_depth_option
+    - ripgrep_deadlock_visitor_panic
+
+diagnostic_targets: []
+
+rejection_log: []
+
+screening_log: []

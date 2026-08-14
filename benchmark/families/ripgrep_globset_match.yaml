@@ -1,0 +1,21 @@
+family_id: ripgrep_globset_match
+repository: ripgrep
+
+# The ripgrep globset-match family: bugs in glob-set matching (crates/globset/src/lib.rs).
+# Nodes cover the matches_all false-positive (any-vs-all quantifier confusion within a strategy
+# bucket).
+nodes:
+  - ripgrep_globset_matches_all
+
+edges: []
+
+structure:
+  type: independent
+  order:
+    - ripgrep_globset_matches_all
+
+diagnostic_targets: []
+
+rejection_log: []
+
+screening_log: []

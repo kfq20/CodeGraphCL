@@ -1,0 +1,28 @@
+# Separability checklist for ripgrep_deadlock_visitor_panic (ripgrep_walk_lifecycle, Phase 4).
+schema_version: 1
+task_id: ripgrep_deadlock_visitor_panic
+
+checks:
+  - id: S1_instruction_symptom_only
+    question: "Does the instruction state only the symptom, not the fix?"
+    answer: yes
+    evidence: "instruction.md: parallel walker hangs when visitor panics. Acceptance: panic must propagate, never hang."
+  - id: S2_instruction_no_mechanism_words
+    question: "Does the instruction avoid std::thread::panicking/quit_now/is_quit_now/Drop/walk.rs?"
+    answer: yes
+    evidence: "banned_words.txt forbids; instruction says 'parallel-walk worker lifecycle'"
+  - id: S3_instruction_no_file_names
+    question: "Does the instruction avoid naming walk.rs?"
+    answer: yes
+  - id: S4_near_misses_plausible
+    question: "Are the near-misses plausible-but-wrong?"
+    answer: yes
+    evidence: "A = no idle check (partial fix: only construction panic fixed); B = no Drop (partial fix: only idle loop fixed). Both real partial-fix mistakes."
+  - id: S5_near_misses_distinct_axes
+    question: "Do the near-misses fail along distinct axes?"
+    answer: yes
+    evidence: "A = missing the inner-loop poison check (runtime visitor panic still hangs); B = missing the Drop poison-on-unwind (a worker that panics doesn't poison). Different failure mode, same hang."
+  - id: S6_base_solvable
+    question: "Is the base solvable?"
+    answer: yes
+    evidence: "66-line patch. base-fail = hang (the #[should_panic] test times out)."

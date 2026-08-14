@@ -1,0 +1,59 @@
+From de2567a4c76fa671005538d6cd841abc44932b9a Mon Sep 17 00:00:00 2001
+From: Andrew Gallant <jamslam@gmail.com>
+Date: Sun, 12 Oct 2025 16:29:10 -0400
+Subject: [PATCH] printer: fix panic in replacements in look-around corner case
+
+The abstraction boundary fuck up is the gift that keeps on giving. It
+turns out that the invariant that the match would never exceed the range
+given is not always true. So we kludge around it.
+
+Also, update the CHANGELOG to include the fix for #2111.
+
+Fixes #3180
+---
+ crates/printer/src/util.rs | 14 ++++++++++----
+ 1 file changed, 10 insertions(+), 4 deletions(-)
+
+diff --git a/crates/printer/src/util.rs b/crates/printer/src/util.rs
+index 4fd96cc..491a0b7 100644
+--- a/crates/printer/src/util.rs
++++ b/crates/printer/src/util.rs
+@@ -59,7 +59,8 @@ impl<M: Matcher> Replacer<M> {
+         // See the giant comment in 'find_iter_at_in_context' below for why we
+         // do this dance.
+         let is_multi_line = searcher.multi_line_with_matcher(&matcher);
+-        // Get the line_terminator that was removed (if any) so we can add it back
++        // Get the line_terminator that was removed (if any) so we can add it
++        // back.
+         let line_terminator = if is_multi_line {
+             if haystack[range.end..].len() >= MAX_LOOK_AHEAD {
+                 haystack = &haystack[..range.end + MAX_LOOK_AHEAD];
+@@ -513,7 +514,8 @@ where
+         // Otherwise, it's possible for the regex (via look-around) to observe
+         // the line terminator and not match because of it.
+         let mut m = Match::new(0, range.end);
+-        // No need to rember the line terminator as we aren't doing a replace here
++        // No need to rember the line terminator as we aren't doing a replace
++        // here.
+         trim_line_terminator(searcher, bytes, &mut m);
+         bytes = &bytes[..m.end()];
+     }
+@@ -575,9 +577,13 @@ where
+         last_match = m.end();
+         append(caps, dst)
+     })?;
+-    let end = std::cmp::min(bytes.len(), range.end);
++    let end = if last_match > range.end {
++        bytes.len()
++    } else {
++        std::cmp::min(bytes.len(), range.end)
++    };
+     dst.extend(&bytes[last_match..end]);
+-    // Add back any line terminator
++    // Add back any line terminator.
+     dst.extend(line_terminator);
+     Ok(())
+ }
+-- 
+2.34.1
+

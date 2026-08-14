@@ -1,9 +1,14 @@
 nodes:
+- clap_complete_fish_quote
+- clap_complete_value_index
 - clap_conflict_usage
+- clap_default_values_if
 - clap_derive_default_value_os
 - clap_derive_type_alias
 - clap_error_help_newline
 - clap_error_newline
+- clap_help_bracket_values
+- clap_help_short_padding
 - fastify_404_route_handler
 - fastify_404_unsupported_method
 - fastify_bodylimit_perparser
@@ -31,7 +36,12 @@ nodes:
 - ripgrep_c3
 - ripgrep_c4
 - ripgrep_c5
+- ripgrep_crlf_preserve_terminator
+- ripgrep_deadlock_visitor_panic
 - ripgrep_gitignore_skip_bom
+- ripgrep_globset_matches_all
+- ripgrep_look_around_panic
+- ripgrep_min_depth_option
 - ripgrep_skip_unreachable_ignore
 edges:
 - edge_id: clap_help_newline_to_newline

@@ -1,0 +1,61 @@
+From 0d7054d8e466d6aa0a6bb6cf121e87225d26df44 Mon Sep 17 00:00:00 2001
+From: Andrew Gallant <jamslam@gmail.com>
+Date: Thu, 16 Jul 2026 12:02:33 -0400
+Subject: [PATCH] ignore: fix deadlock when visitor panics
+
+When a visitor panics and the workers shutdown, we indicate as such and
+quit everything. This effectively acts as a sort of poison that will
+cause all other workers to stop even when in their idle loop.
+
+Fixes #3009
+---
+ crates/ignore/src/walk.rs | 79 ++++++++++++++++++++++++++++++++-------
+ 1 file changed, 66 insertions(+), 13 deletions(-)
+
+diff --git a/crates/ignore/src/walk.rs b/crates/ignore/src/walk.rs
+index 93e6cf1..f712582 100644
+--- a/crates/ignore/src/walk.rs
++++ b/crates/ignore/src/walk.rs
+@@ -2604,4 +2622,39 @@ mod tests {
+             ],
+         );
+     }
++
++    // This should always panic and never hang.
++    //
++    // Ref: https://github.com/BurntSushi/ripgrep/issues/3009
++    #[test]
++    #[should_panic]
++    fn panic_in_parallel() {
++        let td = tmpdir();
++        wfile(td.path().join("foo.txt"), "");
++
++        WalkBuilder::new(td.path())
++            .threads(40)
++            .build_parallel()
++            .run(|| Box::new(|_| panic!("oops!")));
++    }
++
++    // This should always panic and never hang. The first call to the visitor
++    // builder is used while processing the root paths. Previously, a panic on
++    // the third call occurred after the first worker had already been spawned,
++    // leaving it waiting indefinitely for workers that were never created.
++    #[test]
++    #[should_panic(expected = "builder panic")]
++    fn panic_in_parallel_builder() {
++        let td = tmpdir();
++        wfile(td.path().join("foo.txt"), "");
++
++        let mut builds = 0;
++        WalkBuilder::new(td.path()).threads(2).build_parallel().run(|| {
++            builds += 1;
++            if builds == 3 {
++                panic!("builder panic");
++            }
++            Box::new(|_| WalkState::Continue)
++        });
++    }
+ }
+-- 
+2.34.1
+

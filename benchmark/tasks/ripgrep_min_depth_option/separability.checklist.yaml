@@ -1,0 +1,28 @@
+# Separability checklist for ripgrep_min_depth_option (ripgrep_walk_lifecycle, Phase 4).
+schema_version: 1
+task_id: ripgrep_min_depth_option
+
+checks:
+  - id: S1_instruction_symptom_only
+    question: "Does the instruction state only the symptom, not the fix?"
+    answer: yes
+    evidence: "instruction.md: shallow entries skipped. Acceptance: min_depth setter, skip depth<min, descend regardless, both walkers."
+  - id: S2_instruction_no_mechanism_words
+    question: "Does the instruction avoid should_visit/work.dent.depth()/visitor.visit/walk.rs?"
+    answer: yes
+    evidence: "banned_words.txt forbids; instruction says 'directory-walk machinery'"
+  - id: S3_instruction_no_file_names
+    question: "Does the instruction avoid naming walk.rs?"
+    answer: yes
+  - id: S4_near_misses_plausible
+    question: "Are the near-misses plausible-but-wrong?"
+    answer: yes
+    evidence: "A = off-by-one (depth == min not >=); B = no-descend (skip the dir visit only). Both real plausible mistakes."
+  - id: S5_near_misses_distinct_axes
+    question: "Do the near-misses fail along distinct axes?"
+    answer: yes
+    evidence: "A = wrong comparison (==); B = wrong visit site (non-dir only). Both leave shallow entries present, different residual."
+  - id: S6_base_solvable
+    question: "Is the base solvable?"
+    answer: yes
+    evidence: "92-line patch. base-fail = compile error (no min_depth method)."

@@ -1,9 +1,12 @@
 {
   "task_ids": [
-    "fastify_decorate_null",
-    "fastify_decorator_getter",
-    "fastify_onsend_hook_runner",
-    "fastify_reply_sendstream"
+    "clap_default_values_if",
+    "clap_help_bracket_values",
+    "clap_help_short_padding",
+    "fastify_header_case_validation",
+    "ripgrep_deadlock_visitor_panic",
+    "ripgrep_min_depth_option",
+    "ripgrep_skip_unreachable_ignore"
   ],
   "description": "public instruction, hidden core verifier; ~20% by family"
 }

@@ -1,0 +1,18 @@
+# Banned MECHANISM words for ripgrep_globset_matches_all instruction.
+# The fix: add a per-strategy matches_all method (LiteralStrategy: len==1 && is_match;
+# Prefix/Suffix: count overlapping matches at start/end == map.len; RequiredExtension: all regexes
+# match; Regex: patset.is_full) and call strat.matches_all instead of strat.is_match in
+# matches_all_candidate.
+# "strategy"/"glob"/"matches" are symptom-level; the per-strategy method mechanism is banned.
+matches_all_candidate
+strat.matches_all
+GlobSetMatchStrategy
+LiteralStrategy
+ExtensionStrategy
+PrefixStrategy
+SuffixStrategy
+RegexSetStrategy
+find_overlapping_iter
+patset.is_full
+lib.rs
+mod tests

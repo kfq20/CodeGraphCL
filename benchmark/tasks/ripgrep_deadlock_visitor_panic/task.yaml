@@ -1,0 +1,89 @@
+schema_version: 1
+task_id: ripgrep_deadlock_visitor_panic
+family_id: ripgrep_walk_lifecycle
+
+repository:
+  url: https://github.com/BurntSushi/ripgrep
+  base_commit: "0d7054d^"
+  gold_commit: "0d7054d"
+  language: rust
+
+instruction:
+  path: instruction.md
+
+environment:
+  image: codegraphcl-ripgrep:rust
+  dockerfile: harbor_task/environment/Dockerfile.ripgrep
+  workdir: /workspace/repo
+  build_timeout_sec: 900
+  extra_mounts:
+    cargo_cache: /tmp/cgcl_cargo_cache
+    target: /tmp/cgcl_target
+
+patches:
+  gold: gold.patch                 # crates/ignore/src/walk.rs source (collect workers + Drop + idle check)
+  verifier: verifier/verifier.patch # crates/ignore/src/walk.rs test hunk (inline #[should_panic] tests)
+
+verifier:
+  command: bash verifier/test.sh   # cargo test -p ignore panic_in_parallel
+  timeout_sec: 300
+  hermetic: false
+  fail_to_pass:
+    - "test: walk::tests::panic_in_parallel"
+    - "test: walk::tests::panic_in_parallel_builder"
+  pass_to_pass: []
+  pass_to_pass_not_applicable: true  # the tests are new (inline in walk.rs mod tests)
+  near_miss_base: gold               # near-miss corrupts gold's source change
+  near_miss:
+    - near_miss/nearmiss_deadlock_no_idlecheck.py
+    - near_miss/nearmiss_deadlock_no_drop.py
+
+separability:
+  banned_words: banned_words.txt
+  checklist: separability.checklist.yaml
+
+mechanism_audit:
+  reusable_decision: >
+    Producer (the parallel walk architecture) spawns N worker threads, each running a Worker
+    struct that pulls Work from a shared stack. When work runs out, a worker enters an idle loop
+    (recv with a 1ms sleep). The quit_now AtomicBool is the poison signal: set by any worker that
+    decides the run is over, checked by others to break out. The original spawn loop interleaved
+    Worker construction (builder.build()) with thread spawning — so a panic in builder.build()
+    after the first spawn left that worker waiting for partners never created. And a panic in a
+    running visitor set quit_now, but idle workers only checked quit_now at the top of get_work,
+    not inside the inner idle loop — so they'd sleep forever.
+  plausible_path_correct: >
+    (1) Collect ALL Worker structs into a Vec BEFORE entering the thread::scope and spawning — so
+    a builder.build() panic happens before any thread is alive and propagates cleanly. (2) Add a
+    Drop impl for Worker that calls self.quit_now() when std::thread::panicking() — so a panicking
+    worker poisons the pool as it unwinds. (3) Add an is_quit_now() check at the top of the inner
+    idle recv loop so a poisoned worker exits instead of sleeping.
+  plausible_path_competing: >
+    Only do (1) (collect before spawn) but not (2)/(3) — plausible "I fixed the construction
+    panic" but a runtime visitor panic still hangs the idle workers. Or only do (3) (idle check)
+    but not (1) — the builder panic still hangs. Or only do (2) (Drop) but not (3) — a worker
+    already in the idle loop when another panics never re-checks quit_now.
+  why_instruction_does_not_disambiguate: >
+    The instruction says the symptom (hang on panic) and the rule (propagate the panic, both
+    construction and runtime). It does NOT name Drop, quit_now, the idle-loop inner check, or the
+    collect-before-spawn reordering.
+  why_correct_history_selects_path: >
+    The producer's quit_now poison-flag architecture points at all three: the flag must be set on
+    unwind (Drop), checked where workers wait (idle loop), and construction must not leave
+    orphans (collect before spawn).
+  why_wrong_history_is_plausible: >
+    The wrong priors ("just collect before spawn" / "just add the idle check") are each a partial
+    fix — a reset agent fixing the reported symptom (one variant) would plausibly stop there.
+
+status:
+  semantic_audit: passed
+  separability_gate: passed
+  executable_gate: passed         # base-fail + gold-pass + near-miss VERIFIED by hand
+  verification_tier: executable_candidate
+  intervention_preflight: pending
+
+notes: >
+  New node in ripgrep_walk_lifecycle family. Motif: lifecycle/poison-propagation (a panicking
+  worker must poison the pool so idle workers exit instead of hanging). 66-line source patch.
+  Inline #[should_panic] tests in walk.rs mod tests (split: gold = source hunks, verifier =
+  test hunk). Phase 4 task.

@@ -1,0 +1,28 @@
+# Separability checklist for ripgrep_crlf_preserve_terminator (ripgrep_printer_replace, Phase 4).
+schema_version: 1
+task_id: ripgrep_crlf_preserve_terminator
+
+checks:
+  - id: S1_instruction_symptom_only
+    question: "Does the instruction state only the symptom, not the fix?"
+    answer: yes
+    evidence: "instruction.md: line terminator lost when replacing in CRLF mode. Acceptance: re-append the trimmed terminator."
+  - id: S2_instruction_no_mechanism_words
+    question: "Does the instruction avoid trim_line_terminator/line_terminator/dst.extend/util.rs?"
+    answer: yes
+    evidence: "banned_words.txt forbids; instruction says 'printer's replacement helper'"
+  - id: S3_instruction_no_file_names
+    question: "Does the instruction avoid naming util.rs/standard.rs?"
+    answer: yes
+  - id: S4_near_misses_plausible
+    question: "Are the near-misses plausible-but-wrong?"
+    answer: yes
+    evidence: "A = append wrong terminator (hardcoded \\r\\n); B = append unconditionally (even when none trimmed). Both real 'put it back' shortcuts."
+  - id: S5_near_misses_distinct_axes
+    question: "Do the near-misses fail along distinct axes?"
+    answer: yes
+    evidence: "A = wrong value (hardcoded CRLF breaks \\n lines); B = wrong condition (double-appends). Different residual error."
+  - id: S6_base_solvable
+    question: "Is the base solvable?"
+    answer: yes
+    evidence: "59-line patch. base-fail = assertion (output missing \\r\\n)."

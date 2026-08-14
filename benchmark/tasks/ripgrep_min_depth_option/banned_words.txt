@@ -1,0 +1,13 @@
+# Banned MECHANISM words for ripgrep_min_depth_option instruction.
+# The fix: add a min_depth: Option<usize> field to WalkBuilder/WalkParallel/Worker; gate the
+# visitor.visit call on should_visit = min_depth.map(|d| work.dent.depth() >= d).unwrap_or(true);
+# also add the min_depth setter and clamp max_depth<->min_depth.
+# "min depth"/"walker"/"parallel" are symptom-level; the field/gate mechanism is banned.
+should_visit
+work.dent.depth()
+visitor.visit
+min_depth.map
+unwrap_or(true)
+max_depth = self.min_depth
+walk.rs
+mod tests

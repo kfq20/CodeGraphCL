@@ -1,0 +1,83 @@
+schema_version: 1
+task_id: ripgrep_look_around_panic
+family_id: ripgrep_printer_replace
+
+repository:
+  url: https://github.com/BurntSushi/ripgrep
+  base_commit: "de2567a^"
+  gold_commit: "de2567a"
+  language: rust
+
+instruction:
+  path: instruction.md
+
+environment:
+  image: codegraphcl-ripgrep:rust
+  dockerfile: harbor_task/environment/Dockerfile.ripgrep
+  workdir: /workspace/repo
+  build_timeout_sec: 900
+  extra_mounts:
+    cargo_cache: /tmp/cgcl_cargo_cache
+    target: /tmp/cgcl_target
+
+patches:
+  gold: gold.patch                   # crates/printer/src/util.rs (clamp end when last_match > range.end)
+  verifier: verifier/verifier.patch  # tests/regression.rs (r3180_look_around_panic rgtest)
+
+verifier:
+  command: bash verifier/test.sh   # cargo test --test integration r3180_look_around_panic
+  timeout_sec: 600
+  hermetic: false
+  fail_to_pass:
+    - "test: r3180_look_around_panic"
+  pass_to_pass: []
+  pass_to_pass_not_applicable: true  # the test is new (in tests/regression.rs)
+  near_miss_base: gold               # near-miss corrupts gold's source change
+  near_miss:
+    - near_miss/nearmiss_panic_clamp_range_end.py
+    - near_miss/nearmiss_panic_no_clamp.py
+
+separability:
+  banned_words: banned_words.txt
+  checklist: separability.checklist.yaml
+
+mechanism_audit:
+  reusable_decision: >
+    Producer (the printer's Replacer) established that replace_with_captures_in_context appends the
+    trailing unmatched bytes bytes[last_match..end] to dst after running all replacements, where
+    end = min(bytes.len(), range.end). The invariant assumed was that last_match (the end of the
+    last replacement) never exceeds range.end. With look-around in multiline mode, the regex
+    engine's reported match end CAN exceed range.end (the match window extends past the line), so
+    last_match > range.end, making end < last_match and the slice bytes[last_match..end] panics.
+  plausible_path_correct: >
+    Clamp end to bytes.len() when last_match > range.end: end = if last_match > range.end {
+    bytes.len() } else { min(bytes.len(), range.end) }. The trailing slice becomes
+    bytes[last_match..bytes.len()] (empty or the real tail), never inverted.
+  plausible_path_competing: >
+    Clamp end to range.end unconditionally (still inverts when last_match > range.end). Or do
+    nothing (the base: panics). Or clamp last_match down to range.end (silently drops the
+    look-around tail, wrong output).
+  why_instruction_does_not_disambiguate: >
+    The instruction says the symptom (panic on multiline+replace+look-around) and the rule (clamp
+    the trailing slice to the buffer end when the match overshoots). It does NOT name last_match,
+    range.end, bytes.len(), or the clamp branch.
+  why_correct_history_selects_path: >
+    The producer's "trailing slice by indices" design points at the inverted-index clamp as the
+    fix — the invariant violation is exactly last_match > range.end.
+  why_wrong_history_is_plausible: >
+    The wrong priors ("clamp to range.end" / "clamp last_match down") are real plausible attempts
+    a reset agent would make when told "the slice end is too small."
+
+status:
+  semantic_audit: passed
+  separability_gate: passed
+  executable_gate: passed         # base-fail + gold-pass + near-miss VERIFIED by hand
+  verification_tier: executable_candidate
+  intervention_preflight: pending
+
+notes: >
+  New node in ripgrep_printer_replace family (shared with crlf_preserve_terminator). Motif:
+  invariant-violation-panic (look-around breaks the last_match<=range.end invariant). 10-line
+  source patch (util.rs). rgtest in tests/regression.rs (file-level split: gold = util.rs,
+  verifier = regression.rs). Phase 4 task. NOTE: verifier builds the full rg binary (slower, 600s
+  timeout).
