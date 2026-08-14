@@ -1,6 +1,7 @@
 {
   "task_ids": [
     "fastify_404_unsupported_method",
+    "fastify_bodylimit_perparser",
     "fastify_delete_body_check",
     "fastify_middleware_encapsulation",
     "fastify_per_parser_bodylimit",

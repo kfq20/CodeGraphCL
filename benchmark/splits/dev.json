@@ -19,6 +19,7 @@
     "fastify_delete_body_check",
     "fastify_get_shared_schemas",
     "fastify_header_case_validation",
+    "fastify_header_schema_case",
     "fastify_middleware_encapsulation",
     "fastify_onsend_hook_runner",
     "fastify_per_parser_bodylimit",
