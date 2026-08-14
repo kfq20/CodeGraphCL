@@ -1,0 +1,9 @@
+check,result,detail
+re-materialize_fastify,passed,fastify_route_404_to_handler 4/4
+re-materialize_clap,passed,clap_error_newline 4/4
+re-materialize_ripgrep,passed,ripgrep_gitignore_skip_bom 4/4
+re-materialize_httpx,passed,httpx_queryparam_types 4/4
+re-materialize_viper,passed,viper_sub_keydelim 4/4
+graph_validation,passed,no self-loops, no dangling edges
+stream_static_check,passed,all task_ids resolve (10 diagnostic + 13 integrated)
+infra_success_rate,100%,5/5 tasks re-materialized (>= 95% target MET)
