@@ -1,0 +1,79 @@
+From 66754ad0c58d61d34489294530351aa4b17e217f Mon Sep 17 00:00:00 2001
+From: Tom Christie <tom@tomchristie.com>
+Date: Wed, 31 Jul 2019 00:27:20 +0100
+Subject: [PATCH] Tweak query param types (#175)
+
+* Tweak query param types
+
+* Handle primitive data types for queryparams
+
+* QueryParam keys as str-only, not PrimitiveData
+---
+ httpx/models.py | 11 +++++++----
+ httpx/utils.py  | 15 +++++++++++++++
+ 2 files changed, 22 insertions(+), 4 deletions(-)
+
+diff --git a/httpx/models.py b/httpx/models.py
+index f98447c..df5d071 100644
+--- a/httpx/models.py
++++ b/httpx/models.py
+@@ -34,14 +34,17 @@ from .utils import (
+     is_known_encoding,
+     normalize_header_key,
+     normalize_header_value,
++    str_query_param
+ )
+ 
++PrimitiveData = typing.Union[str, int, float, bool, type(None)]
++
+ URLTypes = typing.Union["URL", str]
+ 
+ QueryParamTypes = typing.Union[
+     "QueryParams",
+-    typing.Mapping[str, str],
+-    typing.List[typing.Tuple[typing.Any, typing.Any]],
++    typing.Mapping[str, PrimitiveData],
++    typing.List[typing.Tuple[str, PrimitiveData]],
+     str,
+ ]
+ 
+@@ -268,8 +271,8 @@ class QueryParams(typing.Mapping[str, str]):
+         else:
+             items = value.items()  # type: ignore
+ 
+-        self._list = [(str(k), str(v)) for k, v in items]
+-        self._dict = {str(k): str(v) for k, v in items}
++        self._list = [(str(k), str_query_param(v)) for k, v in items]
++        self._dict = {str(k): str_query_param(v) for k, v in items}
+ 
+     def getlist(self, key: typing.Any) -> typing.List[str]:
+         return [item_value for item_key, item_value in self._list if item_key == key]
+diff --git a/httpx/utils.py b/httpx/utils.py
+index 3d0d660..e96335f 100644
+--- a/httpx/utils.py
++++ b/httpx/utils.py
+@@ -20,6 +20,21 @@ def normalize_header_value(value: typing.AnyStr, encoding: str = None) -> bytes:
+     return value.encode(encoding or "ascii")
+ 
+ 
++def str_query_param(value: typing.Union[str, int, float, bool, type(None)]) -> str:
++    """
++    Coerce a primitive data type into a string value for query params.
++
++    Note that we prefer JSON-style 'true'/'false' for boolean values here.
++    """
++    if value is True:
++        return "true"
++    elif value is False:
++        return "false"
++    elif value is None:
++        return ""
++    return str(value)
++
++
+ def is_known_encoding(encoding: str) -> bool:
+     """
+     Return `True` if `encoding` is a known codec.
+-- 
+2.34.1
+

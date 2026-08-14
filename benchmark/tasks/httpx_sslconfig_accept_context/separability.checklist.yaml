@@ -1,0 +1,36 @@
+# Separability checklist for httpx_sslconfig_accept_context (httpx_ssl_config family).
+schema_version: 1
+task_id: httpx_sslconfig_accept_context
+
+checks:
+  - id: S1_instruction_symptom_only
+    question: "Does the instruction state only the symptom, not the fix?"
+    answer: yes
+    evidence: >
+      instruction.md: "passing a pre-built ssl.SSLContext object as verify= raises a
+      TypeError." Acceptance: accept it, stash it, set verify=True, load client certs.
+  - id: S2_instruction_no_mechanism_words
+    question: "Does the instruction avoid isinstance/_load_client_certs/load_cert_chain?"
+    answer: yes
+    evidence: "banned_words.txt forbids these; instruction describes type acceptance behaviorally"
+  - id: S3_instruction_no_file_names
+    question: "Does the instruction avoid naming config.py?"
+    answer: yes
+    evidence: "instruction says 'the SSL configuration module'"
+  - id: S4_near_misses_plausible
+    question: "Are the near-misses plausible-but-wrong?"
+    answer: yes
+    evidence: >
+      A = accept SSLContext but don't load client certs (the caller "already configured it");
+      B = accept SSLContext but don't set verify=True (leave it as the SSLContext object,
+      breaking the verify attribute contract).
+  - id: S5_near_misses_distinct_axes
+    question: "Do the near-misses fail along distinct axes?"
+    answer: yes
+    evidence: >
+      A fails on cert loading assertion (certs not loaded into passed context); B fails on
+      the verify attribute check (verify is SSLContext, not True).
+  - id: S6_base_solvable
+    question: "Is the base solvable?"
+    answer: yes
+    evidence: "42-line patch. base-fail verified (TypeError on SSLContext verify)."

@@ -1,0 +1,35 @@
+# Separability checklist for httpx_queryparam_lists (httpx_queryparams family, node 2).
+schema_version: 1
+task_id: httpx_queryparam_lists
+
+checks:
+  - id: S1_instruction_symptom_only
+    question: "Does the instruction state only the symptom, not the fix?"
+    answer: yes
+    evidence: >
+      instruction.md: "a dict that has list or tuple values raises a TypeError...
+      expected behavior is to flatten list/tuple values into multiple key-value pairs."
+  - id: S2_instruction_no_mechanism_words
+    question: "Does the instruction avoid flatten_queryparams/collections.abc.Sequence?"
+    answer: yes
+    evidence: "banned_words.txt forbids these; instruction describes flattening behaviorally"
+  - id: S3_instruction_no_file_names
+    question: "Does the instruction avoid naming models.py/utils.py?"
+    answer: yes
+    evidence: "instruction says 'the flattening logic and the query param type definitions'"
+  - id: S4_near_misses_plausible
+    question: "Are the near-misses plausible-but-wrong?"
+    answer: yes
+    evidence: >
+      A = flatten lists but not tuples (lists are the common case, isinstance list check);
+      B = flatten strings too (forget str/bytes exclusion, iterate string chars).
+  - id: S5_near_misses_distinct_axes
+    question: "Do the near-misses fail along distinct axes?"
+    answer: yes
+    evidence: >
+      A fails on the tuple source (TypeError on tuple); B fails on the string source
+      (string split into characters, wrong query params).
+  - id: S6_base_solvable
+    question: "Is the base solvable?"
+    answer: yes
+    evidence: "39-line patch. base-fail verified (TypeError on list values)."

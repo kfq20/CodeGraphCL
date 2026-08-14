@@ -1,0 +1,37 @@
+# Separability checklist for httpx_url_copywith_authority (httpx_url_builder family).
+schema_version: 1
+task_id: httpx_url_copywith_authority
+
+checks:
+  - id: S1_instruction_symptom_only
+    question: "Does the instruction state only the symptom, not the fix?"
+    answer: yes
+    evidence: >
+      instruction.md: "calling copy_with() with host=, port=, username=, or password= keyword
+      arguments does not update the URL's authority component." Acceptance: compose them
+      into the authority component string.
+  - id: S2_instruction_no_mechanism_words
+    question: "Does the instruction avoid kwargs.pop/kwargs[authority]/userpass?"
+    answer: yes
+    evidence: "banned_words.txt forbids these; instruction describes composition behaviorally"
+  - id: S3_instruction_no_file_names
+    question: "Does the instruction avoid naming models.py?"
+    answer: yes
+    evidence: "instruction says 'the URL model's copy method'"
+  - id: S4_near_misses_plausible
+    question: "Are the near-misses plausible-but-wrong?"
+    answer: yes
+    evidence: >
+      A = build authority but forget userpass (host:port is the common case, credentials
+      are rare); B = build authority but forget port (host-only URLs are common, port
+      is optional).
+  - id: S5_near_misses_distinct_axes
+    question: "Do the near-misses fail along distinct axes?"
+    answer: yes
+    evidence: >
+      A fails on the username/password assertions; B fails on the port assertion and the
+      final str(new) comparison.
+  - id: S6_base_solvable
+    question: "Is the base solvable?"
+    answer: yes
+    evidence: "22-line patch. base-fail verified (copy_with component kwargs ignored)."

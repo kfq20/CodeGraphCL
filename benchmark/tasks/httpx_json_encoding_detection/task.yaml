@@ -1,0 +1,84 @@
+schema_version: 1
+task_id: httpx_json_encoding_detection
+family_id: httpx_encoding
+
+repository:
+  url: https://github.com/encode/httpx
+  base_commit: "561fb842489e52831daf91621f821b745be748eb"
+  gold_commit: "5442006a41f94a3e41186910d7a6e8546adf0f89"
+  language: python
+
+instruction:
+  path: instruction.md
+
+environment:
+  image: codegraphcl-httpx:py311
+  dockerfile: harbor_task/environment/Dockerfile.httpx
+  workdir: /workspace/repo
+  build_timeout_sec: 900
+  extra_mounts:
+    wheels: /pool/wheels
+
+patches:
+  gold: gold.patch                   # http3/models.py + http3/utils.py (guess_json_utf + json() encoding detection)
+  verifier: verifier/verifier.patch   # tests/models/test_responses.py + tests/test_utils.py (encoding tests)
+
+verifier:
+  command: bash verifier/test.sh
+  timeout_sec: 300
+  hermetic: false
+  fail_to_pass:
+    - "test_json_with_specified_encoding"
+    - "test_json_without_specified_encoding"
+    - "test_json_without_specified_encoding_decode_error"
+    - "test_encoded"
+    - "test_bad_utf_like_encoding"
+    - "test_guess_by_bom"
+  pass_to_pass: []
+  pass_to_pass_not_applicable: true
+  near_miss_base: gold
+  near_miss:
+    - near_miss/nearmiss_bom_only.py
+    - near_miss/nearmiss_wrong_null_logic.py
+
+separability:
+  banned_words: banned_words.txt
+  checklist: separability.checklist.yaml
+
+mechanism_audit:
+  reusable_decision: >
+    Producer: JSON encoding detection from raw bytes. The decision: when Content-Type charset
+    is absent, detect the encoding by inspecting the first 4 bytes for a BOM (UTF-8/16/32 BOM)
+    or a null-byte pattern (count + position of \x00 in the first 4 bytes determines endianness
+    and width). Fall back to .text (which uses the declared charset) if detection fails.
+  plausible_path_correct: >
+    Add a guess_json_utf(data) utility that checks BOM patterns first, then null-byte count
+    (0=null -> utf-8, 2 -> utf-16-be/le depending on position, 3 -> utf-32-be/le). In json(),
+    call it when charset_encoding is None and content is >3 bytes; decode with detected encoding.
+  plausible_path_competing: >
+    Only check for BOM markers (UTF-8/16/32 BOM), ignoring the null-byte heuristic. This catches
+    BOM-prefixed content but misses non-BOM utf-16/32 content (the common case). Looks correct
+    (BOM is the standard way to detect encoding) but is incomplete.
+  why_instruction_does_not_disambiguate: >
+    The instruction says the symptom (JSON decoded as utf-8 when the content is actually utf-16/32
+    without a charset header) and the expectation (detect the encoding from the bytes). It does
+    NOT name guess_json_utf, the null-byte heuristic, or the BOM check — a reset agent can't tell
+    whether to check BOM, null bytes, or both.
+  why_correct_history_selects_path: >
+    The null-byte heuristic is the correct approach because JSON always starts with ASCII
+    characters ('{', '[', '"', digits, letters), so null bytes in the first 4 bytes reliably
+    indicate the encoding width and endianness. BOM-only detection misses non-BOM content.
+  why_wrong_history_is_plausible: >
+    BOM detection is the standard encoding-detection approach and is simpler. "Just check the
+    BOM" is a reasonable first instinct.
+
+status:
+  semantic_audit: passed
+  separability_gate: passed
+  executable_gate: passed         # materialized 4/4 (agent-built, verified)
+  verification_tier: executable_candidate
+  intervention_preflight: pending
+
+notes: >
+  httpx_encoding family. Motif: parity (ported from requests' guess_json_utf). 53-line source
+  patch (http3/models.py + http3/utils.py). Uses http3/ package name (early httpx, pre-rename).

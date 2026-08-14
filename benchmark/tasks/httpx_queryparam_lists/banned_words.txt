@@ -1,0 +1,10 @@
+# Banned MECHANISM words for httpx_queryparam_lists instruction.
+# The fix: add flatten_queryparams() that checks collections.abc.Sequence (not str/bytes)
+# and flattens list/tuple values into multiple pairs. "flatten"/"list" are symptom-level.
+flatten_queryparams
+collections.abc.Sequence
+isinstance(v,
+multi_items
+QueryParamTypes
+str_query_param
+flatten_queryparams_values

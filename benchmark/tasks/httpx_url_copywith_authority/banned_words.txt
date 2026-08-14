@@ -1,0 +1,11 @@
+# Banned MECHANISM words for httpx_url_copywith_authority instruction.
+# The fix: in copy_with(), detect host/port/username/password kwargs, compose authority string,
+# set kwargs["authority"]. "authority"/"host"/"port" are symptom-level; the composition mechanism is banned.
+kwargs.pop
+kwargs["authority"]
+userpass
+_uri_reference.copy_with
+authority = host
+authority += f":{port}"
+authority = f"{userpass}@{authority}"
+copy_with

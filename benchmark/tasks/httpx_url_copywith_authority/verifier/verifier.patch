@@ -1,0 +1,34 @@
+From e6da325e8be4a7194571adea67053446c75d9aa3 Mon Sep 17 00:00:00 2001
+From: =?UTF-8?q?Can=20Sar=C4=B1g=C3=B6l?= <cansarigol@derinbilgi.com.tr>
+Date: Fri, 4 Oct 2019 11:17:25 +0300
+Subject: [PATCH] added authority copy feature in URL.copy_with (#436)
+
+---
+ tests/models/test_url.py | 14 ++++++++++++++
+ 1 file changed, 14 insertions(+)
+
+diff --git a/tests/models/test_url.py b/tests/models/test_url.py
+index 0bba256..c4a74a8 100644
+--- a/tests/models/test_url.py
++++ b/tests/models/test_url.py
+@@ -190,3 +190,17 @@ def test_origin_from_url_string():
+     assert origin.is_ssl
+     assert origin.host == "example.com"
+     assert origin.port == 443
++
++
++def test_url_copywith_for_authority():
++    copy_with_kwargs = {
++        "username": "username",
++        "password": "password",
++        "port": 444,
++        "host": "example.net",
++    }
++    url = URL("https://example.org")
++    new = url.copy_with(**copy_with_kwargs)
++    for k, v in copy_with_kwargs.items():
++        assert getattr(new, k) == v
++    assert str(new) == "https://username:password@example.net:444"
+-- 
+2.34.1
+

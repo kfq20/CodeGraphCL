@@ -1,0 +1,35 @@
+# Separability checklist for httpx_json_encoding_detection (httpx_encoding family).
+schema_version: 1
+task_id: httpx_json_encoding_detection
+
+checks:
+  - id: S1_instruction_symptom_only
+    question: "Does the instruction state only the symptom, not the fix?"
+    answer: yes
+    evidence: >
+      instruction.md: "calling .json() raises a UnicodeDecodeError... the method blindly
+      assumes the content is UTF-8." Acceptance: detect encoding from raw byte content.
+  - id: S2_instruction_no_mechanism_words
+    question: "Does the instruction avoid guess_json_utf/nullcount/BOM/codecs?"
+    answer: yes
+    evidence: "banned_words.txt forbids these; instruction says 'byte pattern reveals the encoding width'"
+  - id: S3_instruction_no_file_names
+    question: "Does the instruction avoid naming models.py/utils.py?"
+    answer: yes
+    evidence: "instruction says 'the response model and a utility module'"
+  - id: S4_near_misses_plausible
+    question: "Are the near-misses plausible-but-wrong?"
+    answer: yes
+    evidence: >
+      A = BOM-only detection (standard approach, but misses non-BOM utf-16/32); B = wrong
+      null-byte logic (off-by-one in endianness detection — plausible inversion).
+  - id: S5_near_misses_distinct_axes
+    question: "Do the near-misses fail along distinct axes?"
+    answer: yes
+    evidence: >
+      A fails on non-BOM content (detection returns None, falls back to utf-8, still fails);
+      B fails on utf-16 endianness (detects wrong endianness, decode produces wrong chars).
+  - id: S6_base_solvable
+    question: "Is the base solvable?"
+    answer: yes
+    evidence: "53-line patch. base-fail verified (UnicodeDecodeError on non-utf-8 JSON)."

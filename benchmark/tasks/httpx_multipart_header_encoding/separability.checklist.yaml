@@ -1,0 +1,36 @@
+# Separability checklist for httpx_multipart_header_encoding (httpx_multipart family).
+schema_version: 1
+task_id: httpx_multipart_header_encoding
+
+checks:
+  - id: S1_instruction_symptom_only
+    question: "Does the instruction state only the symptom, not the fix?"
+    answer: yes
+    evidence: >
+      instruction.md: "filenames with non-ASCII characters are incorrectly encoded...
+      different output than the HTML5 form encoding specification requires." Acceptance:
+      encode per HTML5 form encoding spec.
+  - id: S2_instruction_no_mechanism_words
+    question: "Does the instruction avoid _format_param/HTML5_FORM_ENCODING_RE/regex?"
+    answer: yes
+    evidence: "banned_words.txt forbids these; instruction describes the encoding rules behaviorally"
+  - id: S3_instruction_no_file_names
+    question: "Does the instruction avoid naming multipart.py?"
+    answer: yes
+    evidence: "instruction says 'the multipart encoding module'"
+  - id: S4_near_misses_plausible
+    question: "Are the near-misses plausible-but-wrong?"
+    answer: yes
+    evidence: >
+      A = keep urllib quote() (the existing approach, just wrong spec); B = HTML5 encoding
+      but missing control characters (the 0x1B exclusion is easy to get wrong).
+  - id: S5_near_misses_distinct_axes
+    question: "Do the near-misses fail along distinct axes?"
+    answer: yes
+    evidence: >
+      A fails on unicode and backslash (wrong encoding entirely); B fails on control chars
+      (correct encoding type, missing one char class).
+  - id: S6_base_solvable
+    question: "Is the base solvable?"
+    answer: yes
+    evidence: "43-line patch. base-fail verified (non-ASCII filename encoding mismatch)."

@@ -1,0 +1,45 @@
+From 66754ad0c58d61d34489294530351aa4b17e217f Mon Sep 17 00:00:00 2001
+From: Tom Christie <tom@tomchristie.com>
+Date: Wed, 31 Jul 2019 00:27:20 +0100
+Subject: [PATCH] Tweak query param types (#175)
+
+* Tweak query param types
+
+* Handle primitive data types for queryparams
+
+* QueryParam keys as str-only, not PrimitiveData
+---
+ tests/models/test_queryparams.py | 20 ++++++++++++++++++++
+ 1 file changed, 20 insertions(+)
+
+diff --git a/tests/models/test_queryparams.py b/tests/models/test_queryparams.py
+index 983b09f..fbb559f 100644
+--- a/tests/models/test_queryparams.py
++++ b/tests/models/test_queryparams.py
+@@ -31,3 +31,23 @@ def test_queryparams():
+ 
+     q = QueryParams([("a", "123"), ("a", "456")])
+     assert QueryParams(q) == q
++
++
++def test_queryparam_types():
++    q = QueryParams({"a": True})
++    assert str(q) == "a=true"
++
++    q = QueryParams({"a": False})
++    assert str(q) == "a=false"
++
++    q = QueryParams({"a": ""})
++    assert str(q) == "a="
++
++    q = QueryParams({"a": None})
++    assert str(q) == "a="
++
++    q = QueryParams({"a": 1.23})
++    assert str(q) == "a=1.23"
++
++    q = QueryParams({"a": 123})
++    assert str(q) == "a=123"
+-- 
+2.34.1
+

@@ -1,0 +1,18 @@
+# Banned MECHANISM words for httpx_json_encoding_detection instruction.
+# The fix: add guess_json_utf() that detects encoding from BOM + null-byte pattern, and
+# call it in Response.json() when charset_encoding is None. "utf-8"/"utf-16"/"utf-32"
+# are symptom-level encodings; the detection mechanism is banned.
+guess_json_utf
+_null
+nullcount
+BOM_UTF32_LE
+BOM_UTF32_BE
+BOM_UTF16_LE
+BOM_UTF16_BE
+BOM_UTF8
+codecs.BOM
+sample.count
+sample[::2]
+sample[1::2]
+jsonlib.loads
+charset_encoding

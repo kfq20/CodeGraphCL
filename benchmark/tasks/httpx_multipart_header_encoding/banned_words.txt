@@ -1,0 +1,14 @@
+# Banned MECHANISM words for httpx_multipart_header_encoding instruction.
+# The fix: replace urllib quote() with a regex-based HTML5 form encoding (_format_param).
+# "encoding"/"percent-encode" are symptom-level; the specific mechanism is banned.
+_format_param
+_HTML5_FORM_ENCODING_REPLACEMENTS
+_HTML5_FORM_ENCODING_RE
+re.escape
+re.compile
+quote(
+quote_from_bytes
+urllib.parse.quote
+render_headers
+DataField
+FileField

@@ -1,0 +1,78 @@
+schema_version: 1
+task_id: httpx_queryparam_types
+family_id: httpx_queryparams
+
+repository:
+  url: https://github.com/encode/httpx
+  base_commit: "33822973c3aacf9e395e276fe3448c4f9ace2be2"
+  gold_commit: "66754ad0c58d61d34489294530351aa4b17e217f"
+  language: python
+
+instruction:
+  path: instruction.md
+
+environment:
+  image: codegraphcl-httpx:py311
+  dockerfile: harbor_task/environment/Dockerfile.httpx
+  workdir: /workspace/repo
+  build_timeout_sec: 900
+  extra_mounts:
+    wheels: /pool/wheels
+
+patches:
+  gold: gold.patch                   # httpx/models.py + httpx/utils.py (str_query_param + PrimitiveData type)
+  verifier: verifier/verifier.patch   # tests/models/test_queryparams.py (test_queryparam_types)
+
+verifier:
+  command: bash verifier/test.sh
+  timeout_sec: 300
+  hermetic: false
+  fail_to_pass:
+    - "test_queryparam_types"
+  pass_to_pass: []
+  pass_to_pass_not_applicable: true
+  near_miss_base: gold
+  near_miss:
+    - near_miss/nearmiss_bool_only.py
+    - near_miss/nearmiss_none_as_none.py
+
+separability:
+  banned_words: banned_words.txt
+  checklist: separability.checklist.yaml
+
+mechanism_audit:
+  reusable_decision: >
+    Producer: query parameter value type coercion. The decision: when building query params from
+    a dict, primitive values (bool, int, float, None) must be coerced to strings using JSON-style
+    conventions (True -> "true", False -> "false", None -> "") rather than Python str() defaults
+    (True -> "True", None -> "None"). This matches how web frameworks and HTTP clients expect
+    booleans and nulls to be serialized.
+  plausible_path_correct: >
+    Add a str_query_param(value) utility that checks: if True -> "true", if False -> "false",
+    if None -> "", else str(value). Use it in QueryParams.__init__ instead of str(v) for both
+    _list and _dict. Also add PrimitiveData type alias and update QueryParamTypes union.
+  plausible_path_competing: >
+    Handle only booleans (True -> "true", False -> "false") but leave None as str(None) -> "None".
+    This fixes the boolean case but produces "a=None" for None values, which should be "a=".
+    Looks correct (booleans are the most visible issue) but misses None handling.
+  why_instruction_does_not_disambiguate: >
+    The instruction says the symptom (boolean query params render as Python str "True"/"False"
+    instead of lowercase "true"/"false") and the expectation (use lowercase for booleans).
+    It does NOT name str_query_param, the None->"" rule, or which file the coercion belongs in.
+  why_correct_history_selects_path: >
+    The JSON-style convention (true/false/null) is the web standard for query param serialization.
+    Handling None as empty string matches RFC 3986 (a key with no value).
+  why_wrong_history_is_plausible: >
+    "Just fix the boolean rendering" is a reasonable minimal fix that addresses the most visible
+    symptom.
+
+status:
+  semantic_audit: passed
+  separability_gate: passed
+  executable_gate: passed         # materialized 4/4 (agent-built, verified)
+  verification_tier: executable_candidate
+  intervention_preflight: pending
+
+notes: >
+  httpx_queryparams family (node 1/2). Motif: direct (primitive type coercion). 26-line source
+  patch (httpx/models.py + httpx/utils.py). Precedes httpx_queryparam_lists (57ae7ea).

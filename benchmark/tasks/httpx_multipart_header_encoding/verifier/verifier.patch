@@ -1,0 +1,38 @@
+From fb17459335b7e703f1895c4186a4fe421a54d815 Mon Sep 17 00:00:00 2001
+From: Nik <snive2013@yandex.ru>
+Date: Mon, 29 Jul 2019 06:16:37 +0300
+Subject: [PATCH] Fixed multipart header params encoding (#167)
+
+---
+ tests/test_multipart.py | 18 ++++++++++++++++++
+ 1 file changed, 18 insertions(+)
+
+diff --git a/tests/test_multipart.py b/tests/test_multipart.py
+index a3e6eb5..097adbd 100644
+--- a/tests/test_multipart.py
++++ b/tests/test_multipart.py
+@@ -123,3 +123,21 @@ def test_multipart_encode():
+             "--{0}--\r\n"
+             "".format(boundary).encode("ascii")
+         )
++
++
++class TestHeaderParamHTML5Formatting:
++    def test_unicode(self):
++        param = multipart._format_param("filename", "n\u00e4me")
++        assert param == b'filename="n\xc3\xa4me"'
++
++    def test_ascii(self):
++        param = multipart._format_param("filename", b"name")
++        assert param == b'filename="name"'
++
++    def test_unicode_escape(self):
++        param = multipart._format_param("filename", "hello\\world\u0022")
++        assert param == b'filename="hello\\\\world%22"'
++
++    def test_unicode_with_control_character(self):
++        param = multipart._format_param("filename", "hello\x1A\x1B\x1C")
++        assert param == b'filename="hello%1A\x1B%1C"'
+-- 
+2.34.1
+

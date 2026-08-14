@@ -1,0 +1,11 @@
+# Banned MECHANISM words for httpx_sslconfig_accept_context instruction.
+# The fix: isinstance(verify, ssl.SSLContext) check in __init__, stash it, set verify=True,
+# extract _load_client_certs helper. "SSLContext"/"verify" are symptom-level; the mechanism is banned.
+isinstance(verify, ssl.SSLContext
+_load_client_certs
+load_cert_chain
+ssl_context = verify
+verify = True
+self.cert
+self.verify = verify
+ssl.SSLContext

@@ -1,0 +1,79 @@
+schema_version: 1
+task_id: httpx_url_copywith_authority
+family_id: httpx_url_builder
+
+repository:
+  url: https://github.com/encode/httpx
+  base_commit: "f504399781b838779bdb3aeae9254aeeea5ebb84"
+  gold_commit: "e6da325e8be4a7194571adea67053446c75d9aa3"
+  language: python
+
+instruction:
+  path: instruction.md
+
+environment:
+  image: codegraphcl-httpx:py311
+  dockerfile: harbor_task/environment/Dockerfile.httpx
+  workdir: /workspace/repo
+  build_timeout_sec: 900
+  extra_mounts:
+    wheels: /pool/wheels
+
+patches:
+  gold: gold.patch                   # httpx/models.py (authority copy in URL.copy_with)
+  verifier: verifier/verifier.patch   # tests/models/test_url.py (test_url_copywith_for_authority)
+
+verifier:
+  command: bash verifier/test.sh
+  timeout_sec: 300
+  hermetic: false
+  fail_to_pass:
+    - "test_url_copywith_for_authority"
+  pass_to_pass: []
+  pass_to_pass_not_applicable: true
+  near_miss_base: gold
+  near_miss:
+    - near_miss/nearmiss_no_userpass.py
+    - near_miss/nearmiss_no_port.py
+
+separability:
+  banned_words: banned_words.txt
+  checklist: separability.checklist.yaml
+
+mechanism_audit:
+  reusable_decision: >
+    Producer: URL copy_with component composition. The decision: when copy_with() is called with
+    individual authority components (username, password, host, port), it must compose them into the
+    authority string that the underlying URI library expects (user:pass@host:port), rather than
+    passing them individually (which the URI library doesn't understand).
+  plausible_path_correct: >
+    In copy_with(), check if any of username/password/host/port is in kwargs. If so, pop them
+    (defaulting to self.* values), build the authority string: host, append ":port" if port,
+    prepend "user:pass@" if username (append ":password" if password), then set kwargs["authority"]
+    to the composed string. Delegate to the URI library with authority.
+  plausible_path_competing: >
+    Build the authority but forget the userpass component. Set authority to just "host:port"
+    without the "user:pass@" prefix. This is correct for URLs without credentials but drops
+    username/password. Looks correct (host:port is the common case) but incomplete.
+  why_instruction_does_not_disambiguate: >
+    The instruction says the symptom (calling copy_with with host/port/username/password kwargs
+    doesn't update the URL's authority, the resulting URL has the old host/port/credentials) and
+    the expectation (compose them into the authority). It does NOT name the authority string,
+    the kwargs.pop pattern, or the f-string composition.
+  why_correct_history_selects_path: >
+    The full authority composition (host + port + userpass) is the correct approach because the
+    URI library expects a single authority component, and all four parts contribute to it.
+  why_wrong_history_is_plausible: >
+    "Just build host:port" is a reasonable partial fix that handles the common case without
+    credentials.
+
+status:
+  semantic_audit: passed
+  separability_gate: passed
+  executable_gate: passed         # materialized 4/4 (agent-built, verified)
+  verification_tier: executable_candidate
+  intervention_preflight: pending
+
+notes: >
+  httpx_url_builder family. Motif: builder-derive (individual components composed into authority
+  string for the URI library). 22-line source patch (httpx/models.py).

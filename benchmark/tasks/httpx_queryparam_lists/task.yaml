@@ -1,0 +1,81 @@
+schema_version: 1
+task_id: httpx_queryparam_lists
+family_id: httpx_queryparams
+
+repository:
+  url: https://github.com/encode/httpx
+  base_commit: "31730e709597baaa7b2364fee041dfa985169789"
+  gold_commit: "57ae7ea22b0a091ad9dbd01c327b80e8bc67e265"
+  language: python
+
+instruction:
+  path: instruction.md
+
+environment:
+  image: codegraphcl-httpx:py311
+  dockerfile: harbor_task/environment/Dockerfile.httpx
+  workdir: /workspace/repo
+  build_timeout_sec: 900
+  extra_mounts:
+    wheels: /pool/wheels
+
+patches:
+  gold: gold.patch                   # httpx/models.py + httpx/utils.py (flatten_queryparams for list values)
+  verifier: verifier/verifier.patch   # tests/models/test_queryparams.py (parametrized list/tuple sources)
+
+verifier:
+  command: bash verifier/test.sh
+  timeout_sec: 300
+  hermetic: false
+  fail_to_pass:
+    - "test_queryparams[source1]"   # {"a": ["123", "456"], "b": 789}
+    - "test_queryparams[source2]"   # {"a": ("123", "456"), "b": 789}
+  pass_to_pass: []
+  pass_to_pass_not_applicable: true
+  near_miss_base: gold
+  near_miss:
+    - near_miss/nearmiss_list_not_tuple.py
+    - near_miss/nearmiss_str_flatten.py
+
+separability:
+  banned_words: banned_words.txt
+  checklist: separability.checklist.yaml
+
+mechanism_audit:
+  reusable_decision: >
+    Producer: query parameter list/tuple flattening. The decision: when a dict mapping is passed
+    to QueryParams, list/tuple values (not str/bytes) must be flattened into multiple key-value
+    pairs (e.g. {"tag": ["python", "dev"]} -> [("tag", "python"), ("tag", "dev")]), matching the
+    HTTP convention for repeated query params. str and bytes values are treated as single values
+    (not iterated).
+  plausible_path_correct: >
+    Add a flatten_queryparams(queryparams) utility that iterates the dict: for each (k, v), if v is
+    a collections.abc.Sequence and not str/bytes, iterate and append (k, item) for each; else
+    append (k, v). Use it in QueryParams.__init__ for the dict branch. Also update QueryParamTypes
+    to accept Union[PrimitiveData, Sequence[PrimitiveData]] values.
+  plausible_path_competing: >
+    Flatten lists but not tuples. Check isinstance(v, list) but forget tuples. This handles the
+    most common case (dicts with list values) but raises TypeError for tuple values.
+    Looks correct (lists are the common case) but misses tuples.
+  why_instruction_does_not_disambiguate: >
+    The instruction says the symptom (passing a dict with list values for a key raises TypeError
+    instead of producing repeated query params) and the expectation (flatten list values into
+    multiple key-value pairs). It does NOT name flatten_queryparams, the collections.abc check,
+    or the str/bytes exclusion.
+  why_correct_history_selects_path: >
+    The Sequence ABC check (with str/bytes exclusion) is the correct approach because it handles
+    both lists and tuples generically while avoiding the pitfall of iterating string characters.
+  why_wrong_history_is_plausible: >
+    "Just check for lists" is a reasonable minimal fix that addresses the most common case.
+
+status:
+  semantic_audit: passed
+  separability_gate: passed
+  executable_gate: passed         # materialized 4/4 (agent-built, verified)
+  verification_tier: executable_candidate
+  intervention_preflight: pending
+
+notes: >
+  httpx_queryparams family (node 2/2). Motif: parity (type acceptance expansion, matching requests'
+  list-query-param behavior). 39-line source patch (httpx/models.py + httpx/utils.py). Succeeds
+  httpx_queryparam_types (66754ad) — builds on its str_query_param + PrimitiveData.

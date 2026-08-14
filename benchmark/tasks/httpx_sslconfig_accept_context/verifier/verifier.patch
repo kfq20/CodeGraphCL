@@ -1,0 +1,32 @@
+From df8874b7339c9dcb7963689b304ce0179fc0d862 Mon Sep 17 00:00:00 2001
+From: Seth Michael Larson <sethmichaellarson@gmail.com>
+Date: Wed, 14 Aug 2019 22:30:02 -0500
+Subject: [PATCH] Accept SSLContext into SSLConfig(verify=...) (#215)
+
+---
+ tests/test_config.py | 9 +++++++++
+ 1 file changed, 9 insertions(+)
+
+diff --git a/tests/test_config.py b/tests/test_config.py
+index b587e93..20befa7 100644
+--- a/tests/test_config.py
++++ b/tests/test_config.py
+@@ -76,6 +76,15 @@ def test_load_ssl_config_no_verify():
+     assert context.check_hostname is False
+ 
+ 
++def test_load_ssl_context():
++    ssl_context = ssl.create_default_context()
++    ssl_config = httpx.SSLConfig(verify=ssl_context)
++
++    assert ssl_config.verify is True
++    assert ssl_config.ssl_context is ssl_context
++    assert repr(ssl_config) == "SSLConfig(cert=None, verify=True)"
++
++
+ def test_ssl_repr():
+     ssl = httpx.SSLConfig(verify=False)
+     assert repr(ssl) == "SSLConfig(cert=None, verify=False)"
+-- 
+2.34.1
+

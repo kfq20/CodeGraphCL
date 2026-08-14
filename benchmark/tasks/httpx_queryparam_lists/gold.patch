@@ -1,0 +1,113 @@
+From 57ae7ea22b0a091ad9dbd01c327b80e8bc67e265 Mon Sep 17 00:00:00 2001
+From: Florimond Manca <florimond.manca@gmail.com>
+Date: Tue, 8 Oct 2019 22:12:04 +0200
+Subject: [PATCH] Allow lists in query params (#386)
+
+---
+ httpx/models.py |  8 +++++---
+ httpx/utils.py  | 31 ++++++++++++++++++++++++++++++-
+ 2 files changed, 35 insertions(+), 4 deletions(-)
+
+diff --git a/httpx/models.py b/httpx/models.py
+index f70fdf4..136aa41 100644
+--- a/httpx/models.py
++++ b/httpx/models.py
+@@ -32,6 +32,7 @@ from .exceptions import (
+ from .multipart import multipart_encode
+ from .status_codes import StatusCode
+ from .utils import (
++    flatten_queryparams,
+     guess_json_utf,
+     is_known_encoding,
+     normalize_header_key,
+@@ -51,7 +52,7 @@ URLTypes = typing.Union["URL", str]
+ 
+ QueryParamTypes = typing.Union[
+     "QueryParams",
+-    typing.Mapping[str, PrimitiveData],
++    typing.Mapping[str, typing.Union[PrimitiveData, typing.Sequence[PrimitiveData]]],
+     typing.List[typing.Tuple[str, PrimitiveData]],
+     str,
+ ]
+@@ -311,14 +312,15 @@ class QueryParams(typing.Mapping[str, str]):
+ 
+         value = args[0] if args else kwargs
+ 
++        items: typing.Sequence[typing.Tuple[str, PrimitiveData]]
+         if isinstance(value, str):
+             items = parse_qsl(value)
+         elif isinstance(value, QueryParams):
+             items = value.multi_items()
+         elif isinstance(value, list):
+-            items = value  # type: ignore
++            items = value
+         else:
+-            items = value.items()  # type: ignore
++            items = flatten_queryparams(value)
+ 
+         self._list = [(str(k), str_query_param(v)) for k, v in items]
+         self._dict = {str(k): str_query_param(v) for k, v in items}
+diff --git a/httpx/utils.py b/httpx/utils.py
+index c8fcb1e..8aea5e7 100644
+--- a/httpx/utils.py
++++ b/httpx/utils.py
+@@ -1,4 +1,5 @@
+ import codecs
++import collections
+ import logging
+ import netrc
+ import os
+@@ -11,6 +12,9 @@ from time import perf_counter
+ from types import TracebackType
+ from urllib.request import getproxies
+ 
++if typing.TYPE_CHECKING:  # pragma: no cover
++    from .models import PrimitiveData
++
+ 
+ def normalize_header_key(value: typing.AnyStr, encoding: str = None) -> bytes:
+     """
+@@ -30,7 +34,7 @@ def normalize_header_value(value: typing.AnyStr, encoding: str = None) -> bytes:
+     return value.encode(encoding or "ascii")
+ 
+ 
+-def str_query_param(value: typing.Optional[typing.Union[str, int, float, bool]]) -> str:
++def str_query_param(value: "PrimitiveData") -> str:
+     """
+     Coerce a primitive data type into a string value for query params.
+ 
+@@ -256,6 +260,31 @@ def unquote(value: str) -> str:
+     return value[1:-1] if value[0] == value[-1] == '"' else value
+ 
+ 
++def flatten_queryparams(
++    queryparams: typing.Mapping[
++        str, typing.Union["PrimitiveData", typing.Sequence["PrimitiveData"]]
++    ]
++) -> typing.List[typing.Tuple[str, "PrimitiveData"]]:
++    """
++    Convert a mapping of query params into a flat list of two-tuples
++    representing each item.
++
++    Example:
++    >>> flatten_queryparams_values({"q": "httpx", "tag": ["python", "dev"]})
++    [("q", "httpx), ("tag", "python"), ("tag", "dev")]
++    """
++    items = []
++
++    for k, v in queryparams.items():
++        if isinstance(v, collections.abc.Sequence) and not isinstance(v, (str, bytes)):
++            for u in v:
++                items.append((k, u))
++        else:
++            items.append((k, typing.cast("PrimitiveData", v)))
++
++    return items
++
++
+ class ElapsedTimer:
+     def __init__(self) -> None:
+         self.start: float = perf_counter()
+-- 
+2.34.1
+

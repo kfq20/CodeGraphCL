@@ -1,0 +1,80 @@
+schema_version: 1
+task_id: httpx_sslconfig_accept_context
+family_id: httpx_ssl_config
+
+repository:
+  url: https://github.com/encode/httpx
+  base_commit: "af907e85e175541289768e61ad21511cfa3ec1b7"
+  gold_commit: "df8874b7339c9dcb7963689b304ce0179fc0d862"
+  language: python
+
+instruction:
+  path: instruction.md
+
+environment:
+  image: codegraphcl-httpx:py311
+  dockerfile: harbor_task/environment/Dockerfile.httpx
+  workdir: /workspace/repo
+  build_timeout_sec: 900
+  extra_mounts:
+    wheels: /pool/wheels
+
+patches:
+  gold: gold.patch                   # httpx/config.py (accept SSLContext into SSLConfig(verify=...))
+  verifier: verifier/verifier.patch   # tests/test_config.py (test_load_ssl_context)
+
+verifier:
+  command: bash verifier/test.sh
+  timeout_sec: 300
+  hermetic: false
+  fail_to_pass:
+    - "test_load_ssl_context"
+  pass_to_pass: []
+  pass_to_pass_not_applicable: true
+  near_miss_base: gold
+  near_miss:
+    - near_miss/nearmiss_no_cert_loading.py
+    - near_miss/nearmiss_verify_not_set.py
+
+separability:
+  banned_words: banned_words.txt
+  checklist: separability.checklist.yaml
+
+mechanism_audit:
+  reusable_decision: >
+    Producer: SSLConfig constructor type acceptance. The decision: the verify parameter should
+    accept not just str (CA path) and bool (enable/disable verification), but also a pre-built
+    ssl.SSLContext. When an SSLContext is passed, stash it directly and set verify=True (assume
+    the caller configured it), then load client certs into it via a shared helper.
+  plausible_path_correct: >
+    In __init__, check isinstance(verify, ssl.SSLContext). If so, stash it as ssl_context,
+    set verify=True, and call _load_client_certs(ssl_context) to load client certs. Extract
+    the cert-loading logic into a _load_client_certs method (DRY) so both the pre-built-context
+    path and the normal load_ssl_context path share it.
+  plausible_path_competing: >
+    Accept the SSLContext and stash it, but don't extract the cert-loading into a shared helper.
+    Instead, duplicate the cert-loading code inline. This is functionally correct for the SSLContext
+    path but misses the DRY refactor. Looks correct (the SSLContext is accepted and used) but
+    doesn't load client certs on the pre-built context.
+  why_instruction_does_not_disambiguate: >
+    The instruction says the symptom (passing a pre-built SSL context as the verify argument raises
+    a TypeError) and the expectation (accept it and use it as-is). It does NOT name isinstance,
+    _load_client_certs, the verify=True default, or the DRY refactor.
+  why_correct_history_selects_path: >
+    The shared-helper approach is correct because the pre-built SSLContext still needs client
+    certs loaded (the caller may have set up the context but not the certs). The DRY refactor
+    ensures both paths share the same cert-loading logic.
+  why_wrong_history_is_plausible: >
+    "Just accept the SSLContext and use it directly" is a reasonable minimal fix that doesn't
+    handle client cert loading.
+
+status:
+  semantic_audit: passed
+  separability_gate: passed
+  executable_gate: passed         # materialized 4/4 (agent-built, verified)
+  verification_tier: executable_candidate
+  intervention_preflight: pending
+
+notes: >
+  httpx_ssl_config family. Motif: scope (type acceptance + DRY refactor of cert loading).
+  42-line source patch (httpx/config.py).

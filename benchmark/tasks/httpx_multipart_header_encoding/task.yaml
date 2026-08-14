@@ -1,0 +1,82 @@
+schema_version: 1
+task_id: httpx_multipart_header_encoding
+family_id: httpx_multipart
+
+repository:
+  url: https://github.com/encode/httpx
+  base_commit: "44beaa1c8fd2e2882dc6565c026c2fc1385c8d40"
+  gold_commit: "fb17459335b7e703f1895c4186a4fe421a54d815"
+  language: python
+
+instruction:
+  path: instruction.md
+
+environment:
+  image: codegraphcl-httpx:py311
+  dockerfile: harbor_task/environment/Dockerfile.httpx
+  workdir: /workspace/repo
+  build_timeout_sec: 900
+  extra_mounts:
+    wheels: /pool/wheels
+
+patches:
+  gold: gold.patch                   # httpx/multipart.py (HTML5 form encoding for header params)
+  verifier: verifier/verifier.patch   # tests/test_multipart.py (TestHeaderParamHTML5Formatting)
+
+verifier:
+  command: bash verifier/test.sh
+  timeout_sec: 300
+  hermetic: false
+  fail_to_pass:
+    - "TestHeaderParamHTML5Formatting::test_unicode"
+    - "TestHeaderParamHTML5Formatting::test_ascii"
+    - "TestHeaderParamHTML5Formatting::test_unicode_escape"
+    - "TestHeaderParamHTML5Formatting::test_unicode_with_control_character"
+  pass_to_pass: []
+  pass_to_pass_not_applicable: true
+  near_miss_base: gold
+  near_miss:
+    - near_miss/nearmiss_quote_only.py
+    - near_miss/nearmiss_no_control_chars.py
+
+separability:
+  banned_words: banned_words.txt
+  checklist: separability.checklist.yaml
+
+mechanism_audit:
+  reusable_decision: >
+    Producer: multipart header parameter encoding. The decision: Content-Disposition header params
+    (name, filename) must be encoded per HTML5 form encoding (RFC 7578 §4.2 + WHATWG form
+    encoding), which percent-encodes control characters (0x00-0x1F except 0x1B), escapes
+    backslashes, and percent-encodes double quotes — NOT urllib quote() (which uses a different
+    safe set).
+  plausible_path_correct: >
+    Replace urllib quote() with a regex-based encoder that applies the HTML5 form encoding
+    replacement table (backslash -> \\, double-quote -> %22, control chars 0x00-0x1F except
+    0x1B -> %XX). Build the Content-Disposition header by concatenating the formatted params.
+  plausible_path_competing: >
+    Keep urllib quote() but add the missing characters to the safe set. This partially fixes
+    encoding but doesn't match the HTML5 spec (backslash handling differs, control chars
+    handled differently). Looks correct (urllib quote is the standard URL encoder) but wrong spec.
+  why_instruction_does_not_disambiguate: >
+    The instruction says the symptom (non-ASCII filenames in multipart uploads are incorrectly
+    encoded, causing garbled headers on the server) and the expectation (encode per the HTML5
+    form encoding spec). It does NOT name the replacement table, the regex, _format_param,
+    or which characters to escape.
+  why_correct_history_selects_path: >
+    The HTML5 form encoding spec is the authoritative reference for multipart form-data header
+    params. The regex + replacement table approach is the standard implementation.
+  why_wrong_history_is_plausible: >
+    urllib quote() is the standard URL encoder and is already used in the base code. "Just fix
+    the safe set" is a reasonable incremental fix.
+
+status:
+  semantic_audit: passed
+  separability_gate: passed
+  executable_gate: passed         # materialized 4/4 (agent-built, verified)
+  verification_tier: executable_candidate
+  intervention_preflight: pending
+
+notes: >
+  httpx_multipart family. Motif: parity (HTML5 form encoding, matching requests/WHATWG spec).
+  43-line source patch (httpx/multipart.py).

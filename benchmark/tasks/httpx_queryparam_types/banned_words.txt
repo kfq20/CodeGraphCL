@@ -1,0 +1,12 @@
+# Banned MECHANISM words for httpx_queryparam_types instruction.
+# The fix: add str_query_param() that coerces bool->"true"/"false", None->"", and use it
+# in QueryParams.__init__. "true"/"false"/"None" are symptom-level; the mechanism is banned.
+str_query_param
+PrimitiveData
+QueryParamTypes
+self._list
+self._dict
+str_query_param(value
+return "true"
+return "false"
+return ""
