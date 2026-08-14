@@ -1,0 +1,43 @@
+# Separability checklist for fastify_loggr_responsetime (single-node, fastify_logger_timing family).
+# Instruction states the symptom (response-time field gone from logs when logging is on); the fix
+# (invert the hasLogger flag + select the real callback when logging + guard _startTime) must be
+# derived.
+schema_version: 1
+task_id: fastify_loggr_responsetime
+
+checks:
+  - id: S1_instruction_symptom_only
+    question: "Does the instruction state only the symptom (response-time gone from logs), not the fix?"
+    answer: yes
+    evidence: >
+      instruction.md: "that field is gone ... the response-time measurement is never computed."
+      Acceptance: carry a truthy response-time field when logging is on; no-op when off.
+  - id: S2_instruction_no_mechanism_words
+    question: "Does the instruction avoid hasLogger / onResponseCallback / _startTime / noop?"
+    answer: yes
+    evidence: "banned_words.txt forbids these; instruction says 'the response callback' and 'start timestamp' generically"
+  - id: S3_instruction_no_file_names
+    question: "Does the instruction avoid naming fastify.js / logger.js?"
+    answer: yes
+    evidence: "instruction says 'the application setup' and 'the response-completion path'"
+  - id: S4_near_misses_plausible
+    question: "Are the near-misses plausible-but-wrong, not absurd?"
+    answer: yes
+    evidence: >
+      A = silence the response callback when logging is on (real "avoid callback overhead/noise"
+      assumption); B = default responseTime to 0 and never compute (real "guard against NaN"
+      assumption).
+  - id: S5_near_misses_distinct_axes
+    question: "Do the near-misses fail along distinct axes?"
+    answer: yes
+    evidence: >
+      A fails with "test unfinished" (the callback is a no-op so the 'request completed' line
+      never carries the field); B fails with "responseTime exists" (the field is present but
+      0/falsy). Both empirically verified reward=0.
+  - id: S6_base_solvable_and_feasible
+    question: "Is the base solvable and comfortably under the agent time budget?"
+    answer: yes
+    evidence: "two-file flag-inversion fix. base-fail verified empirically (BF reward=0, field absent)."
+
+edge_strength: n/a_single_node
+# Single-node regression fix; first node in fastify_logger_timing family.

@@ -1,0 +1,176 @@
+From 63fce75eba82f4629d908443fde3a7df7c754d6c Mon Sep 17 00:00:00 2001
+From: Matteo Collina <matteo.collina@gmail.com>
+Date: Wed, 31 Jan 2018 22:52:52 +0100
+Subject: [PATCH] Route 404 errors to the 404 handler (#727)
+
+* Route 404 errors to the 404 handler
+* removed reply.notFound
+* Added test for onSend hook
+---
+ test/404s.test.js            | 56 ++++++++++++++++++++++++++++++++++--
+ test/internals/reply.test.js | 16 +++++------
+ 2 files changed, 62 insertions(+), 10 deletions(-)
+
+diff --git a/test/404s.test.js b/test/404s.test.js
+index ced5462f..f09ea61e 100644
+--- a/test/404s.test.js
++++ b/test/404s.test.js
+@@ -5,6 +5,7 @@ const test = t.test
+ const fp = require('fastify-plugin')
+ const httpErrors = require('http-errors')
+ const sget = require('simple-get').concat
++const errors = require('http-errors')
+ const Fastify = require('..')
+ 
+ test('default 404', t => {
+@@ -51,7 +52,7 @@ test('default 404', t => {
+ })
+ 
+ test('customized 404', t => {
+-  t.plan(3)
++  t.plan(4)
+ 
+   const test = t.test
+   const fastify = Fastify()
+@@ -60,6 +61,10 @@ test('customized 404', t => {
+     reply.send({ hello: 'world' })
+   })
+ 
++  fastify.get('/with-error', function (req, reply) {
++    reply.send(new errors.NotFound())
++  })
++
+   fastify.setNotFoundHandler(function (req, reply) {
+     reply.code(404).send('this was not found')
+   })
+@@ -94,6 +99,18 @@ test('customized 404', t => {
+         t.strictEqual(body.toString(), 'this was not found')
+       })
+     })
++
++    test('with error object', t => {
++      t.plan(3)
++      sget({
++        method: 'GET',
++        url: 'http://localhost:' + fastify.server.address().port + '/with-error'
++      }, (err, response, body) => {
++        t.error(err)
++        t.strictEqual(response.statusCode, 404)
++        t.strictEqual(body.toString(), 'this was not found')
++      })
++    })
+   })
+ })
+ 
+@@ -837,7 +854,7 @@ test('recognizes errors from the http-errors module', t => {
+         const obj = JSON.parse(body.toString())
+         t.strictDeepEqual(obj, {
+           error: 'Not Found',
+-          message: 'Not Found',
++          message: 'Not found',
+           statusCode: 404
+         })
+       })
+@@ -862,3 +879,38 @@ test('cannot set notFoundHandler after binding', t => {
+     }
+   })
+ })
++
++test('404 inside onSend', t => {
++  t.plan(3)
++
++  const fastify = Fastify()
++
++  var called = false
++
++  fastify.get('/', function (req, reply) {
++    reply.send({ hello: 'world' })
++  })
++
++  fastify.addHook('onSend', function (request, reply, payload, next) {
++    if (!called) {
++      called = true
++      next(new errors.NotFound())
++    } else {
++      next()
++    }
++  })
++
++  t.tearDown(fastify.close.bind(fastify))
++
++  fastify.listen(0, err => {
++    t.error(err)
++
++    sget({
++      method: 'GET',
++      url: 'http://localhost:' + fastify.server.address().port
++    }, (err, response, body) => {
++      t.error(err)
++      t.strictEqual(response.statusCode, 404)
++    })
++  })
++})
+diff --git a/test/internals/reply.test.js b/test/internals/reply.test.js
+index db7d3fa0..432bb21f 100644
+--- a/test/internals/reply.test.js
++++ b/test/internals/reply.test.js
+@@ -4,7 +4,7 @@ const t = require('tap')
+ const test = t.test
+ const sget = require('simple-get').concat
+ const http = require('http')
+-
++const NotFound = require('http-errors').NotFound
+ const Reply = require('../../lib/reply')
+ 
+ test('Once called, Reply should return an object with methods', t => {
+@@ -414,18 +414,18 @@ test('undefined payload should be sent as-is', t => {
+   })
+ })
+ 
+-test('reply.notFound() should invoke the 404 handler', t => {
++test('reply.send(new NotFound()) should invoke the 404 handler', t => {
+   t.plan(9)
+ 
+   const fastify = require('../..')()
+ 
+   fastify.get('/not-found', function (req, reply) {
+-    reply.notFound()
++    reply.send(new NotFound())
+   })
+ 
+   fastify.register(function (instance, options, next) {
+     instance.get('/not-found', function (req, reply) {
+-      reply.notFound()
++      reply.send(new NotFound())
+     })
+ 
+     instance.setNotFoundHandler(function (req, reply) {
+@@ -466,21 +466,21 @@ test('reply.notFound() should invoke the 404 handler', t => {
+   })
+ })
+ 
+-test('reply.notFound() should log a warning and send a basic response if called inside a 404 handler', t => {
++test('reply.send(new NotFound()) should log a warning and send a basic response if called inside a 404 handler', t => {
+   t.plan(6)
+ 
+   const fastify = require('../..')()
+ 
+   fastify.get('/not-found', function (req, reply) {
+-    reply.notFound()
++    reply.send(new NotFound())
+   })
+ 
+   fastify.setNotFoundHandler(function (req, reply) {
+     reply.res.log.warn = function mockWarn (message) {
+-      t.type(message, 'string')
++      t.equal(message, 'Trying to send a NotFound error inside a 404 handler. Sending basic 404 response.')
+     }
+ 
+-    reply.notFound()
++    reply.send(new NotFound())
+   })
+ 
+   fastify.listen(0, err => {
+-- 
+2.34.1
+

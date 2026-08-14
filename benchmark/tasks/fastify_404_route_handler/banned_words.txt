@@ -1,0 +1,11 @@
+# Banned MECHANISM words for fastify_404_route_handler instruction.
+# The fix: in handleError, intercept error.status/error.statusCode === 404 and call notFound(reply),
+# which resets reply.sent=false + reply._isError=false and switches reply.context to
+# context._fastify._404Context then calls its handler. The mechanism words are banned.
+notFound
+_404Context
+handleError
+_isError
+reply.sent
+context._fastify
+reply.js

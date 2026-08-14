@@ -1,0 +1,23 @@
+family_id: fastify_body_limit
+repository: fastify
+
+# The fastify body-limit family. Single node so far; built for the scoped-precedence motif:
+# how the request-body size limit is selected when multiple scopes (route, parser, global) apply.
+# dab20bd9 ("Add support for per-parser body limits"): the only body limit was the global one; a
+#   content-type parser could not carry its own limit, and a route's limit was ignored at parse
+#   time. gold threads a per-parser bodyLimit through the parser constructor/add path and selects
+#   the limit at raw-body read time by precedence: route limit > parser limit > global limit.
+#   (bank: fastify_bodylimit_perparser)
+nodes:
+  - fastify_bodylimit_perparser   # gold=dab20bd9
+
+edges: []
+
+structure:
+  type: single_node
+  order:
+    - dab20bd9
+
+diagnostic_targets: []
+
+screening_log: []

@@ -1,0 +1,57 @@
+schema_version: 1
+task_id: fastify_reply_sendstream
+family_id: fastify_response_stream
+
+repository:
+  url: https://github.com/fastify/fastify
+  base_commit: ed424325^
+  gold_commit: ed424325
+  language: javascript
+
+instruction:
+  path: instruction.md
+
+environment:
+  image: codegraphcl-fastify:node
+  dockerfile: harbor_task/environment/Dockerfile.fastify
+  workdir: /workspace/repo
+  build_timeout_sec: 900
+  extra_mounts: {}
+
+patches:
+  gold: gold.patch                 # lib/reply.js (sendStream: end-of-stream + payload.pipe(res))
+  verifier: verifier/verifier.patch # test/stream.test.js + package.json (stream-error tests)
+
+verifier:
+  command: bash verifier/test.sh   # tap test/stream.test.js --grep 'return a 404 if the stream emits a 404 error'
+  timeout_sec: 300
+  hermetic: false
+  fail_to_pass:
+    - "test: return a 404 if the stream emits a 404 error (status 404 + application/json content-type)"
+  pass_to_pass: []
+  pass_to_pass_not_applicable: true
+  near_miss_base: gold
+  near_miss:
+    - near_miss/nearmiss_ss_noerrorguard.py
+    - near_miss/nearmiss_ss_directstatus.py
+
+separability:
+  banned_words: banned_words.txt
+  checklist: separability.checklist.yaml
+
+status:
+  semantic_audit: passed
+  separability_gate: passed
+  executable_gate: passed         # 4/4 materialize gates passed (BF/GP/P2P/NM both caught)
+  verification_tier: executable_candidate
+  intervention_preflight: pending
+
+notes: >
+  First node in fastify_response_stream family. Single-node behavior fix (commit ed424325):
+  when a stream piped to the response closes with an error before headers are sent, the
+  connection is reset (ECONNRESET) instead of returning an HTTP status code. gold replaces the
+  pump-based pipe with an end-of-stream-guarded sendStream that, on a pre-headers-sent error,
+  delegates to the error handler (so a 404-bearing stream yields a 404 response) and, on a
+  post-headers-sent error, destroys the response. package.json moves pump to devDeps and adds
+  end-of-stream (dep) + send (devDep); the dep change travels in the verifier patch so npm
+  install has the runtime dep for both base-fail and gold-pass.

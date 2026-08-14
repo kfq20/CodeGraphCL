@@ -1,0 +1,42 @@
+# Separability checklist for fastify_bodylimit_perparser (single-node, fastify_body_limit family).
+# Instruction states the symptom (no per-parser body limit; route limit ignored); the fix (thread
+# a per-parser bodyLimit; select route > parser > global at read time) must be derived.
+schema_version: 1
+task_id: fastify_bodylimit_perparser
+
+checks:
+  - id: S1_instruction_symptom_only
+    question: "Does the instruction state only the symptom (no per-parser limit, route limit ignored), not the fix?"
+    answer: yes
+    evidence: >
+      instruction.md: "every parser shares the same global ceiling, and a route-level limit has
+      no effect at parse time." Acceptance: per-parser limit option; precedence route > parser > global.
+  - id: S2_instruction_no_mechanism_words
+    question: "Does the instruction avoid bodyLimit / parser.bodyLimit / options.limit / rawBody?"
+    answer: yes
+    evidence: "banned_words.txt forbids these; instruction says 'body size limit' and 'body-reading path' generically"
+  - id: S3_instruction_no_file_names
+    question: "Does the instruction avoid naming fastify.js / ContentTypeParser.js?"
+    answer: yes
+    evidence: "instruction says 'the content-type parser registration/construction and the body-reading path'"
+  - id: S4_near_misses_plausible
+    question: "Are the near-misses plausible-but-wrong, not absurd?"
+    answer: yes
+    evidence: >
+      A = no route limit means unlimited (real "if the route sets no limit, there is none"
+      assumption); B = always use the parser's limit (real "the parser knows its own limit best"
+      assumption).
+  - id: S5_near_misses_distinct_axes
+    question: "Do the near-misses fail along distinct axes?"
+    answer: yes
+    evidence: >
+      A fails test 22 (no-route-limit case: parser invoked when it shouldn't be) and passes test
+      23; B fails test 23 (route-limit case: route limit ignored) and passes test 22. Different
+      test fails. Both empirically verified reward=0.
+  - id: S6_base_solvable_and_feasible
+    question: "Is the base solvable and comfortably under the agent time budget?"
+    answer: yes
+    evidence: "two-file feature-add (parser construction + limit selection). base-fail verified empirically (BF reward=0, test 22 fails)."
+
+edge_strength: n/a_single_node
+# Single-node feature-add; first node in fastify_body_limit family.

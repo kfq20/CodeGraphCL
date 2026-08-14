@@ -1,0 +1,9 @@
+{
+  "run_id": "mat_fastify_404_route_handler_1",
+  "task_id": "fastify_404_route_handler",
+  "image": "codegraphcl-fastify:node",
+  "base_commit": "63fce75e^",
+  "gold_commit": "63fce75e",
+  "started_at": 1786701701,
+  "finished_at": 1786701815
+}

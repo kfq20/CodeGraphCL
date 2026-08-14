@@ -1,0 +1,44 @@
+# Separability checklist for fastify_404_route_handler (single-node, fastify_error_lifecycle family).
+# Instruction states the symptom (404 errors during a request become 500, never reach the custom 404
+# handler); the fix (intercept 404-status errors in the error handler, reset sent/_isError, switch to
+# the 404 context) must be derived.
+schema_version: 1
+task_id: fastify_404_route_handler
+
+checks:
+  - id: S1_instruction_symptom_only
+    question: "Does the instruction state only the symptom (404 errors become 500), not the fix?"
+    answer: yes
+    evidence: >
+      instruction.md: "the response comes back as a 500, and the custom 404 handler is never invoked."
+      Acceptance: route 404-status errors to the registered custom 404 handler; guard against
+      recursion inside an active 404 handler.
+  - id: S2_instruction_no_mechanism_words
+    question: "Does the instruction avoid notFound / _404Context / handleError / _isError?"
+    answer: yes
+    evidence: "banned_words.txt forbids these; instruction says '404 handler' and 'error-handling path' generically"
+  - id: S3_instruction_no_file_names
+    question: "Does the instruction avoid naming reply.js?"
+    answer: yes
+    evidence: "instruction says 'the error-handling path of the reply'"
+  - id: S4_near_misses_plausible
+    question: "Are the near-misses plausible-but-wrong, not absurd?"
+    answer: yes
+    evidence: >
+      A = intercept the 404 but don't switch the context to the 404 handler (real "just set the
+      status code" assumption); B = switch the context but don't reset the sent/_isError flags
+      (real "the flags don't matter" assumption).
+  - id: S5_near_misses_distinct_axes
+    question: "Do the near-misses fail along distinct axes?"
+    answer: yes
+    evidence: >
+      A fails because the response still uses the error path (wrong handler / status); B fails
+      because the stale sent/_isError flags abort the resend. Different assertion. Both empirically
+      verified rc!=0.
+  - id: S6_base_solvable_and_feasible
+    question: "Is the base solvable and comfortably under the agent time budget?"
+    answer: yes
+    evidence: "localized error-handler branch + notFound helper. base-fail verified empirically (BF reward=0)."
+
+edge_strength: n/a_single_node
+# Single-node behavior fix; first node in fastify_error_lifecycle family.

@@ -1,0 +1,56 @@
+schema_version: 1
+task_id: fastify_bodylimit_perparser
+family_id: fastify_body_limit
+
+repository:
+  url: https://github.com/fastify/fastify
+  base_commit: dab20bd9^
+  gold_commit: dab20bd9
+  language: javascript
+
+instruction:
+  path: instruction.md
+
+environment:
+  image: codegraphcl-fastify:node
+  dockerfile: harbor_task/environment/Dockerfile.fastify
+  workdir: /workspace/repo
+  build_timeout_sec: 900
+  extra_mounts: {}
+
+patches:
+  gold: gold.patch                 # fastify.js + lib/ContentTypeParser.js (per-parser bodyLimit)
+  verifier: verifier/verifier.patch # test/custom-parser.test.js (per-parser bodyLimit tests)
+
+verifier:
+  command: bash verifier/test.sh   # tap test/custom-parser.test.js --grep 'bodyLimit per parser'
+  timeout_sec: 300
+  hermetic: false
+  fail_to_pass:
+    - "test: Should allow defining the bodyLimit per parser"
+  pass_to_pass:
+    - "test: route bodyLimit should take precedence over a custom parser bodyLimit"
+  pass_to_pass_not_applicable: false  # test 23 (precedence) passes on base AND gold; test 22 (per-parser) is the true fail-to-pass
+  near_miss_base: gold
+  near_miss:
+    - near_miss/nearmiss_bl_ignoreparser.py
+    - near_miss/nearmiss_bl_alwaysparser.py
+
+separability:
+  banned_words: banned_words.txt
+  checklist: separability.checklist.yaml
+
+status:
+  semantic_audit: passed
+  separability_gate: passed
+  executable_gate: passed         # 4/4 materialize gates passed (BF/GP/P2P/NM both caught)
+  verification_tier: executable_candidate
+  intervention_preflight: pending
+
+notes: >
+  First node in fastify_body_limit family. Single-node feature-add (commit dab20bd9): the global
+  body limit was the only knob; there was no way to set a body limit per content-type parser, and
+  a route's body limit did not take precedence over a parser's. gold threads a per-parser
+  bodyLimit through the parser constructor/add path, and at raw-body read time selects the limit
+  by precedence: route limit wins, else the parser's limit, else the global. base-fail + near-miss
+  VERIFIED empirically before materialize.

@@ -1,0 +1,181 @@
+From ed4243255dd6637569a952afab1118ef2de4c7e8 Mon Sep 17 00:00:00 2001
+From: Matteo Collina <matteo.collina@gmail.com>
+Date: Tue, 30 Jan 2018 19:03:32 +0100
+Subject: [PATCH] Support send (#724)
+
+Return an http status code if a stream closes before headers are sent. This enable us to pass the send module stream directly to reply.send().
+---
+ package.json        |  6 ++-
+ test/stream.test.js | 93 +++++++++++++++++++++++++++++++++++++++------
+ 2 files changed, 85 insertions(+), 14 deletions(-)
+
+diff --git a/package.json b/package.json
+index c610e6b2..e915e9ed 100644
+--- a/package.json
++++ b/package.json
+@@ -83,7 +83,9 @@
+     "ienoopen": "^1.0.0",
+     "joi": "~11.3.4",
+     "pre-commit": "^1.2.2",
++    "pump": "^2.0.1",
+     "semver": "^5.5.0",
++    "send": "^0.16.1",
+     "serve-static": "^1.13.1",
+     "simple-get": "^2.7.0",
+     "snazzy": "^7.0.0",
+@@ -99,13 +101,13 @@
+     "abstract-logging": "^1.0.0",
+     "ajv": "^6.1.0",
+     "avvio": "^5.0.1",
++    "end-of-stream": "^1.4.1",
+     "fast-json-stringify": "^0.17.0",
+     "find-my-way": "^1.10.0",
+     "flatstr": "^1.0.5",
+     "light-my-request": "^2.0.1",
+     "middie": "^3.1.0",
+-    "pino": "^4.10.3",
+-    "pump": "^2.0.1"
++    "pino": "^4.10.3"
+   },
+   "greenkeeper": {
+     "ignore": [
+diff --git a/test/stream.test.js b/test/stream.test.js
+index 703f300d..f6a64342 100644
+--- a/test/stream.test.js
++++ b/test/stream.test.js
+@@ -8,14 +8,17 @@ const resolve = require('path').resolve
+ const zlib = require('zlib')
+ const pump = require('pump')
+ const Fastify = require('..')
++const errors = require('http-errors')
+ const JSONStream = require('JSONStream')
++const send = require('send')
++const Readable = require('stream').Readable
+ 
+ test('should respond with a stream', t => {
+-  t.plan(7)
++  t.plan(8)
+   const fastify = Fastify()
+ 
+   fastify.get('/', function (req, reply) {
+-    const stream = fs.createReadStream(process.cwd() + '/test/stream.test.js', 'utf8')
++    const stream = fs.createReadStream(__filename, 'utf8')
+     reply.code(200).send(stream)
+   })
+ 
+@@ -28,23 +31,20 @@ test('should respond with a stream', t => {
+     t.error(err)
+     fastify.server.unref()
+ 
+-    sget(`http://localhost:${fastify.server.address().port}`, function (err, response) {
++    sget(`http://localhost:${fastify.server.address().port}`, function (err, response, data) {
+       t.error(err)
+       t.strictEqual(response.headers['content-type'], 'application/octet-stream')
+       t.strictEqual(response.statusCode, 200)
+ 
+-      response.on('error', err => {
++      fs.readFile(__filename, (err, expected) => {
+         t.error(err)
+-      })
+-      response.on('end', () => {
+-        t.pass('Correctly close the stream')
++        t.equal(expected.toString(), data.toString())
+       })
+     })
+ 
+     sget(`http://localhost:${fastify.server.address().port}/error`, function (err, response) {
+-      t.type(err, Error)
+-      t.equal(err.code, 'ECONNRESET')
+-      t.pass('Correctly close the stream')
++      t.error(err)
++      t.strictEqual(response.statusCode, 500)
+     })
+   })
+ })
+@@ -92,8 +92,8 @@ test('should trigger the onSend hook only once if pumping the stream fails', t =
+     fastify.server.unref()
+ 
+     sget(`http://localhost:${fastify.server.address().port}`, function (err, response) {
+-      t.type(err, Error)
+-      t.equal(err.code, 'ECONNRESET')
++      t.error(err)
++      t.strictEqual(response.statusCode, 500)
+     })
+   })
+ })
+@@ -195,3 +195,72 @@ test('should respond with a stream1', t => {
+     })
+   })
+ })
++
++test('return a 404 if the stream emits a 404 error', t => {
++  t.plan(5)
++
++  const fastify = Fastify()
++
++  fastify.get('/', function (request, reply) {
++    t.pass('Received request')
++
++    var reallyLongStream = new Readable({
++      read: function () {
++        setImmediate(() => {
++          this.emit('error', new errors.NotFound())
++        })
++      }
++    })
++
++    reply.send(reallyLongStream)
++  })
++
++  fastify.listen(0, err => {
++    t.error(err)
++    fastify.server.unref()
++
++    var port = fastify.server.address().port
++
++    sget(`http://localhost:${port}`, function (err, response) {
++      t.error(err)
++      t.strictEqual(response.headers['content-type'], 'application/json')
++      t.strictEqual(response.statusCode, 404)
++    })
++  })
++})
++
++test('should support send module 200 and 404', t => {
++  t.plan(8)
++  const fastify = Fastify()
++
++  fastify.get('/', function (req, reply) {
++    const stream = send(req.req, __filename)
++    reply.code(200).send(stream)
++  })
++
++  fastify.get('/error', function (req, reply) {
++    const stream = send(req.req, 'non-existing-file')
++    reply.code(200).send(stream)
++  })
++
++  fastify.listen(0, err => {
++    t.error(err)
++    fastify.server.unref()
++
++    sget(`http://localhost:${fastify.server.address().port}`, function (err, response, data) {
++      t.error(err)
++      t.strictEqual(response.headers['content-type'], 'application/octet-stream')
++      t.strictEqual(response.statusCode, 200)
++
++      fs.readFile(__filename, (err, expected) => {
++        t.error(err)
++        t.equal(expected.toString(), data.toString())
++      })
++    })
++
++    sget(`http://localhost:${fastify.server.address().port}/error`, function (err, response) {
++      t.error(err)
++      t.strictEqual(response.statusCode, 404)
++    })
++  })
++})
+-- 
+2.34.1
+

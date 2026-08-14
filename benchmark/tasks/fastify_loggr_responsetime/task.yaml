@@ -1,0 +1,57 @@
+schema_version: 1
+task_id: fastify_loggr_responsetime
+family_id: fastify_logger_timing
+
+repository:
+  url: https://github.com/fastify/fastify
+  base_commit: 288903a3^
+  gold_commit: 288903a3
+  language: javascript
+
+instruction:
+  path: instruction.md
+
+environment:
+  image: codegraphcl-fastify:node
+  dockerfile: harbor_task/environment/Dockerfile.fastify
+  workdir: /workspace/repo
+  build_timeout_sec: 900
+  extra_mounts: {}
+
+patches:
+  gold: gold.patch                 # fastify.js + lib/logger.js (invert hasLogger init + guard _startTime)
+  verifier: verifier/verifier.patch # test/internals/logger.test.js + test/logger.test.js + package.json (proxyquire)
+
+verifier:
+  command: bash verifier/test.sh   # tap test/internals/logger.test.js --grep 'should add a timestamp'
+  timeout_sec: 300
+  hermetic: false
+  fail_to_pass:
+    - "test: The logger should add a timestamp if logging to stdout (responseTime exists)"
+  pass_to_pass: []
+  pass_to_pass_not_applicable: true
+  near_miss_base: gold
+  near_miss:
+    - near_miss/nearmiss_rt_noguardstarttime.py
+    - near_miss/nearmiss_rt_swappedcallback.py
+
+separability:
+  banned_words: banned_words.txt
+  checklist: separability.checklist.yaml
+
+status:
+  semantic_audit: passed
+  separability_gate: passed
+  executable_gate: passed         # 4/4 materialize gates passed (BF/GP/P2P/NM both caught)
+  verification_tier: executable_candidate
+  intervention_preflight: pending
+
+notes: >
+  First node in fastify_logger_timing family. Single-node regression fix (commit 288903a3):
+  the per-request response-time field disappeared from the logs when a logger was enabled,
+  because the hasLogger flag was initialized inverted (false when a logger is present, true
+  when absent). With the flag inverted, the response-completion callback was set to a no-op
+  precisely when logging was on, so responseTime was never computed. gold inverts the hasLogger
+  initialization and swaps the callback selection; it also guards _startTime (only set when a
+  logger is present) and guards onResponseCallback against an undefined _startTime. The
+  proxyquire devDep (needed by the timestamp test) travels in the verifier patch.

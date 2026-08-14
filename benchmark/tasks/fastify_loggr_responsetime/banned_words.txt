@@ -1,0 +1,12 @@
+# Banned MECHANISM words for fastify_loggr_responsetime instruction.
+# The fix: invert the hasLogger initialization (true when a logger is present), select the real
+# onResponseCallback when hasLogger, set res._startTime = hasLogger ? now() : undefined, and
+# guard onResponseCallback against an undefined _startTime (default responseTime to 0). The
+# mechanism words are banned.
+hasLogger
+onResponseCallback
+_startTime
+now()
+noop
+fastify.js
+logger.js

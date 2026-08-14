@@ -1,0 +1,13 @@
+# Banned MECHANISM words for fastify_reply_sendstream instruction.
+# The fix: replace pump with a sendStream using end-of-stream (eos); on source error before
+# headersSent, delegate to handleError; after headersSent, res.destroy() + log; on response
+# error while source open, destroy/close/abort the source. The mechanism words are banned.
+end-of-stream
+eos
+sendStream
+headersSent
+handleError
+res.destroy
+payload.pipe
+reply.js
+pump

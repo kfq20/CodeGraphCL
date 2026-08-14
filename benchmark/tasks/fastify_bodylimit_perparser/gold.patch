@@ -1,0 +1,112 @@
+From dab20bd986a74682d385228e7ead08f43eee7485 Mon Sep 17 00:00:00 2001
+From: James Sumners <james.sumners@gmail.com>
+Date: Tue, 27 Feb 2018 07:51:32 -0500
+Subject: [PATCH] Add support for per-parser body limits (#800)
+
+* Add support for per-parser body limits
+
+* Set parser body limit via addContentTypeParser
+
+* Select which bodyLimit to apply when parsing a request
+
+* Use either the route's body limit or the parser's body limit
+
+* Update custom ContentTypeParser bodyLimit documentation
+---
+ fastify.js               | 13 ++++++++++---
+ lib/ContentTypeParser.js | 10 ++++++----
+ 2 files changed, 16 insertions(+), 7 deletions(-)
+
+diff --git a/fastify.js b/fastify.js
+index 552a9100..c3e9ced9 100644
+--- a/fastify.js
++++ b/fastify.js
+@@ -157,7 +157,7 @@ function build (options) {
+   // custom parsers
+   fastify.addContentTypeParser = addContentTypeParser
+   fastify.hasContentTypeParser = hasContentTypeParser
+-  fastify._contentTypeParser = new ContentTypeParser()
++  fastify._contentTypeParser = new ContentTypeParser(fastify._bodyLimit)
+ 
+   fastify.setSchemaCompiler = setSchemaCompiler
+   fastify.setSchemaCompiler(buildSchemaCompiler())
+@@ -471,7 +471,6 @@ function build (options) {
+       opts.path = url
+       opts.prefix = prefix
+       opts.logLevel = opts.logLevel || _fastify._logLevel
+-      opts.bodyLimit = opts.bodyLimit || _fastify._bodyLimit
+ 
+       // run 'onRoute' hooks
+       for (var h of onRouteHooks) {
+@@ -556,7 +555,7 @@ function build (options) {
+     this.errorHandler = errorHandler
+     this._middie = null
+     this._parserOptions = {
+-      limit: bodyLimit
++      limit: bodyLimit || null
+     }
+     this._fastify = fastify
+     this.logLevel = logLevel
+@@ -636,6 +635,14 @@ function build (options) {
+       opts = {}
+     }
+ 
++    if (!opts) {
++      opts = {}
++    }
++
++    if (!opts.bodyLimit) {
++      opts.bodyLimit = this._bodyLimit
++    }
++
+     this._contentTypeParser.add(contentType, opts, parser)
+     return this
+   }
+diff --git a/lib/ContentTypeParser.js b/lib/ContentTypeParser.js
+index 3364b78f..f247b934 100644
+--- a/lib/ContentTypeParser.js
++++ b/lib/ContentTypeParser.js
+@@ -3,9 +3,9 @@
+ 
+ const lru = require('tiny-lru')
+ 
+-function ContentTypeParser () {
++function ContentTypeParser (bodyLimit) {
+   this.customParsers = {}
+-  this.customParsers['application/json'] = new Parser(true, false, defaultJsonParser)
++  this.customParsers['application/json'] = new Parser(true, false, bodyLimit, defaultJsonParser)
+   this.parserList = ['application/json']
+   this.cache = lru(100)
+ }
+@@ -28,6 +28,7 @@ ContentTypeParser.prototype.add = function (contentType, opts, parserFn) {
+   const parser = new Parser(
+     opts.parseAs === 'string',
+     opts.parseAs === 'buffer',
++    opts.bodyLimit,
+     parserFn
+   )
+ 
+@@ -94,7 +95,7 @@ ContentTypeParser.prototype.run = function (contentType, handler, request, reply
+ 
+ function rawBody (request, reply, options, parser, done) {
+   var asString = parser.asString
+-  var limit = options.limit
++  var limit = options.limit === null ? parser.bodyLimit : options.limit
+   var contentLength = request.headers['content-length'] === undefined
+     ? NaN
+     : Number.parseInt(request.headers['content-length'], 10)
+@@ -178,9 +179,10 @@ function buildContentTypeParser (c) {
+   return contentTypeParser
+ }
+ 
+-function Parser (asString, asBuffer, fn) {
++function Parser (asString, asBuffer, bodyLimit, fn) {
+   this.asString = asString
+   this.asBuffer = asBuffer
++  this.bodyLimit = bodyLimit
+   this.fn = fn
+ }
+ 
+-- 
+2.34.1
+

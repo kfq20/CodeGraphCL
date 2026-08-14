@@ -1,0 +1,55 @@
+schema_version: 1
+task_id: fastify_404_route_handler
+family_id: fastify_error_lifecycle
+
+repository:
+  url: https://github.com/fastify/fastify
+  base_commit: 63fce75e^         # parent of the fix
+  gold_commit: 63fce75e
+  language: javascript
+
+instruction:
+  path: instruction.md
+
+environment:
+  image: codegraphcl-fastify:node
+  dockerfile: harbor_task/environment/Dockerfile.fastify
+  workdir: /workspace/repo
+  build_timeout_sec: 900
+  extra_mounts: {}
+
+patches:
+  gold: gold.patch                 # lib/reply.js (route 404 errors to the 404 handler via notFound)
+  verifier: verifier/verifier.patch # test/404s.test.js + test/internals/reply.test.js (404-routing tests)
+
+verifier:
+  command: bash verifier/test.sh   # tap test/404s.test.js --grep 'customized 404'
+  timeout_sec: 300
+  hermetic: false
+  fail_to_pass:
+    - "test: customized 404 (with error object subtest: body must be the 404 handler body)"
+  pass_to_pass: []
+  pass_to_pass_not_applicable: true  # the with-error-object subtest is new
+  near_miss_base: gold
+  near_miss:
+    - near_miss/nearmiss_404_nocontextswitch.py
+    - near_miss/nearmiss_404_noflagreset.py
+
+separability:
+  banned_words: banned_words.txt
+  checklist: separability.checklist.yaml
+
+status:
+  semantic_audit: passed
+  separability_gate: passed      # instruction = symptom (404 errors not reaching the custom 404 handler); no notFound/handleError/_404Context leakage
+  executable_gate: passed         # 4/4 materialize gates passed (BF/GP/P2P/NM both caught)
+  verification_tier: executable_candidate
+  intervention_preflight: pending
+
+notes: >
+  First node in fastify_error_lifecycle family. Single-node behavior fix (commit 63fce75e):
+  a 404 error emitted during the response lifecycle (e.g. from an onSend hook or a route
+  handler sending http-errors NotFound) is handled as a generic 500 error instead of being
+  routed to the app's custom 404 handler. gold intercepts 404-status errors in the error
+  handler and delegates to the internal notFound function (resets sent/_isError, switches
+  context to the 404 handler). base-fail + near-miss VERIFIED empirically before materialize.

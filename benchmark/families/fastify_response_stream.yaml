@@ -1,0 +1,24 @@
+family_id: fastify_response_stream
+repository: fastify
+
+# The fastify response-stream family. Single node so far; built for the stream-error motif:
+# how a piped stream that errors before headers are sent is surfaced as an HTTP error response
+# instead of resetting the connection.
+# ed424325 ("Support send"): a stream piped to the response that errored before headers were
+#   sent reset the connection (pump-based pipe); gold replaces pump with an end-of-stream-guarded
+#   sendStream that delegates pre-headers-sent errors to the error handler (so a 404-bearing
+#   stream yields a 404 JSON response) and destroys the response on post-headers-sent errors.
+#   (bank: fastify_reply_sendstream)
+nodes:
+  - fastify_reply_sendstream   # gold=ed424325
+
+edges: []
+
+structure:
+  type: single_node
+  order:
+    - ed424325
+
+diagnostic_targets: []
+
+screening_log: []

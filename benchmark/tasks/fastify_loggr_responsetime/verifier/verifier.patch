@@ -1,0 +1,147 @@
+From 288903a3504c98762005e77c5b100ed272e0d352 Mon Sep 17 00:00:00 2001
+From: Matteo Collina <matteo.collina@gmail.com>
+Date: Sun, 4 Mar 2018 20:02:54 +0100
+Subject: [PATCH] fix responseTime regression (#827)
+
+Introduced in https://github.com/fastify/fastify/pull/776
+
+Fixes https://github.com/fastify/fastify/issues/826
+---
+ package.json                  |  1 +
+ test/internals/logger.test.js | 35 ++++++++++++++++++++++++++++++
+ test/logger.test.js           | 40 ++++++++++++++++++-----------------
+ 3 files changed, 57 insertions(+), 19 deletions(-)
+
+diff --git a/package.json b/package.json
+index 3e1949aa..8f9d81a6 100644
+--- a/package.json
++++ b/package.json
+@@ -83,6 +83,7 @@
+     "ienoopen": "^1.0.0",
+     "joi": "~11.3.4",
+     "pre-commit": "^1.2.2",
++    "proxyquire": "^2.0.0",
+     "pump": "^3.0.0",
+     "semver": "^5.5.0",
+     "send": "^0.16.1",
+diff --git a/test/internals/logger.test.js b/test/internals/logger.test.js
+index 235683b1..8de57057 100644
+--- a/test/internals/logger.test.js
++++ b/test/internals/logger.test.js
+@@ -3,6 +3,8 @@
+ const t = require('tap')
+ const test = t.test
+ const Fastify = require('../..')
++const split = require('split2')
++const proxyquire = require('proxyquire')
+ const loggerUtils = require('../../lib/logger')
+ 
+ test('time resolution', t => {
+@@ -72,6 +74,39 @@ test('The logger should reuse request id header for req.id', t => {
+   })
+ })
+ 
++test('The logger should add a timestamp if logging to stdout', t => {
++  t.plan(5)
++
++  const stream = split(JSON.parse)
++  const stub = Object.create(loggerUtils)
++  stub.createLogger = function (opts) {
++    return loggerUtils.createLogger(opts, stream)
++  }
++
++  const Fastify = proxyquire('../..', {
++    './lib/logger': stub
++  })
++  const fastify = Fastify({ logger: true })
++
++  stream.once('data', (line) => {
++    t.equal(line.msg, 'incoming request')
++    stream.once('data', (line) => {
++      t.equal(line.msg, 'Not found')
++      stream.once('data', (line) => {
++        t.equal(line.msg, 'request completed')
++        t.ok(line.responseTime, 'responseTime exists')
++      })
++    })
++  })
++
++  fastify.inject({
++    method: 'GET',
++    url: '/'
++  }, function (err, res) {
++    t.error(err)
++  })
++})
++
+ function Queue () {
+   this.q = []
+   this.running = false
+diff --git a/test/logger.test.js b/test/logger.test.js
+index 8910b157..b456c81b 100644
+--- a/test/logger.test.js
++++ b/test/logger.test.js
+@@ -10,7 +10,7 @@ const pino = require('pino')
+ const os = require('os')
+ 
+ test('defaults to info level', t => {
+-  t.plan(12)
++  t.plan(13)
+   var fastify = null
+   var stream = split(JSON.parse)
+   try {
+@@ -28,31 +28,33 @@ test('defaults to info level', t => {
+     reply.send({ hello: 'world' })
+   })
+ 
+-  fastify.listen(0, err => {
+-    t.error(err)
+-    fastify.server.unref()
++  stream.once('data', listenAtLogLine => {
++    t.ok(listenAtLogLine, 'listen at log message is ok')
+ 
+-    http.get('http://localhost:' + fastify.server.address().port)
+-    stream.once('data', listenAtLogLine => {
+-      t.ok(listenAtLogLine, 'listen at log message is ok')
++    stream.once('data', line => {
++      const id = line.reqId
++      t.ok(line.reqId, 'reqId is defined')
++      t.ok(line.req, 'req is defined')
++      t.equal(line.msg, 'incoming request', 'message is set')
++      t.equal(line.req.method, 'GET', 'method is get')
+ 
+       stream.once('data', line => {
+-        const id = line.reqId
++        t.equal(line.reqId, id)
+         t.ok(line.reqId, 'reqId is defined')
+-        t.ok(line.req, 'req is defined')
+-        t.equal(line.msg, 'incoming request', 'message is set')
+-        t.equal(line.req.method, 'GET', 'method is get')
+-
+-        stream.once('data', line => {
+-          t.equal(line.reqId, id)
+-          t.ok(line.reqId, 'reqId is defined')
+-          t.ok(line.res, 'res is defined')
+-          t.equal(line.msg, 'request completed', 'message is set')
+-          t.equal(line.res.statusCode, 200, 'statusCode is 200')
+-        })
++        t.ok(line.res, 'res is defined')
++        t.equal(line.msg, 'request completed', 'message is set')
++        t.equal(line.res.statusCode, 200, 'statusCode is 200')
++        t.ok(line.responseTime, 'responseTime is defined')
+       })
+     })
+   })
++
++  fastify.listen(0, err => {
++    t.error(err)
++    fastify.server.unref()
++
++    http.get('http://localhost:' + fastify.server.address().port)
++  })
+ })
+ 
+ test('test log stream', t => {
+-- 
+2.34.1
+

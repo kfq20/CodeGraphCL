@@ -1,0 +1,80 @@
+From 288903a3504c98762005e77c5b100ed272e0d352 Mon Sep 17 00:00:00 2001
+From: Matteo Collina <matteo.collina@gmail.com>
+Date: Sun, 4 Mar 2018 20:02:54 +0100
+Subject: [PATCH] fix responseTime regression (#827)
+
+Introduced in https://github.com/fastify/fastify/pull/776
+
+Fixes https://github.com/fastify/fastify/issues/826
+---
+ fastify.js    | 13 ++++++-------
+ lib/logger.js |  6 +++++-
+ 2 files changed, 11 insertions(+), 8 deletions(-)
+
+diff --git a/fastify.js b/fastify.js
+index 5cd26105..370c79f3 100644
+--- a/fastify.js
++++ b/fastify.js
+@@ -43,14 +43,14 @@ function build (options) {
+   }
+ 
+   var log
+-  var hasLogger = false
++  var hasLogger = true
+   if (isValidLogger(options.logger)) {
+     log = loggerUtils.createLogger({
+       logger: options.logger,
+       serializers: Object.assign({}, loggerUtils.serializers, options.logger.serializers)
+     })
+   } else if (!options.logger) {
+-    hasLogger = true
++    hasLogger = false
+     log = Object.create(abstractLogging)
+     log.child = () => log
+   } else {
+@@ -76,7 +76,7 @@ function build (options) {
+   const genReqId = customGenReqId || loggerUtils.reqIdGenFactory()
+   const now = loggerUtils.now
+   const onResponseIterator = loggerUtils.onResponseIterator
+-  const onResponseCallback = hasLogger ? noop : loggerUtils.onResponseCallback
++  const onResponseCallback = hasLogger ? loggerUtils.onResponseCallback : noop
+ 
+   const app = avvio(fastify, {
+     autostart: false
+@@ -202,13 +202,12 @@ function build (options) {
+     req.id = genReqId(req)
+     req.log = res.log = log.child({ reqId: req.id, level: context.logLevel })
+     req.originalUrl = req.url
++    res._startTime = hasLogger ? now() : undefined
++    res._context = context
+ 
+     req.log.info({ req }, 'incoming request')
+ 
+-    res._startTime = hasLogger ? now() : undefined
+-
+-    if (hasLogger === false || context.onResponse !== null) {
+-      res._context = context
++    if (hasLogger === true || context.onResponse !== null) {
+       res.on('finish', onResFinished)
+       res.on('error', onResFinished)
+     }
+diff --git a/lib/logger.js b/lib/logger.js
+index 724b1c8d..eeb23f6a 100644
+--- a/lib/logger.js
++++ b/lib/logger.js
+@@ -65,7 +65,11 @@ function now () {
+ }
+ 
+ function onResponseCallback (err, res) {
+-  var responseTime = now() - res._startTime
++  var responseTime = 0
++
++  if (res._startTime) {
++    responseTime = now() - res._startTime
++  }
+ 
+   if (err) {
+     res.log.error({
+-- 
+2.34.1
+

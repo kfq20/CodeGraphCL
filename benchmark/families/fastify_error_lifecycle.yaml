@@ -1,0 +1,24 @@
+family_id: fastify_error_lifecycle
+repository: fastify
+
+# The fastify error-lifecycle family. Single node so far; built for the error-routing motif:
+# how a status-bearing error raised mid-request is dispatched (to the custom 404 handler, not
+# the generic 500 path).
+# 63fce75e ("Route 404 errors to the 404 handler"): a 404-status error (from a route handler
+#   or an onSend hook) was treated as a generic error (500 JSON); gold intercepts 404-status
+#   errors in the error handler and delegates to the internal notFound function, which resets
+#   sent/_isError and switches the reply context to the registered 404 handler.
+#   (bank: fastify_404_route_handler)
+nodes:
+  - fastify_404_route_handler   # gold=63fce75e
+
+edges: []
+
+structure:
+  type: single_node   # only one node; no multi-node edge yet
+  order:
+    - 63fce75e
+
+diagnostic_targets: []   # no edge to screen
+
+screening_log: []

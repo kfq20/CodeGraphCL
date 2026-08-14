@@ -1,0 +1,9 @@
+{
+  "run_id": "mat_fastify_loggr_responsetime_1",
+  "task_id": "fastify_loggr_responsetime",
+  "image": "codegraphcl-fastify:node",
+  "base_commit": "288903a3^",
+  "gold_commit": "288903a3",
+  "started_at": 1786702466,
+  "finished_at": 1786702520
+}

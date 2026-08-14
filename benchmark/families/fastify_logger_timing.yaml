@@ -1,0 +1,23 @@
+family_id: fastify_logger_timing
+repository: fastify
+
+# The fastify logger-timing family. Single node so far; built for the request-timing motif:
+# how the per-request response time is captured and emitted in the "request completed" log line.
+# 288903a3 ("fix responseTime regression"): a prior change inverted the hasLogger flag, so the
+#   response-completion callback became a no-op exactly when logging was on, and the
+#   responseTime field vanished from the logs. gold inverts the flag back, selects the real
+#   callback when logging, sets a per-request start timestamp, and guards the compute against
+#   an undefined start time. (bank: fastify_loggr_responsetime)
+nodes:
+  - fastify_loggr_responsetime   # gold=288903a3
+
+edges: []
+
+structure:
+  type: single_node
+  order:
+    - 288903a3
+
+diagnostic_targets: []
+
+screening_log: []

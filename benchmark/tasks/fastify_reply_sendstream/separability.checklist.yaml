@@ -1,0 +1,44 @@
+# Separability checklist for fastify_reply_sendstream (single-node, fastify_response_stream family).
+# Instruction states the symptom (stream errors before headers reset the connection); the fix
+# (end-of-stream guard: delegate pre-headers errors to handleError, destroy on post-headers
+# errors, pipe the payload) must be derived.
+schema_version: 1
+task_id: fastify_reply_sendstream
+
+checks:
+  - id: S1_instruction_symptom_only
+    question: "Does the instruction state only the symptom (connection reset on stream error), not the fix?"
+    answer: yes
+    evidence: >
+      instruction.md: "the HTTP connection is reset ... the stream's error status ... is lost."
+      Acceptance: surface the error as an HTTP error response (status + error content-type);
+      tear down the connection only when headers are already sent.
+  - id: S2_instruction_no_mechanism_words
+    question: "Does the instruction avoid end-of-stream / sendStream / headersSent / handleError?"
+    answer: yes
+    evidence: "banned_words.txt forbids these; instruction says 'before headers are written' and 'the normal error path' generically"
+  - id: S3_instruction_no_file_names
+    question: "Does the instruction avoid naming reply.js?"
+    answer: yes
+    evidence: "instruction says 'the reply's stream-sending path'"
+  - id: S4_near_misses_plausible
+    question: "Are the near-misses plausible-but-wrong, not absurd?"
+    answer: yes
+    evidence: >
+      A = always destroy on stream error (real "a stream error means the response is dead"
+      assumption); B = set the status directly and skip the error handler (real "just needs a
+      status code" assumption).
+  - id: S5_near_misses_distinct_axes
+    question: "Do the near-misses fail along distinct axes?"
+    answer: yes
+    evidence: >
+      A fails the statusCode/content-type assertions via ECONNRESET (no response at all); B
+      sets 404 but fails the content-type assertion (octet-stream vs application/json). Both
+      empirically verified reward=0.
+  - id: S6_base_solvable_and_feasible
+    question: "Is the base solvable and comfortably under the agent time budget?"
+    answer: yes
+    evidence: "localized sendStream helper. base-fail verified empirically (BF reward=0, ECONNRESET)."
+
+edge_strength: n/a_single_node
+# Single-node behavior fix; first node in fastify_response_stream family.
