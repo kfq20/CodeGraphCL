@@ -1,0 +1,12 @@
+# Banned MECHANISM words for fastify_per_parser_bodylimit instruction.
+# The fix: thread bodyLimit through ContentTypeParser/Parser; in rawBody select
+# parser.bodyLimit when options.limit === null (route didn't set its own).
+# "body limit"/"413"/"parser" are symptom-level; the threading mechanism is banned.
+parser.bodyLimit
+options.limit === null
+opts.bodyLimit
+this._bodyLimit
+ContentTypeParser(
+bodyLimit
+ContentTypeParser.js
+fastify.js

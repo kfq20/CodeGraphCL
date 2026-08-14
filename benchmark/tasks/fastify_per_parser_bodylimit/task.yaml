@@ -1,0 +1,77 @@
+schema_version: 1
+task_id: fastify_per_parser_bodylimit
+family_id: fastify_contenttype
+
+repository:
+  url: https://github.com/fastify/fastify
+  base_commit: dab20bd9^
+  gold_commit: dab20bd9
+  language: javascript
+
+instruction:
+  path: instruction.md
+
+environment:
+  image: codegraphcl-fastify:node
+  dockerfile: harbor_task/environment/Dockerfile.fastify
+  workdir: /workspace/repo
+  build_timeout_sec: 900
+  extra_mounts: {}
+
+patches:
+  gold: gold.patch                 # fastify.js + lib/ContentTypeParser.js (thread bodyLimit)
+  verifier: verifier/verifier.patch # test/custom-parser.test.js (per-parser + route-precedence)
+
+verifier:
+  command: bash verifier/test.sh   # tap test/custom-parser.test.js --grep 'bodyLimit' (both per-parser + route-precedence)
+  timeout_sec: 300
+  hermetic: false
+  fail_to_pass:
+    - "test: Should allow defining the bodyLimit per parser"
+    - "test: route bodyLimit should take precedence over a custom parser bodyLimit"
+  pass_to_pass: []
+  pass_to_pass_not_applicable: true
+  near_miss_base: gold
+  near_miss:
+    - near_miss/nearmiss_pbl_alwaysparser.py
+    - near_miss/nearmiss_pbl_alwaysroute.py
+
+separability:
+  banned_words: banned_words.txt
+  checklist: separability.checklist.yaml
+
+mechanism_audit:
+  reusable_decision: >
+    Producer: the body-size-limit precedence rule — a route's own bodyLimit takes precedence
+    over a custom parser's bodyLimit; when the route sets no limit (null), the parser's
+    declared limit applies; a parser without a declared limit uses the instance default.
+  plausible_path_correct: >
+    Thread bodyLimit through ContentTypeParser/Parser (constructor param, default to instance
+    _bodyLimit); in rawBody select `options.limit === null ? parser.bodyLimit : options.limit`.
+  plausible_path_competing: >
+    Always use one limit source uniformly: always the parser's limit (ignoring route
+    precedence), or always the route/default (ignoring the parser's declared limit). Both are
+    simpler than the precedence rule and look plausible.
+  why_instruction_does_not_disambiguate: >
+    The instruction says the symptom (parser's limit ignored) and the precedence (route wins).
+    It does NOT name bodyLimit, the null-sentinel, the parser constructor param, or the
+    rawBody selection — a reset agent can't tell which limit source to use when.
+  why_correct_history_selects_path: >
+    The precedence rule (route > parser > default, with the null-sentinel for "route didn't
+    set") points at the ternary-selection path.
+  why_wrong_history_is_plausible: >
+    The wrong priors ("parser declared it, always respect the parser" / "route limit is the
+    authority") are both real, simple, plausible principles — each is the base behavior in one
+    direction.
+
+status:
+  semantic_audit: passed
+  separability_gate: passed
+  executable_gate: passed         # mat_fs_pbl_3: 4/4 gates, 2 near-miss caught (alwaysparser + inverted-ternary)
+  verification_tier: executable_candidate
+  intervention_preflight: pending
+
+notes: >
+  fastify_contenttype family (3rd node). Motif: scoped-update/precedence (which bodyLimit
+  applies: route-level vs parser-level, with a precedence rule). base-fail VERIFIED (per-parser
+  bodyLimit test fails on base). 23-line source patch. Phase 4 task.

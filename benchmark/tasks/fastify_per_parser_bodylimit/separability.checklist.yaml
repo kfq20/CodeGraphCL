@@ -1,0 +1,35 @@
+# Separability checklist for fastify_per_parser_bodylimit (fastify_contenttype, Phase 4).
+schema_version: 1
+task_id: fastify_per_parser_bodylimit
+
+checks:
+  - id: S1_instruction_symptom_only
+    question: "Does the instruction state only the symptom, not the fix?"
+    answer: yes
+    evidence: >
+      instruction.md: "a custom content-type parser registered with its own smaller limit has
+      that limit ignored." Acceptance: parser limit enforced; route limit takes precedence.
+  - id: S2_instruction_no_mechanism_words
+    question: "Does the instruction avoid parser.bodyLimit/options.limit===null/opts.bodyLimit/_bodyLimit?"
+    answer: yes
+    evidence: "banned_words.txt forbids these; instruction says 'content-type-parser + request-parsing surface'"
+  - id: S3_instruction_no_file_names
+    question: "Does the instruction avoid naming ContentTypeParser.js/fastify.js?"
+    answer: yes
+    evidence: "instruction says 'content-type-parser + request-parsing surface'"
+  - id: S4_near_misses_plausible
+    question: "Are the near-misses plausible-but-wrong?"
+    answer: yes
+    evidence: >
+      A = always use parser limit (real 'parser declared it, respect it'); B = always use route/default
+      (real 'route limit is the authority'). Both simple, plausible, each base in one direction.
+  - id: S5_near_misses_distinct_axes
+    question: "Do the near-misses fail along distinct axes?"
+    answer: yes
+    evidence: >
+      A breaks route-precedence (parser limit used where route should win); B breaks per-parser
+      (default used where parser limit should apply). Opposite directions. (pending empirical confirm.)
+  - id: S6_base_solvable
+    question: "Is the base solvable?"
+    answer: yes
+    evidence: "23-line patch. base-fail verified (BF_RC=1, per-parser bodyLimit test fails)."
