@@ -1,0 +1,7 @@
+episode_id,condition,block,reward,outcome,elapsed_sec,input_tokens,output_tokens,cache_read_tokens,tool_uses,assistant_turns,prefix_chars,prompt_sha256
+ep_000000,correct_long,0,0,timeout_failed,600,16241,52600,606083,29,57,1036,96879396e2c3
+ep_000001,correct_short,0,1,timeout_solved,600,0,0,0,38,66,322,71d96e0c4717
+ep_000002,irrelevant_short,0,0,agent_fail,478,44403,25603,3510912,92,136,304,4ca1e528a613
+ep_000003,irrelevant_long,0,0,timeout_failed,600,0,0,0,57,85,1018,332b20ad4811
+ep_000004,reset,0,1,timeout_solved,600,31309,21065,2705925,77,118,0,fa94b5f780ee
+ep_000005,correct_long,1,1,solved,407,36975,30967,2477440,68,120,1036,efebd425781d
