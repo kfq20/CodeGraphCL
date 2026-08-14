@@ -1,0 +1,30 @@
+schema_version: 1
+edge_id: fastify_contenttype__to_fastify_delete_body_
+from: fastify_contenttype_emptybody
+to: fastify_delete_body_check
+edge_type: beneficial_update
+
+experience:
+  statement: >
+    Body parsing: emptybody removed the zero-length reject; delete-body-check gates DELETE on body-indicator headers. Both share 'the body parser must handle method/content-type edge cases, not pre-reject uniformly.'
+  type: body_parser_edge_cases
+  scope: lib/ContentTypeParser.js
+  provenance:
+    repository: fastify
+    commit: "8c5e732f2e9b"
+  validity: valid_for_consumer
+
+conditions:
+  reset: null
+  correct: correct
+  irrelevant: irrelevant
+  stale: wrong
+
+expected_effect:
+  correctness: possible
+  efficiency: possible
+  negative_transfer: possible
+
+status:
+  semantic_audit: passed
+  causal_verification: proposed

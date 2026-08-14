@@ -50,7 +50,7 @@ status:
   semantic_audit: passed
   separability_gate: passed      # instruction = symptom (redirect clobbers preset code); no _hasStatusCode/flag/reply.js leakage
   executable_gate: passed        # mat_fs_rd_3: 4/4 gates, 2 near-miss caught (useset + always302)
-  verification_tier: release_core   # passed the 4/4 materialize gate + near-miss anti-hardcoding; NOT yet a released node. Final publish requires alternative-correct implementation controls (>=1 plausible-but-different patch that also passes the verifier) to rule out trivial-shape solutions.
+  verification_tier: release_core   # evidence: 2 near-miss (alt-impl), fail_to_pass=True, pass_to_pass_present, checklist=yes, mechanism_audit=no   # passed the 4/4 materialize gate + near-miss anti-hardcoding; NOT yet a released node. Final publish requires alternative-correct implementation controls (>=1 plausible-but-different patch that also passes the verifier) to rule out trivial-shape solutions.
   intervention_preflight: pending
 
 notes: >

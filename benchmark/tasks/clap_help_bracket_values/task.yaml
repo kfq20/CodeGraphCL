@@ -45,7 +45,7 @@ status:
   semantic_audit: passed
   separability_gate: passed      # instruction = symptom (help shows required when parser accepts fewer); no mechanism leakage
   executable_gate: passed        # base-fail + gold-pass + BOTH near-miss VERIFIED by materialize (4/4)
-  verification_tier: release_core
+  verification_tier: release_core   # evidence: 2 near-miss (alt-impl), fail_to_pass=True, pass_to_pass_NA, checklist=yes, mechanism_audit=no
   intervention_preflight: pending
 
 notes: >

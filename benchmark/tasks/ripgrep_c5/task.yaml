@@ -45,7 +45,7 @@ status:
   semantic_audit: passed
   separability_gate: passed      # instruction = symptom (wrong root context leaks across multi-root); no absolute_base/IgnoreInner/cache leakage
   executable_gate: passed        # mat_c5_3: 4/4 gates, 2 near-miss caught (parentdir add_child + cachehit)
-  verification_tier: release_core   # passed the 4/4 materialize gate + near-miss anti-hardcoding; NOT yet a released node. Final publish requires alternative-correct implementation controls (>=1 plausible-but-different patch that also passes the verifier) to rule out trivial-shape solutions.
+  verification_tier: release_core   # evidence: 2 near-miss (alt-impl), fail_to_pass=True, pass_to_pass_NA, checklist=yes, mechanism_audit=no   # passed the 4/4 materialize gate + near-miss anti-hardcoding; NOT yet a released node. Final publish requires alternative-correct implementation controls (>=1 plausible-but-different patch that also passes the verifier) to rule out trivial-shape solutions.
   intervention_preflight: passed  # prompt-preview PASS (4 distinct prompts, instr shared, no condition-word leak)
 
 notes: >

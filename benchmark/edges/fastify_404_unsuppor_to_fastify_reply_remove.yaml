@@ -1,0 +1,30 @@
+schema_version: 1
+edge_id: fastify_404_unsuppor_to_fastify_reply_remove
+from: fastify_404_unsupported_method
+to: fastify_reply_removeheader
+edge_type: beneficial_update
+
+experience:
+  statement: >
+    Reply API: 404-unsupported-method returns 404 not 405; removeHeader deletes a set header. Both share 'the reply API must handle edge cases in status codes and header operations, not use generic defaults.'
+  type: reply_api_edge_cases
+  scope: lib/reply.js
+  provenance:
+    repository: fastify
+    commit: "fa5e591b7ab3"
+  validity: valid_for_consumer
+
+conditions:
+  reset: null
+  correct: correct
+  irrelevant: irrelevant
+  stale: wrong
+
+expected_effect:
+  correctness: possible
+  efficiency: possible
+  negative_transfer: possible
+
+status:
+  semantic_audit: passed
+  causal_verification: proposed

@@ -76,7 +76,7 @@ status:
   semantic_audit: passed
   separability_gate: passed
   executable_gate: passed         # mat_oe404_1: 4/4 gates, 2 near-miss caught (copyonly + wrongslot)
-  verification_tier: release_core
+  verification_tier: release_core   # evidence: 2 near-miss (alt-impl), fail_to_pass=True, pass_to_pass_NA, checklist=yes, mechanism_audit=yes
   intervention_preflight: pending
 
 notes: >

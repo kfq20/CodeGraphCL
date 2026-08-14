@@ -1,0 +1,30 @@
+schema_version: 1
+edge_id: fastify_404_route_ha_to_fastify_error_header
+from: fastify_404_route_handler
+to: fastify_error_headers_404
+edge_type: beneficial_update
+
+experience:
+  statement: >
+    Error lifecycle: 404-route handler established the notFound routing convention; error-headers-404 applies the same ordering (set headers before routing). Both in handleError path.
+  type: error_path_ordering
+  scope: lib/reply.js
+  provenance:
+    repository: fastify
+    commit: "63fce75e"
+  validity: valid_for_consumer
+
+conditions:
+  reset: null
+  correct: correct
+  irrelevant: irrelevant
+  stale: wrong
+
+expected_effect:
+  correctness: possible
+  efficiency: possible
+  negative_transfer: possible
+
+status:
+  semantic_audit: passed
+  causal_verification: proposed

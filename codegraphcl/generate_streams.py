@@ -62,7 +62,8 @@ def _load_graph():
         lang = cfg.get("repository", {}).get("language", "unknown")
         nodes[tid] = {"family": family, "repo": repo, "language": lang,
                       "base_commit": cfg.get("repository", {}).get("base_commit"),
-                      "gold_commit": cfg.get("repository", {}).get("gold_commit")}
+                      "gold_commit": cfg.get("repository", {}).get("gold_commit"),
+                      "verification_tier": cfg.get("status", {}).get("verification_tier", "unknown")}
     edges = []
     for ef in sorted(EDGES_DIR.glob("*.yaml")):
         ec = yaml.safe_load(ef.read_text())
@@ -257,22 +258,30 @@ def _build_integrated_stream(edges, rng, nodes, length=6, **kw):
 
 
 def cmd_generate(args):
+    """Generate streams. For diagnostic: one motif per file (no overwrite). For integrated:
+    multi-motif chains. All streams only reference release_core nodes."""
     nodes, edges = _load_graph()
+    # filter to release_core nodes only
+    core_nodes = {n: v for n, v in nodes.items() if v.get("verification_tier") == "release_core"}
+    core_node_ids = set(core_nodes.keys())
+    core_edges = [e for e in edges if e["from"] in core_node_ids and e["to"] in core_node_ids]
     rng = random.Random(args.seed)
     STREAMS_DIR.mkdir(parents=True, exist_ok=True)
-    out_dir = STREAMS_DIR / ("diagnostic" if args.type == "diagnostic" else "integrated")
-    out_dir.mkdir(exist_ok=True)
-    seen_sigs = set()
-    streams = []
-    attempts = 0
-    # for integrated: use the multi-motif builder
+
     if args.type == "integrated":
+        out_dir = STREAMS_DIR / "integrated"
+        out_dir.mkdir(exist_ok=True)
+        seen_sigs = set()
+        streams = []
+        attempts = 0
         while len(streams) < args.count and attempts < args.count * 30:
             attempts += 1
             kw = {"length": args.length, "intervention": "none"}
             if args.stale: kw["intervention"] = "stale"
-            s = _build_integrated_stream(edges, rng, nodes, **kw)
+            s = _build_integrated_stream(core_edges, rng, core_nodes, **kw)
             if not s: continue
+            # verify all task_ids are release_core
+            if not all(t in core_node_ids for t in s["task_ids"]): continue
             sig = _canonical_sig(s)
             if sig in seen_sigs: continue
             seen_sigs.add(sig)
@@ -287,43 +296,53 @@ def cmd_generate(args):
         for s in streams:
             print(f"  {s['stream_id']}: {s['task_ids']} ({s.get('motifs_used', [s['motif']])})")
         if not streams:
-            print(f"(0 streams — graph has {len(edges)} edges, {len(nodes)} nodes)")
+            print(f"(0 streams — graph has {len(core_edges)} core edges, {len(core_nodes)} core nodes)")
         return 0
-    # for diagnostic: single-motif builder
-    motif = args.motif or rng.choice(list(BUILDERS))
-    while len(streams) < args.count and attempts < args.count * 20:
-        attempts += 1
-        kw = {"distance": args.distance, "parent_count": args.parent_count,
-              "intervention": "none"}
-        if args.stale: kw["intervention"] = "stale"
-        if args.wrong: kw["intervention"] = "wrong"
+
+    # diagnostic: generate for specified motif (or all motifs), each to its own file
+    out_dir = STREAMS_DIR / "diagnostic"
+    out_dir.mkdir(exist_ok=True)
+    motifs_to_gen = [args.motif] if args.motif else list(BUILDERS)
+    total_all = 0
+    for motif in motifs_to_gen:
+        seen_sigs_motif = set()
+        streams_motif = []
+        attempts = 0
         builder = BUILDERS[motif]
-        try:
-            s = builder(edges, rng, nodes=nodes, **kw) if motif in ("scope", "hard_negative") \
-                else builder(edges, rng, **kw)
-        except Exception:
-            s = None
-        if not s: continue
-        sig = _canonical_sig(s)
-        if sig in seen_sigs: continue
-        seen_sigs.add(sig)
-        s["stream_id"] = f"{motif}_{len(streams):03d}_seed{args.seed}"
-        s["canonical_sig"] = sig
-        streams.append(s)
-    out = out_dir / f"streams_seed{args.seed}.jsonl"
-    with out.open("w") as f:
-        for s in streams:
-            f.write(json.dumps(s) + "\n")
-    print(f"generated {len(streams)} {args.type} streams ({motif}) -> {out}")
-    for s in streams:
-        print(f"  {s['stream_id']}: {s['task_ids']} ({s['motif']})")
-    if not streams:
-        print(f"(0 streams — graph has {len(edges)} edges, {len(nodes)} nodes; motif {motif} "
-              f"may need more edges/nodes. See PHASE4 needs.)")
+        while len(streams_motif) < args.count and attempts < args.count * 20:
+            attempts += 1
+            kw = {"distance": args.distance, "parent_count": args.parent_count,
+                  "intervention": "none"}
+            if args.stale: kw["intervention"] = "stale"
+            if args.wrong: kw["intervention"] = "wrong"
+            try:
+                s = builder(core_edges, rng, nodes=core_nodes, **kw) if motif in ("scope", "hard_negative") \
+                    else builder(core_edges, rng, **kw)
+            except Exception:
+                s = None
+            if not s: continue
+            # verify all task_ids are release_core
+            if not all(t in core_node_ids for t in s["task_ids"]): continue
+            sig = _canonical_sig(s)
+            if sig in seen_sigs_motif: continue
+            seen_sigs_motif.add(sig)
+            s["stream_id"] = f"{motif}_{len(streams_motif):03d}_seed{args.seed}"
+            s["canonical_sig"] = sig
+            s["family_id"] = s["stream_id"]  # family = stream for diagnostic
+            streams_motif.append(s)
+        # each motif to its OWN file (no overwrite!)
+        out = out_dir / f"{motif}_seed{args.seed}.jsonl"
+        with out.open("w") as f:
+            for s in streams_motif:
+                f.write(json.dumps(s) + "\n")
+        total_all += len(streams_motif)
+        print(f"  {motif}: {len(streams_motif)} streams -> {out}")
+    print(f"total diagnostic streams: {total_all} ({len(motifs_to_gen)} motif files)")
     return 0
 
 
 if __name__ == "__main__":
+    import argparse
     ap = argparse.ArgumentParser()
     ap.add_argument("--type", default="diagnostic", choices=["diagnostic", "integrated"])
     ap.add_argument("--motif", default=None, choices=list(BUILDERS))

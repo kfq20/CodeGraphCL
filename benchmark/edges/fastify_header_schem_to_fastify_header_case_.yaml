@@ -1,0 +1,30 @@
+schema_version: 1
+edge_id: fastify_header_schem_to_fastify_header_case_
+from: fastify_header_schema_case
+to: fastify_header_case_validation
+edge_type: beneficial_update
+
+experience:
+  statement: >
+    Header case normalization: schema-case lowercases property keys; header-case lowercases required-header array. Both share 'header name comparison must be case-insensitive — normalize before matching.'
+  type: header_case_normalization
+  scope: lib/validation.js + fastify.js
+  provenance:
+    repository: fastify
+    commit: "746e307cc4b6fa7cbccc0a590d93844afd7bf548"
+  validity: valid_for_consumer
+
+conditions:
+  reset: null
+  correct: correct
+  irrelevant: irrelevant
+  stale: wrong
+
+expected_effect:
+  correctness: possible
+  efficiency: possible
+  negative_transfer: possible
+
+status:
+  semantic_audit: passed
+  causal_verification: proposed

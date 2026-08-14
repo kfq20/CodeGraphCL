@@ -1,0 +1,30 @@
+schema_version: 1
+edge_id: fastify_error_header_to_fastify_log_after_er
+from: fastify_error_headers_404
+to: fastify_log_after_error_handler
+edge_type: beneficial_update
+
+experience:
+  statement: >
+    Error lifecycle ordering: error-headers-404 sets headers before 404 routing; log-after-error-handler moves logging after customErrorHandler. Both share 'the error handling path has ordering constraints — headers before routing, logging after handler.'
+  type: error_handler_ordering
+  scope: lib/reply.js
+  provenance:
+    repository: fastify
+    commit: "3c920f94b1ce857da5d4356f59ae16b67a6503ce"
+  validity: valid_for_consumer
+
+conditions:
+  reset: null
+  correct: correct
+  irrelevant: irrelevant
+  stale: wrong
+
+expected_effect:
+  correctness: possible
+  efficiency: possible
+  negative_transfer: possible
+
+status:
+  semantic_audit: passed
+  causal_verification: proposed

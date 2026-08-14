@@ -43,7 +43,7 @@ status:
   semantic_audit: passed
   separability_gate: passed      # instruction = symptom (unsupported method returns 405 not 404); no code-swap/405/405 leakage
   executable_gate: passed         # base-fail VERIFIED by hand (BF_RC=1); near-miss pending empirical confirm
-  verification_tier: release_core   # passed the 4/4 materialize gate + near-miss anti-hardcoding; NOT yet a released node. Final publish requires alternative-correct implementation controls (>=1 plausible-but-different patch that also passes the verifier) to rule out trivial-shape solutions.
+  verification_tier: release_core   # evidence: 2 near-miss (alt-impl), fail_to_pass=True, pass_to_pass_NA, checklist=yes, mechanism_audit=no   # passed the 4/4 materialize gate + near-miss anti-hardcoding; NOT yet a released node. Final publish requires alternative-correct implementation controls (>=1 plausible-but-different patch that also passes the verifier) to rule out trivial-shape solutions.
   intervention_preflight: pending
 
 notes: >

@@ -85,9 +85,19 @@ edges:
   to: clap_complete_fish_quote
   edge_type: beneficial_update
   intervention_status: proposed
+- edge_id: fastify_404_route_ha_to_fastify_error_header
+  from: fastify_404_route_handler
+  to: fastify_error_headers_404
+  edge_type: beneficial_update
+  intervention_status: proposed
 - edge_id: fastify_404_unsuppor_to_fastify_redirect_sta
   from: fastify_404_unsupported_method
   to: fastify_redirect_statuscode
+  edge_type: beneficial_update
+  intervention_status: proposed
+- edge_id: fastify_404_unsuppor_to_fastify_reply_remove
+  from: fastify_404_unsupported_method
+  to: fastify_reply_removeheader
   edge_type: beneficial_update
   intervention_status: proposed
 - edge_id: fastify_404route_to_headerssent
@@ -100,11 +110,21 @@ edges:
   to: fastify_decorator_getter
   edge_type: beneficial_parity
   intervention_status: intervention_smoke
+- edge_id: fastify_contenttype__to_fastify_delete_body_
+  from: fastify_contenttype_emptybody
+  to: fastify_delete_body_check
+  edge_type: beneficial_update
+  intervention_status: proposed
 - edge_id: fastify_emptybody_to_array
   from: fastify_contenttype_emptybody
   to: fastify_contenttype_array
   edge_type: beneficial_update
   intervention_status: intervention_smoke
+- edge_id: fastify_error_header_to_fastify_log_after_er
+  from: fastify_error_headers_404
+  to: fastify_log_after_error_handler
+  edge_type: beneficial_update
+  intervention_status: proposed
 - edge_id: fastify_getschemas_to_cleanid
   from: fastify_get_shared_schemas
   to: fastify_clean_schema_id
@@ -120,6 +140,11 @@ edges:
   to: fastify_reply_removeheader
   edge_type: beneficial_update
   intervention_status: intervention_smoke
+- edge_id: fastify_header_schem_to_fastify_header_case_
+  from: fastify_header_schema_case
+  to: fastify_header_case_validation
+  edge_type: beneficial_update
+  intervention_status: proposed
 - edge_id: fastify_per_parser_b_to_fastify_contenttype_
   from: fastify_per_parser_bodylimit
   to: fastify_contenttype_array
@@ -185,39 +210,9 @@ edges:
   to: httpx_url_copywith_authority
   edge_type: beneficial_update
   intervention_status: proposed
-- edge_id: httpx_tA_to_httpx_tC
-  from: httpx_tA
-  to: httpx_tC
-  edge_type: beneficial_update
-  intervention_status: proposed
-- edge_id: httpx_tA_to_tB
-  from: httpx_tA
-  to: httpx_tB
-  edge_type: beneficial_parity
-  intervention_status: rejected
-- edge_id: httpx_tB_to_tC
-  from: httpx_tB
-  to: httpx_tC
-  edge_type: beneficial_update
-  intervention_status: rejected
 - edge_id: ripgrep_bom_to_skip_unreachable
   from: ripgrep_gitignore_skip_bom
   to: ripgrep_skip_unreachable_ignore
-  edge_type: beneficial_update
-  intervention_status: proposed
-- edge_id: ripgrep_c2_to_c3
-  from: ripgrep_c2
-  to: ripgrep_c3
-  edge_type: beneficial_update
-  intervention_status: rejected
-- edge_id: ripgrep_c2_to_ripgrep_c4
-  from: ripgrep_c2
-  to: ripgrep_c4
-  edge_type: beneficial_update
-  intervention_status: proposed
-- edge_id: ripgrep_c2_to_ripgrep_c5
-  from: ripgrep_c2
-  to: ripgrep_c5
   edge_type: beneficial_update
   intervention_status: proposed
 - edge_id: ripgrep_c3_to_c4
