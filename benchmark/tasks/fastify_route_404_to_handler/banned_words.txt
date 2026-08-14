@@ -1,0 +1,12 @@
+# Banned MECHANISM words for fastify_route_404_to_handler instruction.
+# The fix: route 404-status errors (error.status === 404 OR error.statusCode === 404) to a
+# notFound() helper, with sent/_isError reset to avoid re-entrancy.
+# "not-found"/"404"/"error" are symptom-level; the routing mechanism is banned.
+notFound
+error.status === 404
+error.statusCode === 404
+reply.sent = false
+reply._isError = false
+context._fastify._404Context
+handleError
+reply.js

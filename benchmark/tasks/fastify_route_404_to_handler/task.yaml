@@ -1,0 +1,78 @@
+schema_version: 1
+task_id: fastify_route_404_to_handler
+family_id: fastify_reply_api
+
+repository:
+  url: https://github.com/fastify/fastify
+  base_commit: 63fce75e^
+  gold_commit: 63fce75e
+  language: javascript
+
+instruction:
+  path: instruction.md
+
+environment:
+  image: codegraphcl-fastify:node
+  dockerfile: harbor_task/environment/Dockerfile.fastify
+  workdir: /workspace/repo
+  build_timeout_sec: 900
+  extra_mounts: {}
+
+patches:
+  gold: gold.patch                 # lib/reply.js + test/404s.test.js (404 routing + notFound helper)
+  verifier: verifier/verifier.patch # test/404s.test.js (with-error-object + 404-inside-onSend tests)
+
+verifier:
+  command: bash verifier/test.sh   # tap test/404s.test.js --grep 'customized 404'
+  timeout_sec: 300
+  hermetic: false
+  fail_to_pass:
+    - "test: with error object (route-sent 404 renders the notFound handler's body)"
+  pass_to_pass: []
+  pass_to_pass_not_applicable: true
+  near_miss_base: gold
+  near_miss:
+    - near_miss/nearmiss_r404_noreset.py
+    - near_miss/nearmiss_r404_detectonly.py
+
+separability:
+  banned_words: banned_words.txt
+  checklist: separability.checklist.yaml
+
+mechanism_audit:
+  reusable_decision: >
+    Producer: the not-found handler contract — a registered not-found handler owns the 404
+    response body/behavior. The decision: a 404 status error raised INSIDE a matched route
+    should be routed THROUGH the not-found handler (same as a 404 from a missing route), not
+    through generic error serialization.
+  plausible_path_correct: >
+    Add a 404-status early-return in handleError that calls a notFound(reply) helper; the helper
+    resets sent/_isError (so the notFound handler's send() isn't a no-op) and switches context
+    to _404Context, then invokes the 404 handler.
+  plausible_path_competing: >
+    Leave the 404 to fall through generic error serialization (render JSON). This is the base
+    behavior — a route-sent 404 is "just an error" and gets serialized. Looks correct (404 IS
+    an error) but ignores the not-found-handler contract.
+  why_instruction_does_not_disambiguate: >
+    The instruction says the symptom (route-sent 404 renders JSON not the notFound body) and the
+    expectation (route it through the notFound handler). It does NOT name notFound, _404Context,
+    the sent/_isError reset, or the early-return — a reset agent can't tell whether to serialize,
+    route, or what reset is needed.
+  why_correct_history_selects_path: >
+    The not-found-handler contract (the registered handler owns 404 responses) points at the
+    routing path: 404-status errors go to the notFound handler, not serialization.
+  why_wrong_history_is_plausible: >
+    The wrong prior — "a 404 from a route is just an error; serialize it" — is the generic
+    error-handling default and the base behavior. Not absurd.
+
+status:
+  semantic_audit: passed
+  separability_gate: passed
+  executable_gate: passed         # mat_fs_r404_2: 4/4 gates, 2 near-miss caught (noreset + detectonly)
+  verification_tier: executable_candidate
+  intervention_preflight: pending
+
+notes: >
+  fastify_reply_api family (7th node). Motif: precedence (404-status errors routed to notFound
+  handler BEFORE generic error serialization). base-fail VERIFIED (customized-404 tests fail on
+  base). 34-line source patch. Phase 4 task.

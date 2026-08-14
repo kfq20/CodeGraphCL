@@ -1,0 +1,35 @@
+# Separability checklist for fastify_route_404_to_handler (fastify_reply_api, Phase 4).
+schema_version: 1
+task_id: fastify_route_404_to_handler
+
+checks:
+  - id: S1_instruction_symptom_only
+    question: "Does the instruction state only the symptom, not the fix?"
+    answer: yes
+    evidence: >
+      instruction.md: "the framework does NOT route it through the registered not-found handler...
+      renders a JSON body." Acceptance: route 404 through the not-found handler; don't loop.
+  - id: S2_instruction_no_mechanism_words
+    question: "Does the instruction avoid notFound/error.status===404/error.statusCode===404/sent=_isError/_404Context?"
+    answer: yes
+    evidence: "banned_words.txt forbids these; instruction says 'the reply's error-handling path'"
+  - id: S3_instruction_no_file_names
+    question: "Does the instruction avoid naming reply.js?"
+    answer: yes
+    evidence: "instruction says 'the reply's error-handling path'"
+  - id: S4_near_misses_plausible
+    question: "Are the near-misses plausible-but-wrong?"
+    answer: yes
+    evidence: >
+      A = route to notFound but don't reset flags (real 'flags already set' assumption); B = detect
+      404 but don't route (real 'I added detection, existing path handles it' incomplete fix).
+  - id: S5_near_misses_distinct_axes
+    question: "Do the near-misses fail along distinct axes?"
+    answer: yes
+    evidence: >
+      A fails via no-op send (re-entrancy); B fails via generic serialization (no routing). Both
+      wrong body, different reason. (pending empirical confirm.)
+  - id: S6_base_solvable
+    question: "Is the base solvable?"
+    answer: yes
+    evidence: "34-line patch. base-fail verified (BF_RC=1, customized-404 tests fail)."
