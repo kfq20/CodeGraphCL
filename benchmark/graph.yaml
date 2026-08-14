@@ -24,6 +24,8 @@ nodes:
 - fastify_header_case_validation
 - fastify_log_after_error_handler
 - fastify_loggr_responsetime
+- fastify_middleware_encapsulation
+- fastify_onsend_encapsulated_404
 - fastify_onsend_hook_runner
 - fastify_per_parser_bodylimit
 - fastify_prefix_trailing_slash
@@ -162,9 +164,19 @@ edges:
   to: httpx_multipart_header_encoding
   edge_type: beneficial_parity
   intervention_status: proposed
+- edge_id: httpx_json_encoding_detec_to_httpx_headers_keyerror
+  from: httpx_json_encoding_detection
+  to: httpx_headers_keyerror
+  edge_type: beneficial_update
+  intervention_status: proposed
 - edge_id: httpx_queryparam_types_to_lists
   from: httpx_queryparam_types
   to: httpx_queryparam_lists
+  edge_type: beneficial_update
+  intervention_status: proposed
+- edge_id: httpx_sslconfig_accept_co_to_httpx_client_property_con
+  from: httpx_sslconfig_accept_context
+  to: httpx_client_property_convert
   edge_type: beneficial_update
   intervention_status: proposed
 - edge_id: httpx_sslconfig_to_urlauthority
@@ -245,6 +257,16 @@ edges:
 - edge_id: ripgrep_mindepth_to_deadlock
   from: ripgrep_min_depth_option
   to: ripgrep_deadlock_visitor_panic
+  edge_type: beneficial_update
+  intervention_status: proposed
+- edge_id: viper_default_decode_hook_to_viper_config_notfound_err
+  from: viper_default_decode_hook
+  to: viper_config_notfound_error
+  edge_type: beneficial_update
+  intervention_status: proposed
+- edge_id: viper_unmarshal_automatic_to_viper_unmarshal_exact_mer
+  from: viper_unmarshal_automaticenv
+  to: viper_unmarshal_exact_merge
   edge_type: beneficial_update
   intervention_status: proposed
 external_provenance_edges:

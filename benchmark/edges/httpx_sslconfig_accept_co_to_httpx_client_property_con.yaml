@@ -1,0 +1,30 @@
+schema_version: 1
+edge_id: httpx_sslconfig_accept_co_to_httpx_client_property_con
+from: httpx_sslconfig_accept_context
+to: httpx_client_property_convert
+edge_type: beneficial_update
+
+experience:
+  statement: >
+    Config object convention: SSLConfig accepts multiple input types (bool OR SSLContext), and Client.headers/cookies auto-convert raw input on assignment. Both share 'config objects must coerce input types, not store raw values.'
+  type: config_type_coercion
+  scope: httpx/config.py + httpx/client.py
+  provenance:
+    repository: httpx
+    commit: "df8874b7339c9dcb7963689b304ce0179fc0d862"
+  validity: valid_for_consumer
+
+conditions:
+  reset: null
+  correct: correct
+  irrelevant: irrelevant
+  stale: wrong
+
+expected_effect:
+  correctness: possible
+  efficiency: possible
+  negative_transfer: possible
+
+status:
+  semantic_audit: passed
+  causal_verification: proposed

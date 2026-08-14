@@ -1,0 +1,30 @@
+schema_version: 1
+edge_id: httpx_json_encoding_detec_to_httpx_headers_keyerror
+from: httpx_json_encoding_detection
+to: httpx_headers_keyerror
+edge_type: beneficial_update
+
+experience:
+  statement: >
+    HTTP data-model convention: Response.json must detect encoding (not assume UTF-8), and Headers.__delitem__ must raise KeyError (not silently succeed). Both share 'HTTP data models must follow protocol/standard contracts, not generic defaults.'
+  type: http_protocol_contract
+  scope: httpx/models.py
+  provenance:
+    repository: httpx
+    commit: "5442006a41f94a3e41186910d7a6e8546adf0f89"
+  validity: valid_for_consumer
+
+conditions:
+  reset: null
+  correct: correct
+  irrelevant: irrelevant
+  stale: wrong
+
+expected_effect:
+  correctness: possible
+  efficiency: possible
+  negative_transfer: possible
+
+status:
+  semantic_audit: passed
+  causal_verification: proposed

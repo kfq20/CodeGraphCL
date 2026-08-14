@@ -1,0 +1,23 @@
+family_id: fastify_lifecycle
+repository: fastify
+
+# The fastify server-lifecycle family. Single node so far; built for the graceful-shutdown motif:
+# how incoming requests are handled after the server begins closing.
+# cbd08afd ("Block new incoming requests once close has been called"): after close() is invoked,
+#   new requests still went through the full request lifecycle (the server hadn't fully closed
+#   yet). gold sets a `closing` flag in the onClose hook (registered at preReady) and checks it
+#   at the top of routeHandler to short-circuit with a 503 response and destroy the connection.
+#   (bank: fastify_close_blocks_requests)
+nodes:
+  - fastify_close_blocks_requests   # gold=cbd08afdf55c029cc2e8a1d12cdd55cb298c4185
+
+edges: []
+
+structure:
+  type: single_node
+  order:
+    - cbd08afdf55c029cc2e8a1d12cdd55cb298c4185
+
+diagnostic_targets: []
+
+screening_log: []

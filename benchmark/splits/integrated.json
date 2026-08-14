@@ -2,7 +2,14 @@
   "stream_ids": [
     "update_000_seed42",
     "update_001_seed42",
-    "update_002_seed42"
+    "update_002_seed42",
+    "update_003_seed42",
+    "update_004_seed42",
+    "update_005_seed42",
+    "update_006_seed42",
+    "update_007_seed42",
+    "update_008_seed42",
+    "update_009_seed42"
   ],
   "description": "complex combination streams"
 }

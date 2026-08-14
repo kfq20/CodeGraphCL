@@ -1,0 +1,23 @@
+family_id: fastify_routing
+repository: fastify
+
+# The fastify routing family. Single node so far; built for the path-normalization motif:
+# how route paths and plugin prefixes are combined when prefixes end with a trailing slash.
+# 14a1e9d1 ("Normalize route paths with a prefix that has a trailing slash"): a plugin prefix
+#   ending with '/' combined with a route path starting with '/' produced a double-slash URL
+#   that didn't match incoming requests. gold strips the leading '/' from the route path
+#   (and from nested plugin prefixes) when the parent prefix ends with '/'.
+#   (bank: fastify_prefix_trailing_slash)
+nodes:
+  - fastify_prefix_trailing_slash   # gold=14a1e9d1a8ef24da2716ea38fc65a6715da498d8
+
+edges: []
+
+structure:
+  type: single_node
+  order:
+    - 14a1e9d1a8ef24da2716ea38fc65a6715da498d8
+
+diagnostic_targets: []
+
+screening_log: []

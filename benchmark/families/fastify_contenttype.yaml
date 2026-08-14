@@ -1,16 +1,21 @@
 family_id: fastify_contenttype
 repository: fastify
 
-# The fastify content-type-parser family. Two nodes; one candidate Update edge.
+# The fastify content-type-parser family. Three nodes; one candidate Update edge.
 # 8c5e732f2e9b ("Allow parsing empty request bodies"): removed the zero-length-body early-reject,
 #   establishing that the parser's body-reading path must HAND OFF non-canonical inputs to the
 #   custom parser rather than pre-rejecting on a built-in assumption. (bank: fastify_contenttype_emptybody)
 # 7f378355 ("Support array syntax to handle multiple content types as the same"): registration
 #   accepts a COLLECTION of content types; the parser must register under EACH rather than
 #   treating the collection as a single (broken) type. (bank: fastify_contenttype_array)
+# ef873bf0 ("Resolves issue #936"): DELETE/OPTIONS with a Content-Type but no body (no
+#   Content-Length / Transfer-Encoding) still triggered body parsing, which failed. gold
+#   gates parsing on the presence of body-indicator headers, not just Content-Type.
+#   (bank: fastify_delete_body_check)
 nodes:
   - fastify_contenttype_emptybody   # gold=8c5e732f2e9b
   - fastify_contenttype_array       # gold=7f378355
+  - fastify_delete_body_check       # gold=ef873bf04ba8fbc0ed151008b694ccc1d057a4df
 
 edges:
   - fastify_emptybody_to_array      # 8c5e -> 7f37; beneficial_update

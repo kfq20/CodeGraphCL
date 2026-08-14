@@ -1,7 +1,8 @@
 {
   "task_ids": [
     "fastify_404_unsupported_method",
-    "fastify_bodylimit_perparser",
+    "fastify_delete_body_check",
+    "fastify_middleware_encapsulation",
     "fastify_per_parser_bodylimit",
     "fastify_reply_headerssent",
     "fastify_reply_sendstream",
@@ -9,7 +10,8 @@
     "httpx_sslconfig_accept_context",
     "httpx_url_copywith_authority",
     "ripgrep_globset_matches_all",
-    "ripgrep_look_around_panic"
+    "ripgrep_look_around_panic",
+    "viper_unmarshal_exact_merge"
   ],
   "description": "20% newest commits (future-task generalization)"
 }

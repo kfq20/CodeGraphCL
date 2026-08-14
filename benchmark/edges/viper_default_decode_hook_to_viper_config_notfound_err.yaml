@@ -1,0 +1,30 @@
+schema_version: 1
+edge_id: viper_default_decode_hook_to_viper_config_notfound_err
+from: viper_default_decode_hook
+to: viper_config_notfound_error
+edge_type: beneficial_update
+
+experience:
+  statement: >
+    Config handling convention: decode hook must be wired into the decoder config, and config-not-found must return a typed error (not generic). Both share 'config operations must use typed/structured handling, not generic defaults.'
+  type: config_typed_handling
+  scope: viper.go + file.go
+  provenance:
+    repository: viper
+    commit: "d2458a2abcf9c9af10f033aef75dad8b063a1789"
+  validity: valid_for_consumer
+
+conditions:
+  reset: null
+  correct: correct
+  irrelevant: irrelevant
+  stale: wrong
+
+expected_effect:
+  correctness: possible
+  efficiency: possible
+  negative_transfer: possible
+
+status:
+  semantic_audit: passed
+  causal_verification: proposed

@@ -1,0 +1,30 @@
+schema_version: 1
+edge_id: viper_unmarshal_automatic_to_viper_unmarshal_exact_mer
+from: viper_unmarshal_automaticenv
+to: viper_unmarshal_exact_merge
+edge_type: beneficial_update
+
+experience:
+  statement: >
+    Unmarshal key-derivation convention: Unmarshal derives struct keys and decodes via getSettings so env vars surface. UnmarshalExact applies the same pattern. Both share 'struct key derivation + env-var surfacing must use getSettings, not AllSettings directly.'
+  type: unmarshal_key_derivation
+  scope: viper.go
+  provenance:
+    repository: viper
+    commit: "73dfb94c57ad48bcdf3d40b7f47d69c2962d800d"
+  validity: valid_for_consumer
+
+conditions:
+  reset: null
+  correct: correct
+  irrelevant: irrelevant
+  stale: wrong
+
+expected_effect:
+  correctness: possible
+  efficiency: possible
+  negative_transfer: possible
+
+status:
+  semantic_audit: passed
+  causal_verification: proposed

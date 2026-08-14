@@ -1,0 +1,25 @@
+family_id: fastify_middleware
+repository: fastify
+
+# The fastify middleware family. Single node so far; built for the encapsulation-snapshot motif:
+# how middleware registered in a non-encapsulated plugin is scoped to the contexts that existed
+# at registration time.
+# ef221571 ("Add middleware to routes the same as hooks"): middleware was stored in a live
+#   shared Middie instance, so middleware registered AFTER a route (via fastify-plugin) still
+#   applied to that route. gold refactors to build a per-context Middie from a snapshot of the
+#   _middlewares array at context-creation time, so later middleware registrations don't leak
+#   into already-built route contexts.
+#   (bank: fastify_middleware_encapsulation)
+nodes:
+  - fastify_middleware_encapsulation   # gold=ef2215711ca4e348f91b32c8c413d1779692bebd
+
+edges: []
+
+structure:
+  type: single_node
+  order:
+    - ef2215711ca4e348f91b32c8c413d1779692bebd
+
+diagnostic_targets: []
+
+screening_log: []
