@@ -1,0 +1,9 @@
+{
+  "run_id": "mat_rg_mindepth_1",
+  "task_id": "ripgrep_min_depth_option",
+  "image": "codegraphcl-ripgrep:rust",
+  "base_commit": "2924d0c^",
+  "gold_commit": "2924d0c",
+  "started_at": 1786705447,
+  "finished_at": 1786705492
+}

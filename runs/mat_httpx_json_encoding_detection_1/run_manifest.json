@@ -1,0 +1,9 @@
+{
+  "run_id": "mat_httpx_json_encoding_detection_1",
+  "task_id": "httpx_json_encoding_detection",
+  "image": "codegraphcl-httpx:py311",
+  "base_commit": "561fb842489e52831daf91621f821b745be748eb",
+  "gold_commit": "5442006a41f94a3e41186910d7a6e8546adf0f89",
+  "started_at": 1786708172,
+  "finished_at": 1786708198
+}

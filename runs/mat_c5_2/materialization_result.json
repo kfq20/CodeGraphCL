@@ -1,0 +1,22 @@
+{
+  "status": "task_failure",
+  "reason": "near-miss passed verifier (anti-hardcoding fail): near_miss/nearmiss_c5_parentdir.py",
+  "gates": {
+    "base_fail": "passed",
+    "gold_pass": "passed",
+    "pass_to_pass": "passed",
+    "near_miss": "failed"
+  },
+  "near_miss_results": [
+    {
+      "patch": "near_miss/nearmiss_c5_parentdir.py",
+      "rc": 0,
+      "status": "PASSED (anti-hardcoding FAIL)"
+    },
+    {
+      "patch": "near_miss/nearmiss_c5_cachehit.py",
+      "rc": 1,
+      "status": "caught"
+    }
+  ]
+}

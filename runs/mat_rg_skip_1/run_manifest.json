@@ -1,0 +1,9 @@
+{
+  "run_id": "mat_rg_skip_1",
+  "task_id": "ripgrep_skip_unreachable_ignore",
+  "image": "codegraphcl-ripgrep:rust",
+  "base_commit": "435f59f^",
+  "gold_commit": "435f59f",
+  "started_at": 1786643941,
+  "finished_at": 1786643970
+}

@@ -1,0 +1,9 @@
+{
+  "run_id": "mat_rg_panic_1",
+  "task_id": "ripgrep_look_around_panic",
+  "image": "codegraphcl-ripgrep:rust",
+  "base_commit": "de2567a^",
+  "gold_commit": "de2567a",
+  "started_at": 1786706348,
+  "finished_at": 1786706408
+}

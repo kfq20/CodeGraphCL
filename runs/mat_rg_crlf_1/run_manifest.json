@@ -1,0 +1,9 @@
+{
+  "run_id": "mat_rg_crlf_1",
+  "task_id": "ripgrep_crlf_preserve_terminator",
+  "image": "codegraphcl-ripgrep:rust",
+  "base_commit": "64174b8^",
+  "gold_commit": "64174b8",
+  "started_at": 1786705677,
+  "finished_at": 1786705725
+}

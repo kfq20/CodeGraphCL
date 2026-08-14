@@ -1,0 +1,43 @@
+From 0f34f3b60f9461fa686f5fa10c2a636a09cbaeff Mon Sep 17 00:00:00 2001
+From: Gaurav Dhameeja <gdhameeja@gmail.com>
+Date: Sun, 8 Sep 2019 02:42:37 +0530
+Subject: [PATCH] Raise KeyError if header isn't found in Headers (#324)
+
+---
+ tests/client/test_headers.py | 9 +++++++++
+ 1 file changed, 9 insertions(+)
+
+diff --git a/tests/client/test_headers.py b/tests/client/test_headers.py
+index 2d17c12..c5429a8 100755
+--- a/tests/client/test_headers.py
++++ b/tests/client/test_headers.py
+@@ -2,6 +2,8 @@
+ 
+ import json
+ 
++import pytest
++
+ from httpx import (
+     AsyncDispatcher,
+     AsyncRequest,
+@@ -11,6 +13,7 @@ from httpx import (
+     TimeoutTypes,
+     VerifyTypes,
+     __version__,
++    models,
+ )
+ 
+ 
+@@ -122,3 +125,9 @@ def test_header_update():
+             "user-agent": "python-myclient/0.2.1",
+         }
+     }
++
++
++def test_header_does_not_exist():
++    headers = models.Headers({"foo": "bar"})
++    with pytest.raises(KeyError):
++        del headers["baz"]
+-- 
+2.34.1
+

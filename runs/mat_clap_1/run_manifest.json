@@ -1,0 +1,9 @@
+{
+  "run_id": "mat_clap_1",
+  "task_id": "clap_derive_default_value_os",
+  "image": "codegraphcl-ripgrep:rust",
+  "base_commit": "7c10b5a9b4^",
+  "gold_commit": "7c10b5a9b4",
+  "started_at": 1786590683,
+  "finished_at": 1786590742
+}

@@ -1,0 +1,23 @@
+{
+  "status": "inconclusive",
+  "reason": "near-miss could not be applied/injected (inconclusive): near_miss/nearmiss_fastify_value_only.py (inject_failed)",
+  "gates": {
+    "base_fail": "passed",
+    "gold_pass": "passed",
+    "pass_to_pass": "passed",
+    "near_miss": "inconclusive"
+  },
+  "near_miss_results": [
+    {
+      "patch": "near_miss/nearmiss_fastify_value_only.py",
+      "status": "inject_failed",
+      "rc": -1,
+      "stderr": ""
+    },
+    {
+      "patch": "near_miss/nearmiss_fastify_wrong_proto.py",
+      "rc": 1,
+      "status": "caught"
+    }
+  ]
+}

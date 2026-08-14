@@ -1,0 +1,79 @@
+schema_version: 1
+task_id: httpx_headers_keyerror
+family_id: httpx_headers
+
+repository:
+  url: https://github.com/encode/httpx
+  base_commit: "6b97b2ed00a03d7528abcb45d59e111bebdf0c1a"
+  gold_commit: "0f34f3b60f9461fa686f5fa10c2a636a09cbaeff"
+  language: python
+
+instruction:
+  path: instruction.md
+
+environment:
+  image: codegraphcl-httpx:py311
+  dockerfile: harbor_task/environment/Dockerfile.httpx
+  workdir: /workspace/repo
+  build_timeout_sec: 900
+  extra_mounts:
+    wheels: /pool/wheels
+
+patches:
+  gold: gold.patch                   # httpx/models.py (KeyError in __delitem__) + httpx/middleware.py (del->pop)
+  verifier: verifier/verifier.patch   # tests/client/test_headers.py (test_header_does_not_exist)
+
+verifier:
+  command: bash verifier/test.sh
+  timeout_sec: 300
+  hermetic: false
+  fail_to_pass:
+    - "test_header_does_not_exist"
+  pass_to_pass: []
+  pass_to_pass_not_applicable: true
+  near_miss_base: gold
+  near_miss:
+    - near_miss/nearmiss_valueerror.py
+    - near_miss/nearmiss_silent_return.py
+
+separability:
+  banned_words: banned_words.txt
+  checklist: separability.checklist.yaml
+
+mechanism_audit:
+  reusable_decision: >
+    Producer: Headers.__delitem__ must conform to the MutableMapping contract — raise KeyError(key)
+    when the key is absent, matching dict semantics. Downstream, RedirectMiddleware previously used
+    `del headers[...]` to strip Authorization/Content-Length/Transfer-Encoding on cross-origin or
+    method-change redirects; those deletes must become tolerant `headers.pop(..., None)` calls so
+    the new (correct) KeyError does not break redirect handling when the header was already absent.
+  plausible_path_correct: >
+    In __delitem__, after collecting pop_indexes, `if not pop_indexes: raise KeyError(key)`.
+    Update redirect middleware to use headers.pop(name, None) for the three stripped headers so
+    redirect stripping tolerates a now-correctly-absent header.
+  plausible_path_competing: >
+    Raise an error but of the wrong type (e.g. ValueError) — "raise something when the header is
+    missing" — looks reasonable but does not satisfy pytest.raises(KeyError).
+  why_instruction_does_not_disambiguate: >
+    The instruction states the symptom (silent no-op vs KeyError on absent key), the expectation
+    (match dict semantics, raise KeyError), and that redirect strippers must tolerate absence. It
+    does NOT name pop_indexes, the `if not pop_indexes` guard, or the headers.pop refactor.
+  why_correct_history_selects_path: >
+    KeyError is the standard Python mapping protocol for missing keys (dict, collections.abc).
+    Tolerant pop in the redirect stripper is the minimal adaptation that preserves redirect behavior.
+  why_wrong_history_is_plausible: >
+    "Raise some error" and "silently no-op" are both common reactions to a missing-key delete; the
+    MutableMapping contract is easy to overlook.
+
+status:
+  semantic_audit: passed
+  separability_gate: passed
+  executable_gate: passed         # materialized 4/4 (base-fail, gold-pass, 2 near-miss caught)
+  verification_tier: executable_candidate
+  intervention_preflight: pending
+
+notes: >
+  httpx_headers family (standalone). Motif: protocol-conformance (MutableMapping.__delitem__ must
+  raise KeyError on absent key). 9-line source patch (httpx/models.py + httpx/middleware.py).
+  Commit 0f34f3b (#324). The http2.py import reorder in the original commit is cosmetic and
+  unrelated to the test, but is included in the gold patch for fidelity.

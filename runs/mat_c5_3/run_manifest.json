@@ -1,0 +1,9 @@
+{
+  "run_id": "mat_c5_3",
+  "task_id": "ripgrep_c5",
+  "image": "codegraphcl-ripgrep:rust",
+  "base_commit": "43e2f08^",
+  "gold_commit": "43e2f08",
+  "started_at": 1786592086,
+  "finished_at": 1786592135
+}

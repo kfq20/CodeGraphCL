@@ -1,0 +1,9 @@
+{
+  "run_id": "mat_clap_help_bv_1",
+  "task_id": "clap_help_bracket_values",
+  "image": "codegraphcl-ripgrep:rust",
+  "base_commit": "1ca55413^",
+  "gold_commit": "1ca55413",
+  "started_at": 1786705512,
+  "finished_at": 1786705609
+}

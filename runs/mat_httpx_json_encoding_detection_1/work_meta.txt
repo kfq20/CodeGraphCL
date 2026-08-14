@@ -1,0 +1,2 @@
+work lives in pool: /vePFS-Mindverse/user/intern/fanqi/cgcl_pools/httpx/mat_httpx_json_encoding_detection_1/work -> /pool/mat_httpx_json_encoding_detection_1/work
+container: cgcl-httpx-box

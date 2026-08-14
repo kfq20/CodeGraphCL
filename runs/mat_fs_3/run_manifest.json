@@ -1,0 +1,9 @@
+{
+  "run_id": "mat_fs_3",
+  "task_id": "fastify_decorator_getter",
+  "image": "codegraphcl-fastify:node",
+  "base_commit": "cef8814ea1^",
+  "gold_commit": "cef8814ea1",
+  "started_at": 1786590050,
+  "finished_at": 1786590139
+}

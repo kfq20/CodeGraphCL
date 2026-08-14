@@ -1,0 +1,85 @@
+From 9e420a5c348f8f05124a0918e229acb8bf88acec Mon Sep 17 00:00:00 2001
+From: toppk <toppk@bllue.org>
+Date: Tue, 27 Aug 2019 20:25:30 -0400
+Subject: [PATCH] Automatically convert Client.cookies and Client.headers on
+ set (#274)
+
+---
+ tests/client/test_cookies.py    | 36 +++++++++++++++++++++++++++++++++
+ tests/client/test_properties.py | 17 ++++++++++++++++
+ 2 files changed, 53 insertions(+)
+ create mode 100644 tests/client/test_properties.py
+
+diff --git a/tests/client/test_cookies.py b/tests/client/test_cookies.py
+index 280f44b..f6a7e20 100644
+--- a/tests/client/test_cookies.py
++++ b/tests/client/test_cookies.py
+@@ -78,6 +78,42 @@ def test_set_cookie_with_cookiejar():
+     assert response.json() == {"cookies": "example-name=example-value"}
+ 
+ 
++def test_setting_client_cookies_to_cookiejar():
++    """
++    Send a request including a cookie, using a `CookieJar` instance.
++    """
++
++    url = "http://example.org/echo_cookies"
++    cookies = CookieJar()
++    cookie = Cookie(
++        version=0,
++        name="example-name",
++        value="example-value",
++        port=None,
++        port_specified=False,
++        domain="",
++        domain_specified=False,
++        domain_initial_dot=False,
++        path="/",
++        path_specified=True,
++        secure=False,
++        expires=None,
++        discard=True,
++        comment=None,
++        comment_url=None,
++        rest={"HttpOnly": None},
++        rfc2109=False,
++    )
++    cookies.set_cookie(cookie)
++
++    with Client(dispatch=MockDispatch()) as client:
++        client.cookies = cookies
++        response = client.get(url)
++
++    assert response.status_code == 200
++    assert response.json() == {"cookies": "example-name=example-value"}
++
++
+ def test_set_cookie_with_cookies_model():
+     """
+     Send a request including a cookie, using a `Cookies` instance.
+diff --git a/tests/client/test_properties.py b/tests/client/test_properties.py
+new file mode 100644
+index 0000000..f0ce671
+--- /dev/null
++++ b/tests/client/test_properties.py
+@@ -0,0 +1,17 @@
++from httpx import Client, Cookies, Headers
++
++
++def test_client_headers():
++    client = Client()
++    client.headers = {"a": "b"}
++    assert isinstance(client.headers, Headers)
++    assert client.headers["A"] == "b"
++
++
++def test_client_cookies():
++    client = Client()
++    client.cookies = {"a": "b"}
++    assert isinstance(client.cookies, Cookies)
++    mycookies = list(client.cookies.jar)
++    assert len(mycookies) == 1
++    assert mycookies[0].name == "a" and mycookies[0].value == "b"
+-- 
+2.34.1
+

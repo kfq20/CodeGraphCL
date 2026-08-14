@@ -1,0 +1,9 @@
+{
+  "run_id": "mat_fs_hv_1",
+  "task_id": "fastify_header_case_validation",
+  "image": "codegraphcl-fastify:node",
+  "base_commit": "2907be7c5352^",
+  "gold_commit": "2907be7c5352",
+  "started_at": 1786600132,
+  "finished_at": 1786600171
+}

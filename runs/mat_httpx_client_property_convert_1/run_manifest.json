@@ -1,0 +1,9 @@
+{
+  "run_id": "mat_httpx_client_property_convert_1",
+  "task_id": "httpx_client_property_convert",
+  "image": "codegraphcl-httpx:py311",
+  "base_commit": "1f4b8dd054009f43a5a2c2fd7e38cbf7a539bb2f",
+  "gold_commit": "9e420a5c348f8f05124a0918e229acb8bf88acec",
+  "started_at": 1786709216,
+  "finished_at": 1786709242
+}

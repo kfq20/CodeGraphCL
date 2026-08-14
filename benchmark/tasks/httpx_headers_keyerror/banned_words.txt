@@ -1,0 +1,11 @@
+# Banned MECHANISM words for httpx_headers_keyerror instruction.
+# The fix: in Headers' delete operation, `if not pop_indexes: raise KeyError(key)`; and switch
+# redirect middleware `del headers[...]` to `headers.pop(..., None)`. "KeyError" alone is
+# symptom-level (the expected exception type); the mechanism (guard var, exact code, pop refactor,
+# internal field, method name) is banned.
+pop_indexes
+if not pop_indexes
+raise KeyError(key)
+headers.pop
+self._list
+__delitem__

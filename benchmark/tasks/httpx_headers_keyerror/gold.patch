@@ -1,0 +1,71 @@
+From 0f34f3b60f9461fa686f5fa10c2a636a09cbaeff Mon Sep 17 00:00:00 2001
+From: Gaurav Dhameeja <gdhameeja@gmail.com>
+Date: Sun, 8 Sep 2019 02:42:37 +0530
+Subject: [PATCH] Raise KeyError if header isn't found in Headers (#324)
+
+---
+ httpx/dispatch/http2.py | 2 +-
+ httpx/middleware.py     | 7 +++----
+ httpx/models.py         | 3 ++-
+ 3 files changed, 6 insertions(+), 6 deletions(-)
+
+diff --git a/httpx/dispatch/http2.py b/httpx/dispatch/http2.py
+index 786110c..fd40964 100644
+--- a/httpx/dispatch/http2.py
++++ b/httpx/dispatch/http2.py
+@@ -4,7 +4,7 @@ import typing
+ import h2.connection
+ import h2.events
+ 
+-from ..concurrency.base import BaseStream, ConcurrencyBackend, TimeoutFlag, BaseEvent
++from ..concurrency.base import BaseEvent, BaseStream, ConcurrencyBackend, TimeoutFlag
+ from ..config import TimeoutConfig, TimeoutTypes
+ from ..models import AsyncRequest, AsyncResponse
+ from ..utils import get_logger
+diff --git a/httpx/middleware.py b/httpx/middleware.py
+index dd23ac2..c98c85e 100644
+--- a/httpx/middleware.py
++++ b/httpx/middleware.py
+@@ -147,15 +147,14 @@ class RedirectMiddleware(BaseMiddleware):
+         if url.origin != request.url.origin:
+             # Strip Authorization headers when responses are redirected away from
+             # the origin.
+-            del headers["Authorization"]
++            headers.pop("Authorization", None)
+             headers["Host"] = url.authority
+ 
+         if method != request.method and method == "GET":
+             # If we've switch to a 'GET' request, then strip any headers which
+             # are only relevant to the request body.
+-            del headers["Content-Length"]
+-            del headers["Transfer-Encoding"]
+-
++            headers.pop("Content-Length", None)
++            headers.pop("Transfer-Encoding", None)
+         return headers
+ 
+     def redirect_content(self, request: AsyncRequest, method: str) -> bytes:
+diff --git a/httpx/models.py b/httpx/models.py
+index 59f543f..d0bbc41 100644
+--- a/httpx/models.py
++++ b/httpx/models.py
+@@ -473,6 +473,8 @@ class Headers(typing.MutableMapping[str, str]):
+         for idx, (item_key, _) in enumerate(self._list):
+             if item_key == del_key:
+                 pop_indexes.append(idx)
++        if not pop_indexes:
++            raise KeyError(key)
+ 
+         for idx in reversed(pop_indexes):
+             del self._list[idx]
+@@ -624,7 +626,6 @@ class AsyncRequest(BaseRequest):
+             assert hasattr(data, "__aiter__")
+             self.is_streaming = True
+             self.content_aiter = data
+-
+         self.prepare()
+ 
+     async def read(self) -> bytes:
+-- 
+2.34.1
+

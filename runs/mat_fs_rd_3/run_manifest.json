@@ -1,0 +1,9 @@
+{
+  "run_id": "mat_fs_rd_3",
+  "task_id": "fastify_redirect_statuscode",
+  "image": "codegraphcl-fastify:node",
+  "base_commit": "92f474ea8c98^",
+  "gold_commit": "92f474ea8c98",
+  "started_at": 1786597720,
+  "finished_at": 1786597803
+}

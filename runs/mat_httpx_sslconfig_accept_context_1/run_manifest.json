@@ -1,0 +1,9 @@
+{
+  "run_id": "mat_httpx_sslconfig_accept_context_1",
+  "task_id": "httpx_sslconfig_accept_context",
+  "image": "codegraphcl-httpx:py311",
+  "base_commit": "af907e85e175541289768e61ad21511cfa3ec1b7",
+  "gold_commit": "df8874b7339c9dcb7963689b304ce0179fc0d862",
+  "started_at": 1786708237,
+  "finished_at": 1786708263
+}

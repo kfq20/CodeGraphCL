@@ -1,0 +1,9 @@
+{
+  "run_id": "mat_fs_sch_1",
+  "task_id": "fastify_get_shared_schemas",
+  "image": "codegraphcl-fastify:node",
+  "base_commit": "c9141a071d0f^",
+  "gold_commit": "c9141a071d0f",
+  "started_at": 1786598073,
+  "finished_at": 1786598162
+}

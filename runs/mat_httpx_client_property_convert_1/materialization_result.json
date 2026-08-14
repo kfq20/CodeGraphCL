@@ -1,0 +1,28 @@
+{
+  "status": "passed",
+  "gates": {
+    "base_fail": "passed",
+    "gold_pass": "passed",
+    "pass_to_pass": "passed",
+    "near_miss": "passed"
+  },
+  "fail_to_pass": [
+    "test_client_headers",
+    "test_client_cookies",
+    "test_setting_client_cookies_to_cookiejar"
+  ],
+  "pass_to_pass": [],
+  "near_miss_results": [
+    {
+      "patch": "near_miss/nearmiss_cookies_raw.py",
+      "rc": 1,
+      "status": "caught"
+    },
+    {
+      "patch": "near_miss/nearmiss_headers_raw.py",
+      "rc": 1,
+      "status": "caught"
+    }
+  ],
+  "run_dir": "/vePFS-Mindverse/user/intern/fanqi/CodeGraphCL/runs/mat_httpx_client_property_convert_1"
+}

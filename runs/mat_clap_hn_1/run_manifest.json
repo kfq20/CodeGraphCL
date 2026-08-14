@@ -1,0 +1,9 @@
+{
+  "run_id": "mat_clap_hn_1",
+  "task_id": "clap_error_help_newline",
+  "image": "codegraphcl-ripgrep:rust",
+  "base_commit": "2eb69def4ecb^",
+  "gold_commit": "2eb69def4ecb",
+  "started_at": 1786602351,
+  "finished_at": 1786602419
+}

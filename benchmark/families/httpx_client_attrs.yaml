@@ -1,0 +1,13 @@
+family_id: httpx_client_attrs
+repository: httpx
+
+# Client attribute-access normalization. Assigning to Client.headers / Client.cookies must convert
+# the value to a Headers / Cookies model (not store raw input). Direct-motif (property + coercing
+# setter).
+nodes:
+  - httpx_client_property_convert
+
+structure:
+  type: standalone
+
+diagnostic_targets: []

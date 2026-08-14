@@ -1,0 +1,9 @@
+{
+  "run_id": "mat_fs_rh_1",
+  "task_id": "fastify_reply_removeheader",
+  "image": "codegraphcl-fastify:node",
+  "base_commit": "cfa760cbd129^",
+  "gold_commit": "cfa760cbd129",
+  "started_at": 1786600560,
+  "finished_at": 1786600654
+}

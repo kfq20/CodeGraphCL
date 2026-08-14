@@ -1,0 +1,29 @@
+{
+  "status": "passed",
+  "gates": {
+    "base_fail": "passed",
+    "gold_pass": "passed",
+    "pass_to_pass": "passed",
+    "near_miss": "passed"
+  },
+  "fail_to_pass": [
+    "TestHeaderParamHTML5Formatting::test_unicode",
+    "TestHeaderParamHTML5Formatting::test_ascii",
+    "TestHeaderParamHTML5Formatting::test_unicode_escape",
+    "TestHeaderParamHTML5Formatting::test_unicode_with_control_character"
+  ],
+  "pass_to_pass": [],
+  "near_miss_results": [
+    {
+      "patch": "near_miss/nearmiss_quote_only.py",
+      "rc": 1,
+      "status": "caught"
+    },
+    {
+      "patch": "near_miss/nearmiss_no_control_chars.py",
+      "rc": 1,
+      "status": "caught"
+    }
+  ],
+  "run_dir": "/vePFS-Mindverse/user/intern/fanqi/CodeGraphCL/runs/mat_httpx_multipart_header_encoding_1"
+}

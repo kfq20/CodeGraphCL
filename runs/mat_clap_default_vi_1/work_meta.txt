@@ -1,0 +1,2 @@
+work lives in pool: /vePFS-Mindverse/user/intern/fanqi/cgcl_pools/rg/mat_clap_default_vi_1/work -> /pool/mat_clap_default_vi_1/work
+container: cgcl-rg-box

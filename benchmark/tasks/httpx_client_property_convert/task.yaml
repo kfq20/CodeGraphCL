@@ -1,0 +1,81 @@
+schema_version: 1
+task_id: httpx_client_property_convert
+family_id: httpx_client_attrs
+
+repository:
+  url: https://github.com/encode/httpx
+  base_commit: "1f4b8dd054009f43a5a2c2fd7e38cbf7a539bb2f"
+  gold_commit: "9e420a5c348f8f05124a0918e229acb8bf88acec"
+  language: python
+
+instruction:
+  path: instruction.md
+
+environment:
+  image: codegraphcl-httpx:py311
+  dockerfile: harbor_task/environment/Dockerfile.httpx
+  workdir: /workspace/repo
+  build_timeout_sec: 900
+  extra_mounts:
+    wheels: /pool/wheels
+
+patches:
+  gold: gold.patch                   # httpx/client.py (headers/cookies -> property + coercing setter)
+  verifier: verifier/verifier.patch   # tests/client/test_properties.py + tests/client/test_cookies.py
+
+verifier:
+  command: bash verifier/test.sh
+  timeout_sec: 300
+  hermetic: false
+  fail_to_pass:
+    - "test_client_headers"
+    - "test_client_cookies"
+    - "test_setting_client_cookies_to_cookiejar"
+  pass_to_pass: []
+  pass_to_pass_not_applicable: true
+  near_miss_base: gold
+  near_miss:
+    - near_miss/nearmiss_cookies_raw.py
+    - near_miss/nearmiss_headers_raw.py
+
+separability:
+  banned_words: banned_words.txt
+  checklist: separability.checklist.yaml
+
+mechanism_audit:
+  reusable_decision: >
+    Producer: Client.headers and Client.cookies must always be normalized model objects, including
+    after construction-time assignment. The decision: back the public attributes with private
+    _headers/_cookies and expose them via @property getters plus @*.setter setters that wrap the
+    incoming value through Headers()/Cookies() on every assignment.
+  plausible_path_correct: >
+    Rename self.headers/self.cookies to self._headers/self._cookies in __init__; add a @property
+    headers getter returning self._headers and an @headers.setter that does
+    self._headers = Headers(headers); mirror for cookies with Cookies(cookies).
+  plausible_path_competing: >
+    Add the property + setter pair but have one setter store the raw value without wrapping
+    (self._cookies = cookies). Looks like "the setter just stores" — but isinstance fails and the
+    model API (case-insensitive lookup, cookiejar extraction) breaks.
+  why_instruction_does_not_disambiguate: >
+    The instruction states the symptom (raw input stored on assignment, not a model instance), the
+    expectation (convert on every assignment, reading returns the normalized object), and that the
+    fix belongs in attribute access for headers and cookies. It does NOT name @property, the
+    _headers/_cookies backing fields, or the Headers()/Cookies() wrapping in the setter.
+  why_correct_history_selects_path: >
+    Property-with-coercing-setter is the idiomatic Python way to enforce "always a normalized model
+    object" on both construction and later assignment, and preserves the read API.
+  why_wrong_history_is_plausible: >
+    "A setter that just stores the value" is a common minimal implementation that ignores the
+    normalization requirement.
+
+status:
+  semantic_audit: passed
+  separability_gate: passed
+  executable_gate: passed         # materialized 4/4 (base-fail, gold-pass, 2 near-miss caught)
+  verification_tier: executable_candidate
+  intervention_preflight: pending
+
+notes: >
+  httpx_client_attrs family (standalone). Motif: attribute-access normalization (convert on set via
+  property+setter). 18-line source patch (httpx/client.py). Commit 9e420a5 (#274). The docs/api.md
+  hunk in the original commit is documentation-only and excluded from the source patch.

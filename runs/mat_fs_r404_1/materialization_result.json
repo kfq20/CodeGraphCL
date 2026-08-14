@@ -1,0 +1,8 @@
+{
+  "status": "environment_failure",
+  "reason": "patch apply failed: error: patch failed: test/404s.test.js:5\nerror: test/404s.test.js: patch does not apply\n",
+  "gates": {
+    "base_fail": "passed",
+    "gold_pass": "patch_apply_failed"
+  }
+}

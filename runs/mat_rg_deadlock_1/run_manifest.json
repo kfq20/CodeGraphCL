@@ -1,0 +1,9 @@
+{
+  "run_id": "mat_rg_deadlock_1",
+  "task_id": "ripgrep_deadlock_visitor_panic",
+  "image": "codegraphcl-ripgrep:rust",
+  "base_commit": "0d7054d^",
+  "gold_commit": "0d7054d",
+  "started_at": 1786706252,
+  "finished_at": 1786706340
+}

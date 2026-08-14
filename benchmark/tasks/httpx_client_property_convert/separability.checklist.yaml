@@ -1,0 +1,36 @@
+# Separability checklist for httpx_client_property_convert (httpx_client_attrs family, standalone).
+schema_version: 1
+task_id: httpx_client_property_convert
+
+checks:
+  - id: S1_instruction_symptom_only
+    question: "Does the instruction state only the symptom, not the fix?"
+    answer: yes
+    evidence: >
+      instruction.md: "assigning to these attributes overwrites the attribute with the raw input
+      verbatim." Acceptance: convert on assignment, reading returns the normalized model object.
+  - id: S2_instruction_no_mechanism_words
+    question: "Does the instruction avoid @property/_headers/_cookies/Headers(headers)?"
+    answer: yes
+    evidence: "banned_words.txt forbids these; instruction describes the normalization behaviorally"
+  - id: S3_instruction_no_file_names
+    question: "Does the instruction avoid naming client.py?"
+    answer: yes
+    evidence: "instruction says 'the client's attribute access for headers and cookies'"
+  - id: S4_near_misses_plausible
+    question: "Are the near-misses plausible-but-wrong?"
+    answer: yes
+    evidence: >
+      A = cookies setter stores raw value (plausible 'the setter just stores', breaks isinstance);
+      B = headers setter stores raw value (same plausible rationale, breaks isinstance + lookup).
+  - id: S5_near_misses_distinct_axes
+    question: "Do the near-misses fail along distinct axes?"
+    answer: yes
+    evidence: >
+      A fails the cookies tests (test_client_cookies + test_setting_client_cookies_to_cookiejar)
+      while headers still coerces; B fails the headers test (test_client_headers) while cookies
+      still coerces. Distinct attribute axes.
+  - id: S6_base_solvable
+    question: "Is the base solvable?"
+    answer: yes
+    evidence: "18-line patch. base-fail verified (client.headers = {...} stores raw dict, isinstance False)."

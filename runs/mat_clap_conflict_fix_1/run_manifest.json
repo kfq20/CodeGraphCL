@@ -1,0 +1,9 @@
+{
+  "run_id": "mat_clap_conflict_fix_1",
+  "task_id": "clap_conflict_usage",
+  "image": "codegraphcl-ripgrep:rust",
+  "base_commit": "578cd43a^",
+  "gold_commit": "578cd43a",
+  "started_at": 1786705618,
+  "finished_at": 1786705721
+}

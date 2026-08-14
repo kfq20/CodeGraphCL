@@ -1,0 +1,15 @@
+# Banned MECHANISM words for httpx_client_property_convert instruction.
+# The fix: back the public headers/cookies attrs with _headers/_cookies and add @property getters +
+# @*.setter that wrap the value via Headers()/Cookies() on assignment. "Headers"/"Cookies" as the
+# type name is symptom-level; the mechanism (property + setter + coercion) is banned.
+@property
+@headers.setter
+@cookies.setter
+_headers
+_cookies
+self._headers = Headers
+self._cookies = Cookies
+HeaderTypes
+CookieTypes
+def headers(self
+def cookies(self

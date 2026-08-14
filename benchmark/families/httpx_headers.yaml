@@ -1,0 +1,13 @@
+family_id: httpx_headers
+repository: httpx
+
+# Headers mapping protocol conformance. __delitem__ must raise KeyError on an absent key (matching
+# dict / MutableMapping semantics), and redirect middleware that strips headers must tolerate the
+# now-correct KeyError via headers.pop(..., None). Direct-motif (protocol-conformance).
+nodes:
+  - httpx_headers_keyerror
+
+structure:
+  type: standalone
+
+diagnostic_targets: []

@@ -1,0 +1,2 @@
+work lives in pool: /tmp/cgcl_box_pool/mat_c5_1/work -> /pool/mat_c5_1/work
+container: cgcl-rg-box

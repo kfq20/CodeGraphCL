@@ -1,0 +1,4 @@
+PATCH APPLY FAILED: /vePFS-Mindverse/user/intern/fanqi/CodeGraphCL/benchmark/tasks/fastify_route_404_to_handler/gold.patch
+error: patch failed: test/404s.test.js:5
+error: test/404s.test.js: patch does not apply
+

@@ -1,0 +1,2 @@
+work lives in pool: /tmp/cgcl_fs_pool/mat_fs_ct_1/work -> /pool/mat_fs_ct_1/work
+container: cgcl-fs-box

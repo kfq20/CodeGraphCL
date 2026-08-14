@@ -1,0 +1,9 @@
+{
+  "run_id": "mat_fs_ct_1",
+  "task_id": "fastify_contenttype_array",
+  "image": "codegraphcl-fastify:node",
+  "base_commit": "7f378355^",
+  "gold_commit": "7f378355",
+  "started_at": 1786596696,
+  "finished_at": 1786596807
+}

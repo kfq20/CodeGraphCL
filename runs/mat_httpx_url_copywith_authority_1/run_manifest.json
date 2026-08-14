@@ -1,0 +1,9 @@
+{
+  "run_id": "mat_httpx_url_copywith_authority_1",
+  "task_id": "httpx_url_copywith_authority",
+  "image": "codegraphcl-httpx:py311",
+  "base_commit": "f504399781b838779bdb3aeae9254aeeea5ebb84",
+  "gold_commit": "e6da325e8be4a7194571adea67053446c75d9aa3",
+  "started_at": 1786708140,
+  "finished_at": 1786708166
+}
