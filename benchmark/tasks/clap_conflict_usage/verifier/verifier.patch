@@ -1,0 +1,26 @@
+From 578cd43a88f0009a53ff729cb78163ed30156e93 Mon Sep 17 00:00:00 2001
+From: Ed Page <eopage@gmail.com>
+Date: Thu, 29 Jan 2026 10:29:59 -0600
+Subject: [PATCH] fix(parser): Don't report conflicting arguments in usage
+
+Fixes #6236
+---
+ tests/builder/groups.rs | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/tests/builder/groups.rs b/tests/builder/groups.rs
+index 1bc7945c..a79d2661 100644
+--- a/tests/builder/groups.rs
++++ b/tests/builder/groups.rs
+@@ -232,7 +232,7 @@ error: the argument '--conflict' cannot be used with:
+   --a
+   --b
+ 
+-Usage: prog --a --conflict
++Usage: prog --conflict
+ 
+ For more information, try '--help'.
+ 
+-- 
+2.34.1
+

@@ -1,0 +1,12 @@
+# Banned MECHANISM words for clap_conflict_usage instruction.
+# The fix: collect conflict_ids into a FlatSet (dedup) THEN map to strings, so the usage
+# builder never sees duplicates. Added FlatSet::into_vec.
+# "conflict"/"usage"/"dedup" are symptom-level; the FlatSet/collect-then-map mechanism is banned.
+FlatSet
+flat_set
+collect::<FlatSet
+into_vec
+seen.insert
+conflict_ids
+validator.rs
+groups.rs
