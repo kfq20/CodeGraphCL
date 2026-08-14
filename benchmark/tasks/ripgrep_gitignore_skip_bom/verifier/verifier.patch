@@ -1,0 +1,49 @@
+From 483628469a2580e4eab0edfbe7a7f3f8b1951848 Mon Sep 17 00:00:00 2001
+From: Stephen Albert-Moore <stephen.albert-moore@georgfischer.com>
+Date: Wed, 17 Apr 2024 16:58:23 -0400
+Subject: [PATCH] ignore/gitignore: skip BOM at start of ignore file
+
+This matches Git's behavior.
+
+Fixes #2177, Closes #2782
+---
+ .../ignore/tests/gitignore_skip_bom.gitignore   |  2 ++
+ crates/ignore/tests/gitignore_skip_bom.rs       | 17 +++++++++++++++++
+ 2 files changed, 19 insertions(+)
+ create mode 100644 crates/ignore/tests/gitignore_skip_bom.gitignore
+ create mode 100644 crates/ignore/tests/gitignore_skip_bom.rs
+
+diff --git a/crates/ignore/tests/gitignore_skip_bom.gitignore b/crates/ignore/tests/gitignore_skip_bom.gitignore
+new file mode 100644
+index 0000000..a78c13a
+--- /dev/null
++++ b/crates/ignore/tests/gitignore_skip_bom.gitignore
+@@ -0,0 +1,2 @@
++﻿ignore/this/path
++# This file begins with a BOM (U+FEFF)
+diff --git a/crates/ignore/tests/gitignore_skip_bom.rs b/crates/ignore/tests/gitignore_skip_bom.rs
+new file mode 100644
+index 0000000..14d533d
+--- /dev/null
++++ b/crates/ignore/tests/gitignore_skip_bom.rs
+@@ -0,0 +1,17 @@
++use ignore::gitignore::GitignoreBuilder;
++
++const IGNORE_FILE: &'static str = "tests/gitignore_skip_bom.gitignore";
++
++/// Skip a Byte-Order Mark (BOM) at the beginning of the file, matching Git's
++/// behavior.
++///
++/// Ref: <https://github.com/BurntSushi/ripgrep/issues/2177>
++#[test]
++fn gitignore_skip_bom() {
++    let mut builder = GitignoreBuilder::new("ROOT");
++    let error = builder.add(IGNORE_FILE);
++    assert!(error.is_none(), "failed to open gitignore file");
++    let g = builder.build().unwrap();
++
++    assert!(g.matched("ignore/this/path", false).is_ignore());
++}
+-- 
+2.34.1
+

@@ -1,0 +1,10 @@
+# Banned MECHANISM words for ripgrep_gitignore_skip_bom instruction.
+# The fix: on i==0 (first line), trim_start_matches(UTF8_BOM) where UTF8_BOM = "\u{feff}".
+# "BOM"/"first line"/"gitignore" are symptom-level; the trim_start/UTF8_BOM mechanism is banned.
+trim_start_matches
+trim_end_matches
+UTF8_BOM
+\u{feff}
+i == 0
+i == 0
+gitignore.rs

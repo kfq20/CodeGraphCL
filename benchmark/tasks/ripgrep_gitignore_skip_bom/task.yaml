@@ -1,0 +1,73 @@
+schema_version: 1
+task_id: ripgrep_gitignore_skip_bom
+family_id: ripgrep_ignore_parse
+
+repository:
+  url: https://github.com/BurntSushi/ripgrep
+  base_commit: "4836284^"
+  gold_commit: "4836284"
+  language: rust
+
+instruction:
+  path: instruction.md
+
+environment:
+  image: codegraphcl-ripgrep:rust
+  dockerfile: harbor_task/environment/Dockerfile.ripgrep
+  workdir: /workspace/repo
+  build_timeout_sec: 900
+  extra_mounts:
+    cargo_cache: /tmp/cgcl_cargo_cache
+    target: /tmp/cgcl_target
+
+patches:
+  gold: gold.patch                 # crates/ignore/src/gitignore.rs (BOM strip on i==0)
+  verifier: verifier/verifier.patch # crates/ignore/tests/gitignore_skip_bom.rs + .gitignore fixture
+
+verifier:
+  command: bash verifier/test.sh   # cargo test -p ignore --test gitignore_skip_bom
+  timeout_sec: 300
+  hermetic: false
+  fail_to_pass:
+    - "test: gitignore_skip_bom"
+  pass_to_pass: []
+  pass_to_pass_not_applicable: true
+  near_miss_base: gold
+  near_miss:
+    - near_miss/nearmiss_bom_trimend.py
+    - near_miss/nearmiss_bom_offbyone.py
+
+separability:
+  banned_words: banned_words.txt
+  checklist: separability.checklist.yaml
+
+mechanism_audit:
+  reusable_decision: >
+    Producer: the ignore-file BOM rule — a UTF-8 BOM at the START of the first line must be
+    stripped (matches Git). BOMs on later lines are literal (not stripped). The strip is
+    trim_start (front), conditional on i==0.
+  plausible_path_correct: >
+    On i==0, trim_start_matches(UTF8_BOM); else &line unchanged.
+  plausible_path_competing: >
+    trim_end (wrong end), or off-by-one (strip on i==1), or strip on all lines (breaks literal
+    later-line BOMs). Each leaves the first-line BOM or mis-handles later lines.
+  why_instruction_does_not_disambiguate: >
+    The instruction says the symptom (BOM-prefixed first rule ignored) and the rule (strip start
+    only, match Git). It does NOT name trim_start, UTF8_BOM, the i==0 condition, or the file.
+  why_correct_history_selects_path: >
+    The "strip-start-only-on-first-line" rule points at the conditional trim_start path.
+  why_wrong_history_is_plausible: >
+    The wrong priors ("trim the BOM" without specifying end; "off-by-one on the line index") are
+    real plausible mistakes.
+
+status:
+  semantic_audit: passed
+  separability_gate: passed
+  executable_gate: passed         # base-fail VERIFIED (BF_RC=101, assertion); near-miss empirically tested
+  verification_tier: executable_candidate
+  intervention_preflight: pending
+
+notes: >
+  New ripgrep_ignore_parse family. Motif: parity (matches Git's BOM handling). base-fail VERIFIED
+  (gitignore_skip_bom: BOM-prefixed first rule doesn't match). 6-line source patch. Fast ignore-
+  crate unit test. Phase 4 task.

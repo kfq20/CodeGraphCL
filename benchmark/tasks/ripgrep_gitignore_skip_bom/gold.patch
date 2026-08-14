@@ -1,0 +1,32 @@
+From 483628469a2580e4eab0edfbe7a7f3f8b1951848 Mon Sep 17 00:00:00 2001
+From: Stephen Albert-Moore <stephen.albert-moore@georgfischer.com>
+Date: Wed, 17 Apr 2024 16:58:23 -0400
+Subject: [PATCH] ignore/gitignore: skip BOM at start of ignore file
+
+This matches Git's behavior.
+
+Fixes #2177, Closes #2782
+---
+ crates/ignore/src/gitignore.rs | 6 ++++++
+ 1 file changed, 6 insertions(+)
+
+diff --git a/crates/ignore/src/gitignore.rs b/crates/ignore/src/gitignore.rs
+index 19a347c..eeb51b8 100644
+--- a/crates/ignore/src/gitignore.rs
++++ b/crates/ignore/src/gitignore.rs
+@@ -402,6 +402,12 @@ impl GitignoreBuilder {
+                     break;
+                 }
+             };
++
++            // Match Git's handling of .gitignore files that begin with the Unicode BOM
++            const UTF8_BOM: &str = "\u{feff}";
++            let line =
++                if i == 0 { line.trim_start_matches(UTF8_BOM) } else { &line };
++
+             if let Err(err) = self.add_line(Some(path.to_path_buf()), &line) {
+                 errs.push(err.tagged(path, lineno));
+             }
+-- 
+2.34.1
+

@@ -1,0 +1,28 @@
+# Separability checklist for ripgrep_gitignore_skip_bom (ripgrep_ignore_parse, Phase 4).
+schema_version: 1
+task_id: ripgrep_gitignore_skip_bom
+
+checks:
+  - id: S1_instruction_symptom_only
+    question: "Does the instruction state only the symptom, not the fix?"
+    answer: yes
+    evidence: "instruction.md: BOM at start breaks first rule. Acceptance: strip start BOM only, match Git."
+  - id: S2_instruction_no_mechanism_words
+    question: "Does the instruction avoid trim_start_matches/UTF8_BOM/i==0/gitignore.rs?"
+    answer: yes
+    evidence: "banned_words.txt forbids; instruction says 'ignore-file loading surface'"
+  - id: S3_instruction_no_file_names
+    question: "Does the instruction avoid naming gitignore.rs?"
+    answer: yes
+  - id: S4_near_misses_plausible
+    question: "Are the near-misses plausible-but-wrong?"
+    answer: yes
+    evidence: "A = trim wrong end (real 'I trimmed the BOM' end-vs-start); B = off-by-one (real i==1 vs i==0)."
+  - id: S5_near_misses_distinct_axes
+    question: "Do the near-misses fail along distinct axes?"
+    answer: yes
+    evidence: "A = wrong end (trim_end); B = wrong line (i==1). Both leave first-line BOM, different bug."
+  - id: S6_base_solvable
+    question: "Is the base solvable?"
+    answer: yes
+    evidence: "6-line patch. base-fail verified (BF_RC=101, assertion matched().is_ignore() false)."
