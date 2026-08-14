@@ -1,0 +1,91 @@
+nodes:
+- clap_conflict_usage
+- clap_derive_default_value_os
+- clap_derive_type_alias
+- clap_error_help_newline
+- clap_error_newline
+- fastify_404_route_handler
+- fastify_404_unsupported_method
+- fastify_bodylimit_perparser
+- fastify_clean_schema_id
+- fastify_contenttype_array
+- fastify_contenttype_emptybody
+- fastify_decorate_null
+- fastify_decorator_getter
+- fastify_get_shared_schemas
+- fastify_header_case_validation
+- fastify_loggr_responsetime
+- fastify_onsend_hook_runner
+- fastify_per_parser_bodylimit
+- fastify_redirect_statuscode
+- fastify_reply_hasheader
+- fastify_reply_headerssent
+- fastify_reply_json_charset
+- fastify_reply_removeheader
+- fastify_reply_sendstream
+- fastify_route_404_to_handler
+- httpx_tA
+- httpx_tB
+- httpx_tC
+- ripgrep_c2
+- ripgrep_c3
+- ripgrep_c4
+- ripgrep_c5
+- ripgrep_gitignore_skip_bom
+- ripgrep_skip_unreachable_ignore
+edges:
+- edge_id: clap_help_newline_to_newline
+  from: clap_error_help_newline
+  to: clap_error_newline
+  edge_type: beneficial_update
+  intervention_status: intervention_smoke
+- edge_id: fastify_c1_to_cef_decorator
+  from: fastify_decorate_null
+  to: fastify_decorator_getter
+  edge_type: beneficial_parity
+  intervention_status: intervention_smoke
+- edge_id: fastify_emptybody_to_array
+  from: fastify_contenttype_emptybody
+  to: fastify_contenttype_array
+  edge_type: beneficial_update
+  intervention_status: intervention_smoke
+- edge_id: fastify_getschemas_to_cleanid
+  from: fastify_get_shared_schemas
+  to: fastify_clean_schema_id
+  edge_type: beneficial_update
+  intervention_status: intervention_smoke
+- edge_id: fastify_hasheader_to_removeheader
+  from: fastify_reply_hasheader
+  to: fastify_reply_removeheader
+  edge_type: beneficial_update
+  intervention_status: intervention_smoke
+- edge_id: httpx_tA_to_tB
+  from: httpx_tA
+  to: httpx_tB
+  edge_type: beneficial_parity
+  intervention_status: rejected
+- edge_id: httpx_tB_to_tC
+  from: httpx_tB
+  to: httpx_tC
+  edge_type: beneficial_update
+  intervention_status: rejected
+- edge_id: ripgrep_c2_to_c3
+  from: ripgrep_c2
+  to: ripgrep_c3
+  edge_type: beneficial_update
+  intervention_status: rejected
+- edge_id: ripgrep_c3_to_c4
+  from: ripgrep_c3
+  to: ripgrep_c4
+  edge_type: beneficial_update
+  intervention_status: rejected
+- edge_id: ripgrep_c4_to_c5
+  from: ripgrep_c4
+  to: ripgrep_c5
+  edge_type: beneficial_update
+  intervention_status: intervention_smoke
+external_provenance_edges:
+- edge_id: ripgrep_b621_to_skip_unreachable
+  from: b621e65
+  to: ripgrep_skip_unreachable_ignore
+  provenance_type: external_commit

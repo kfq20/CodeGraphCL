@@ -45,6 +45,8 @@ def main() -> int:
     al.add_argument("task_dir")
     al.add_argument("atoms_file", nargs="?", default="atoms.md")
 
+    vb = sub.add_parser("validate-benchmark", help="build index+graph, validate the full benchmark, report Phase 4 gaps")
+
     gs = sub.add_parser("generate-streams", help="build Diagnostic/Integrated task streams from the Experience Graph")
     gs.add_argument("--type", default="diagnostic", choices=["diagnostic", "integrated"])
     gs.add_argument("--motif", default=None, choices=["direct","delayed","fork","join","scope","update","hard_negative"])
@@ -80,6 +82,9 @@ def main() -> int:
     elif args.cmd == "atom-lengths":
         from .atom_lengths import main as al_main
         return al_main(args.task_dir, args.atoms_file)
+    elif args.cmd == "validate-benchmark":
+        from .validate_benchmark import cmd_validate_benchmark
+        return cmd_validate_benchmark()
     elif args.cmd == "generate-streams":
         from .generate_streams import cmd_generate
         return cmd_generate(args)
