@@ -1,0 +1,9 @@
+{
+  "task_ids": [
+    "fastify_decorate_null",
+    "fastify_decorator_getter",
+    "fastify_onsend_hook_runner",
+    "fastify_reply_sendstream"
+  ],
+  "description": "public instruction, hidden core verifier; ~20% by family"
+}

@@ -47,6 +47,9 @@ def main() -> int:
 
     vb = sub.add_parser("validate-benchmark", help="build index+graph, validate the full benchmark, report Phase 4 gaps")
 
+    ms = sub.add_parser("make-splits", help="build dev/test/cross_repo/temporal/integrated splits")
+    ms.add_argument("--seed", type=int, default=42)
+
     gs = sub.add_parser("generate-streams", help="build Diagnostic/Integrated task streams from the Experience Graph")
     gs.add_argument("--type", default="diagnostic", choices=["diagnostic", "integrated"])
     gs.add_argument("--motif", default=None, choices=["direct","delayed","fork","join","scope","update","hard_negative"])
@@ -85,6 +88,9 @@ def main() -> int:
     elif args.cmd == "validate-benchmark":
         from .validate_benchmark import cmd_validate_benchmark
         return cmd_validate_benchmark()
+    elif args.cmd == "make-splits":
+        from .make_splits import cmd_make_splits
+        return cmd_make_splits(args.seed)
     elif args.cmd == "generate-streams":
         from .generate_streams import cmd_generate
         return cmd_generate(args)

@@ -1,0 +1,11 @@
+{
+  "task_ids": [
+    "fastify_404_unsupported_method",
+    "fastify_bodylimit_perparser",
+    "fastify_per_parser_bodylimit",
+    "fastify_reply_headerssent",
+    "fastify_reply_removeheader",
+    "fastify_reply_sendstream"
+  ],
+  "description": "20% newest commits (future-task generalization)"
+}
