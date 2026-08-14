@@ -1,0 +1,145 @@
+   Compiling grep-matcher v0.1.7 (/pool/mat_c3_reg_nm0/work/crates/matcher)
+   Compiling ripgrep v14.1.1 (/pool/mat_c3_reg_nm0/work)
+   Compiling globset v0.4.16 (/pool/mat_c3_reg_nm0/work/crates/globset)
+   Compiling grep-searcher v0.1.14 (/pool/mat_c3_reg_nm0/work/crates/searcher)
+   Compiling grep-regex v0.1.13 (/pool/mat_c3_reg_nm0/work/crates/regex)
+   Compiling grep-cli v0.1.11 (/pool/mat_c3_reg_nm0/work/crates/cli)
+   Compiling ignore v0.4.23 (/pool/mat_c3_reg_nm0/work/crates/ignore)
+   Compiling grep-printer v0.2.2 (/pool/mat_c3_reg_nm0/work/crates/printer)
+   Compiling grep v0.3.2 (/pool/mat_c3_reg_nm0/work/crates/grep)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 6.78s
+     Running tests/tests.rs (/target/debug/deps/integration-363d9da47f7e0442)
+
+running 6 tests
+test regression::r829_2933 ... FAILED
+test regression::r829_2836 ... FAILED
+test regression::r829_2778 ... FAILED
+test regression::r829_2747 ... FAILED
+test regression::r829_original ... FAILED
+test regression::r829_2731 ... ok
+
+failures:
+
+---- regression::r829_2933 stdout ----
+
+thread 'regression::r829_2933' panicked at tests/util.rs:328:13:
+
+
+===== cd "/tmp/ripgrep-tests/r829_2933/5/testdir" && env -u RIPGREP_CONFIG_PATH "/target/debug/deps/../rg" "--path-separator" "/" "--files-with-matches" "needle" =====
+command succeeded but expected failure!
+
+cwd: /tmp/ripgrep-tests/r829_2933/5
+
+dir list: ["/tmp/ripgrep-tests/r829_2933/5", "/tmp/ripgrep-tests/r829_2933/5/.ignore", "/tmp/ripgrep-tests/r829_2933/5/testdir", "/tmp/ripgrep-tests/r829_2933/5/testdir/sub", "/tmp/ripgrep-tests/r829_2933/5/testdir/sub/sub2", "/tmp/ripgrep-tests/r829_2933/5/testdir/sub/sub2/testfile"]
+
+status: exit status: 0
+
+stdout: sub/sub2/testfile
+
+
+stderr: 
+
+=====
+
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+
+---- regression::r829_2836 stdout ----
+
+thread 'regression::r829_2836' panicked at tests/util.rs:328:13:
+
+
+===== cd "/tmp/ripgrep-tests/r829_2836/2/testdir" && env -u RIPGREP_CONFIG_PATH "/target/debug/deps/../rg" "--path-separator" "/" "--files" =====
+command succeeded but expected failure!
+
+cwd: /tmp/ripgrep-tests/r829_2836/2
+
+dir list: ["/tmp/ripgrep-tests/r829_2836/2", "/tmp/ripgrep-tests/r829_2836/2/.ignore", "/tmp/ripgrep-tests/r829_2836/2/testdir", "/tmp/ripgrep-tests/r829_2836/2/testdir/sub", "/tmp/ripgrep-tests/r829_2836/2/testdir/sub/sub2", "/tmp/ripgrep-tests/r829_2836/2/testdir/sub/sub2/foo"]
+
+status: exit status: 0
+
+stdout: sub/sub2/foo
+
+
+stderr: 
+
+=====
+
+
+---- regression::r829_2778 stdout ----
+
+thread 'regression::r829_2778' panicked at tests/regression.rs:673:9:
+
+printed outputs differ!
+
+expected:
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+subdir/dont-ignore-me.txt
+
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+got:
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+ignore-me.txt
+
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+
+---- regression::r829_2747 stdout ----
+
+thread 'regression::r829_2747' panicked at tests/util.rs:398:13:
+
+
+==========
+command failed but expected success!
+
+Did your search end up with no results?
+
+command: cd "/tmp/ripgrep-tests/r829_2747/1/a/src" && env -u RIPGREP_CONFIG_PATH "/target/debug/deps/../rg" "--path-separator" "/" "--files"
+
+cwd: /tmp/ripgrep-tests/r829_2747/1
+
+dir list: ["/tmp/ripgrep-tests/r829_2747/1", "/tmp/ripgrep-tests/r829_2747/1/.ignore", "/tmp/ripgrep-tests/r829_2747/1/a", "/tmp/ripgrep-tests/r829_2747/1/a/src", "/tmp/ripgrep-tests/r829_2747/1/a/src/f", "/tmp/ripgrep-tests/r829_2747/1/a/src/f/b", "/tmp/ripgrep-tests/r829_2747/1/a/src/f/b/foo", "/tmp/ripgrep-tests/r829_2747/1/a/c", "/tmp/ripgrep-tests/r829_2747/1/a/c/b", "/tmp/ripgrep-tests/r829_2747/1/a/c/b/foo"]
+
+status: exit status: 1
+
+stdout: 
+
+stderr: 
+
+==========
+
+
+---- regression::r829_original stdout ----
+
+thread 'regression::r829_original' panicked at tests/util.rs:328:13:
+
+
+===== cd "/tmp/ripgrep-tests/r829_original/4/a" && env -u RIPGREP_CONFIG_PATH "/target/debug/deps/../rg" "--path-separator" "/" "Sample" =====
+command succeeded but expected failure!
+
+cwd: /tmp/ripgrep-tests/r829_original/4
+
+dir list: ["/tmp/ripgrep-tests/r829_original/4", "/tmp/ripgrep-tests/r829_original/4/.ignore", "/tmp/ripgrep-tests/r829_original/4/a", "/tmp/ripgrep-tests/r829_original/4/a/b", "/tmp/ripgrep-tests/r829_original/4/a/b/test.txt"]
+
+status: exit status: 0
+
+stdout: b/test.txt:Sample text
+
+
+stderr: 
+
+=====
+
+
+
+failures:
+    regression::r829_2747
+    regression::r829_2778
+    regression::r829_2836
+    regression::r829_2933
+    regression::r829_original
+
+test result: FAILED. 1 passed; 5 failed; 0 ignored; 0 measured; 299 filtered out; finished in 0.08s
+
+error: test failed, to rerun pass `--test integration`
+RC=101
