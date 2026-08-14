@@ -4,8 +4,10 @@
     "fastify_bodylimit_perparser",
     "fastify_per_parser_bodylimit",
     "fastify_reply_headerssent",
-    "fastify_reply_removeheader",
     "fastify_reply_sendstream",
+    "httpx_multipart_header_encoding",
+    "httpx_sslconfig_accept_context",
+    "httpx_url_copywith_authority",
     "ripgrep_globset_matches_all",
     "ripgrep_look_around_panic"
   ],

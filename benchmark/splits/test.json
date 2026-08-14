@@ -1,9 +1,15 @@
 {
   "task_ids": [
-    "clap_default_values_if",
-    "clap_help_bracket_values",
-    "clap_help_short_padding",
-    "fastify_header_case_validation",
+    "fastify_404_route_handler",
+    "fastify_404_unsupported_method",
+    "fastify_redirect_statuscode",
+    "fastify_reply_hasheader",
+    "fastify_reply_headerssent",
+    "fastify_reply_json_charset",
+    "fastify_reply_removeheader",
+    "fastify_route_404_to_handler",
+    "httpx_json_encoding_detection",
+    "httpx_sslconfig_accept_context",
     "ripgrep_deadlock_visitor_panic",
     "ripgrep_min_depth_option",
     "ripgrep_skip_unreachable_ignore"

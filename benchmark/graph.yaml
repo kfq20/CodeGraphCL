@@ -29,9 +29,15 @@ nodes:
 - fastify_reply_removeheader
 - fastify_reply_sendstream
 - fastify_route_404_to_handler
+- httpx_json_encoding_detection
+- httpx_multipart_header_encoding
+- httpx_queryparam_lists
+- httpx_queryparam_types
+- httpx_sslconfig_accept_context
 - httpx_tA
 - httpx_tB
 - httpx_tC
+- httpx_url_copywith_authority
 - ripgrep_c2
 - ripgrep_c3
 - ripgrep_c4
