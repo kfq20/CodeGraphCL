@@ -1,0 +1,38 @@
+schema_version: 1
+edge_id: ripgrep_bom_to_skip_unreachable
+from: ripgrep_gitignore_skip_bom
+to: ripgrep_skip_unreachable_ignore
+edge_type: beneficial_update
+
+# Producer 4836284 (BOM skip) established the ignore-file loading convention: the parser must
+# handle edge cases in how ignore files are loaded and parsed (BOM at start). Consumer 435f59f
+# (skip unreachable ignore) applies the same "don't load ignore files you don't need" discipline:
+# at the depth boundary, build an empty matcher instead of loading the file. Both share the
+# "ignore-file loading has special cases that require explicit handling" convention.
+experience:
+  statement: >
+    Ignore-file loading has special cases requiring explicit handling: strip a leading BOM (the
+    file may start with a Unicode byte-order mark), and skip loading entirely for directories
+    that won't be visited (at the depth boundary). Both are "don't naively load/parse — handle
+    the edge case before the normal path."
+  type: ignore_file_loading_edge_cases
+  scope: crates/ignore/src/{gitignore,walk}.rs
+  provenance:
+    repository: ripgrep
+    commit: "4836284"
+  validity: valid_for_consumer
+
+conditions:
+  reset: null
+  correct: correct
+  irrelevant: irrelevant
+  stale: wrong
+
+expected_effect:
+  correctness: possible
+  efficiency: possible
+  negative_transfer: possible
+
+status:
+  semantic_audit: passed
+  causal_verification: proposed

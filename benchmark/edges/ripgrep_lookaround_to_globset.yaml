@@ -1,0 +1,40 @@
+schema_version: 1
+edge_id: ripgrep_lookaround_to_globset
+from: ripgrep_look_around_panic
+to: ripgrep_globset_matches_all
+edge_type: beneficial_update
+
+# Producer de2567a (look_around panic fix) established the regex-matching invariant: the
+# matcher must not panic on edge-case inputs (look-around at string boundary) — it must
+# handle the boundary gracefully. Consumer f55548b (globset matches_all) applies the same
+# "don't crash on edge-case regex inputs" discipline: matches_all must not produce false
+# positives when the quantifier semantics (any vs all) are confused. Both share the "regex/
+# glob matching has quantifier/boundary edge cases that must be handled correctly, not naively"
+# convention.
+experience:
+  statement: >
+    Regex/glob matching has quantifier and boundary edge cases that must be handled correctly:
+    look-around at a string boundary must not panic (graceful handling), and matches_all must
+    not confuse "any match" with "all match" (quantifier semantics). Both are "don't naively
+    apply regex/glob — handle the quantifier/boundary edge case."
+  type: regex_boundary_handling
+  scope: crates/printer/src/util.rs + crates/globset/src/lib.rs
+  provenance:
+    repository: ripgrep
+    commit: "de2567a"
+  validity: valid_for_consumer
+
+conditions:
+  reset: null
+  correct: correct
+  irrelevant: irrelevant
+  stale: wrong
+
+expected_effect:
+  correctness: possible
+  efficiency: possible
+  negative_transfer: possible
+
+status:
+  semantic_audit: passed
+  causal_verification: proposed

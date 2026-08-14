@@ -49,10 +49,20 @@ edges:
   to: clap_error_newline
   edge_type: beneficial_update
   intervention_status: intervention_smoke
+- edge_id: clap_helppadding_to_bracketvalues
+  from: clap_help_short_padding
+  to: clap_help_bracket_values
+  edge_type: beneficial_update
+  intervention_status: proposed
 - edge_id: clap_typealias_to_defaultvalueos
   from: clap_derive_type_alias
   to: clap_derive_default_value_os
   edge_type: beneficial_parity
+  intervention_status: proposed
+- edge_id: clap_valueindex_to_fishquote
+  from: clap_complete_value_index
+  to: clap_complete_fish_quote
+  edge_type: beneficial_update
   intervention_status: proposed
 - edge_id: fastify_404route_to_headerssent
   from: fastify_route_404_to_handler
@@ -99,6 +109,11 @@ edges:
   to: httpx_tC
   edge_type: beneficial_update
   intervention_status: rejected
+- edge_id: ripgrep_bom_to_skip_unreachable
+  from: ripgrep_gitignore_skip_bom
+  to: ripgrep_skip_unreachable_ignore
+  edge_type: beneficial_update
+  intervention_status: proposed
 - edge_id: ripgrep_c2_to_c3
   from: ripgrep_c2
   to: ripgrep_c3
@@ -114,6 +129,16 @@ edges:
   to: ripgrep_c5
   edge_type: beneficial_update
   intervention_status: intervention_smoke
+- edge_id: ripgrep_lookaround_to_globset
+  from: ripgrep_look_around_panic
+  to: ripgrep_globset_matches_all
+  edge_type: beneficial_update
+  intervention_status: proposed
+- edge_id: ripgrep_mindepth_to_deadlock
+  from: ripgrep_min_depth_option
+  to: ripgrep_deadlock_visitor_panic
+  edge_type: beneficial_update
+  intervention_status: proposed
 external_provenance_edges:
 - edge_id: ripgrep_b621_to_skip_unreachable
   from: b621e65

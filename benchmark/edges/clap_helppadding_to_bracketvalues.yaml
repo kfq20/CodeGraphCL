@@ -1,0 +1,40 @@
+schema_version: 1
+edge_id: clap_helppadding_to_bracketvalues
+from: clap_help_short_padding
+to: clap_help_bracket_values
+edge_type: beneficial_update
+
+# Producer 126440ca (help padding) established the help-rendering convention: value-taking
+# args participate in the width calculation, and the short-flag column offset is keyed on
+# whether a long flag exists. Consumer 1ca55413 (bracket values past minimum) applies help-
+# rendering conventions: values past the minimum must be bracketed ([BAR] not <BAR>), with a
+# guard against double-bracketing. Both share the "help rendering has value-position-dependent
+# formatting rules" convention.
+experience:
+  statement: >
+    Help rendering has value-position-dependent formatting rules: the width calculation must
+    include value-taking args (not exclude them), and values past the minimum must use bracket
+    notation ([BAR]) not angle brackets (<BAR>), with a guard against double-bracketing optional
+    whole-arg values. Both are "the help string's format depends on the value's position relative
+    to min_values and the arg's optionality."
+  type: help_rendering_value_format
+  scope: clap_builder/src/{output/help_template,builder/arg}.rs
+  provenance:
+    repository: clap
+    commit: "126440ca"
+  validity: valid_for_consumer
+
+conditions:
+  reset: null
+  correct: correct
+  irrelevant: irrelevant
+  stale: wrong
+
+expected_effect:
+  correctness: possible
+  efficiency: possible
+  negative_transfer: possible
+
+status:
+  semantic_audit: passed
+  causal_verification: proposed

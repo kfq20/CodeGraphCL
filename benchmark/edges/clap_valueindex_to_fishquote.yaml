@@ -1,0 +1,39 @@
+schema_version: 1
+edge_id: clap_valueindex_to_fishquote
+from: clap_complete_value_index
+to: clap_complete_fish_quote
+edge_type: beneficial_update
+
+# Producer ac0d148f (index-aware ValueCompleter) established the completion-engine convention:
+# the engine must thread the per-value positional index through the completion path, so each slot
+# gets context-appropriate candidates. Consumer 49a05cdc (fish two-pass quoting) applies the
+# completion-engine convention: the fish shell re-evaluates --arguments, so the quoting must
+# be two-pass (single-pass for --command, double-pass for embedded (...)). Both share the
+# "completion output must respect the target shell's evaluation semantics" convention.
+experience:
+  statement: >
+    The completion engine must respect the target shell's evaluation semantics: thread the
+    per-value positional index so each slot gets the right candidates, and use two-pass quoting
+    for shells (like fish) that re-evaluate the --arguments field. Both are "completion output
+    is not a flat string — it must be shaped by the shell's parsing/evaluation model."
+  type: completion_shell_semantics
+  scope: clap_complete/src/{engine,env/shells}.rs
+  provenance:
+    repository: clap
+    commit: "ac0d148f"
+  validity: valid_for_consumer
+
+conditions:
+  reset: null
+  correct: correct
+  irrelevant: irrelevant
+  stale: wrong
+
+expected_effect:
+  correctness: possible
+  efficiency: possible
+  negative_transfer: possible
+
+status:
+  semantic_audit: passed
+  causal_verification: proposed

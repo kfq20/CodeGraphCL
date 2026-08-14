@@ -1,0 +1,39 @@
+schema_version: 1
+edge_id: ripgrep_mindepth_to_deadlock
+from: ripgrep_min_depth_option
+to: ripgrep_deadlock_visitor_panic
+edge_type: beneficial_update
+
+# Producer 2924d0c (min_depth) established the Walk iterator's depth-control convention: the
+# worker must skip yielding entries above the depth floor while still descending. Consumer
+# 0d7054d (deadlock fix) operates in the same Walk parallel-worker lifecycle: a panicking
+# worker must poison the shared quit flag so siblings don't hang in recv(). Both share the
+# "Walk worker lifecycle has ordering/lifecycle constraints that must be handled explicitly"
+# convention.
+experience:
+  statement: >
+    The Walk parallel worker lifecycle has ordering constraints: workers must respect depth
+    floors (skip entries above min_depth while still descending) and must propagate panics via
+    a poison flag so siblings don't hang. Both are "the worker lifecycle has edge cases
+    (boundary depth, panic) that need explicit handling, not naive iteration."
+  type: walk_worker_lifecycle
+  scope: crates/ignore/src/walk.rs
+  provenance:
+    repository: ripgrep
+    commit: "2924d0c"
+  validity: valid_for_consumer
+
+conditions:
+  reset: null
+  correct: correct
+  irrelevant: irrelevant
+  stale: wrong
+
+expected_effect:
+  correctness: possible
+  efficiency: possible
+  negative_transfer: possible
+
+status:
+  semantic_audit: passed
+  causal_verification: proposed
