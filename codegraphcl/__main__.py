@@ -45,6 +45,20 @@ def main() -> int:
     al.add_argument("task_dir")
     al.add_argument("atoms_file", nargs="?", default="atoms.md")
 
+    gs = sub.add_parser("generate-streams", help="build Diagnostic/Integrated task streams from the Experience Graph")
+    gs.add_argument("--type", default="diagnostic", choices=["diagnostic", "integrated"])
+    gs.add_argument("--motif", default=None, choices=["direct","delayed","fork","join","scope","update","hard_negative"])
+    gs.add_argument("--distance", type=int, default=3)
+    gs.add_argument("--parent-count", type=int, default=2)
+    gs.add_argument("--distractor", type=int, default=0)
+    gs.add_argument("--distractor-similarity", default="medium", choices=["high","medium","low"])
+    gs.add_argument("--stale", action="store_true")
+    gs.add_argument("--wrong", action="store_true")
+    gs.add_argument("--missing-parent", action="store_true")
+    gs.add_argument("--length", type=int, default=6)
+    gs.add_argument("--count", type=int, default=10)
+    gs.add_argument("--seed", type=int, default=42)
+
     args = ap.parse_args()
 
     if args.cmd == "validate":
@@ -66,6 +80,9 @@ def main() -> int:
     elif args.cmd == "atom-lengths":
         from .atom_lengths import main as al_main
         return al_main(args.task_dir, args.atoms_file)
+    elif args.cmd == "generate-streams":
+        from .generate_streams import cmd_generate
+        return cmd_generate(args)
     return 2
 
 
