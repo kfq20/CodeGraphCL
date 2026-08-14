@@ -82,7 +82,7 @@ status:
   separability_gate: pending
   executable_gate: passed         # base-fail + gold-pass + BOTH near-miss VERIFIED by hand
                                   # (BF_RC=101, GP_RC=0, NMA2_RC=101 assertion, NMB_RC=101 assertion)
-  verification_tier: executable_candidate
+  verification_tier: release_core
   intervention_preflight: pending
 
 notes: >

@@ -69,7 +69,7 @@ status:
   semantic_audit: passed
   separability_gate: passed
   executable_gate: passed         # mat_fs_r404_2: 4/4 gates, 2 near-miss caught (noreset + detectonly)
-  verification_tier: executable_candidate
+  verification_tier: release_core
   intervention_preflight: pending
 
 notes: >

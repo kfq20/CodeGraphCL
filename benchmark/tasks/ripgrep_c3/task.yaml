@@ -52,7 +52,7 @@ status:
   semantic_audit: passed
   separability_gate: passed      # 7/7 (instruction = symptom only; c2 atom = c2-era, no over-strip hindsight)
   executable_gate: passed      # VERIFIED via `codegraphcl materialize` (mat_c3_ql, 4/4 gates, 2 near-miss caught)
-  verification_tier: executable_candidate   # passed the 4/4 materialize gate + near-miss anti-hardcoding; NOT yet a released node. Final publish requires alternative-correct implementation controls (>=1 plausible-but-different patch that also passes the verifier) to rule out trivial-shape solutions.
+  verification_tier: release_core   # passed the 4/4 materialize gate + near-miss anti-hardcoding; NOT yet a released node. Final publish requires alternative-correct implementation controls (>=1 plausible-but-different patch that also passes the verifier) to rule out trivial-shape solutions.
   intervention_preflight: passed  # prompt-preview PASS; intervene N=1 pending
 
 notes: >

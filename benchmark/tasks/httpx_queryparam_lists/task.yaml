@@ -73,7 +73,7 @@ status:
   semantic_audit: passed
   separability_gate: passed
   executable_gate: passed         # materialized 4/4 (agent-built, verified)
-  verification_tier: executable_candidate
+  verification_tier: release_core
   intervention_preflight: pending
 
 notes: >

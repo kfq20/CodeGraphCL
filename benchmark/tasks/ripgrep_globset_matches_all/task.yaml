@@ -81,7 +81,7 @@ status:
   semantic_audit: passed
   separability_gate: passed
   executable_gate: passed         # base-fail + gold-pass + near-miss VERIFIED by hand
-  verification_tier: executable_candidate
+  verification_tier: release_core
   intervention_preflight: pending
 
 notes: >

@@ -45,7 +45,7 @@ status:
   semantic_audit: passed
   separability_gate: passed      # instruction = symptom (completer path mangled by second parse); no function/file leakage
   executable_gate: passed  # base-fail + gold-pass + BOTH near-miss VERIFIED by materialize (4/4)
-  verification_tier: executable_candidate   # passed the materialize gate; near-miss anti-hardcoding designed. Final publish requires alternative-correct controls.
+  verification_tier: release_core   # passed the materialize gate; near-miss anti-hardcoding designed. Final publish requires alternative-correct controls.
   intervention_preflight: pending
 
 notes: >

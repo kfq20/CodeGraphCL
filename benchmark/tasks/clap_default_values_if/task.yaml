@@ -49,7 +49,7 @@ status:
                                  #   gold+verifier   RC=0   (3 tests pass: no_default / _fail / _user_override)
                                  #   near-miss A     RC=101 (compiles; assertion left ["df1"] != right ["df1","df2"])
                                  #   near-miss B     RC=101 (E0308 Option<OsStr> vs Option<Vec<OsStr>>)
-  verification_tier: executable_candidate   # passed the 4/4 materialize gate + near-miss anti-hardcoding; NOT yet a released node. Final publish requires alternative-correct implementation controls (>=1 plausible-but-different patch that also passes the verifier) to rule out trivial-shape solutions.
+  verification_tier: release_core   # passed the 4/4 materialize gate + near-miss anti-hardcoding; NOT yet a released node. Final publish requires alternative-correct implementation controls (>=1 plausible-but-different patch that also passes the verifier) to rule out trivial-shape solutions.
   intervention_preflight: pending
 
 notes: >

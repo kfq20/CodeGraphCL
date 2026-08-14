@@ -64,7 +64,7 @@ status:
   semantic_audit: passed
   separability_gate: passed
   executable_gate: passed         # base-fail VERIFIED (BF_RC=101, assertion); near-miss empirically tested
-  verification_tier: executable_candidate
+  verification_tier: release_core
   intervention_preflight: pending
 
 notes: >

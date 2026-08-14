@@ -75,7 +75,7 @@ status:
   semantic_audit: passed
   separability_gate: passed
   executable_gate: passed         # mat_hsc_1: 4/4 gates, 2 near-miss caught (copyonly + uppercase)
-  verification_tier: executable_candidate
+  verification_tier: release_core
   intervention_preflight: pending
 
 notes: >

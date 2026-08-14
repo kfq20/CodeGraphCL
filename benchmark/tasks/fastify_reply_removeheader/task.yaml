@@ -43,7 +43,7 @@ status:
   semantic_audit: passed
   separability_gate: passed      # instruction = symptom (no way to remove a set header); no removeHeader/_headers/delete/toLowerCase leakage
   executable_gate: passed         # base-fail + both near-miss VERIFIED by hand (BF/NMA/NMB all rc=1)
-  verification_tier: executable_candidate   # passed the 4/4 materialize gate + near-miss anti-hardcoding; NOT yet a released node. Final publish requires alternative-correct implementation controls (>=1 plausible-but-different patch that also passes the verifier) to rule out trivial-shape solutions.
+  verification_tier: release_core   # passed the 4/4 materialize gate + near-miss anti-hardcoding; NOT yet a released node. Final publish requires alternative-correct implementation controls (>=1 plausible-but-different patch that also passes the verifier) to rule out trivial-shape solutions.
   intervention_preflight: pending
 
 notes: >

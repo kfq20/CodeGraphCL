@@ -43,7 +43,7 @@ status:
   semantic_audit: passed
   separability_gate: passed
   executable_gate: passed         # 4/4 materialize gates passed (BF/GP/P2P/NM both caught)
-  verification_tier: executable_candidate
+  verification_tier: release_core
   intervention_preflight: pending
 
 notes: >

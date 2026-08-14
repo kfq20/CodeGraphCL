@@ -45,7 +45,7 @@ status:
   semantic_audit: passed
   separability_gate: passed      # 7/7 (instruction = symptom; Object.defineProperty banned)
   executable_gate: passed        # 4/4 gates (mat_fs_3): base-fail, gold-pass, P2P n/a, 2 near-miss caught
-  verification_tier: executable_candidate   # passed the 4/4 materialize gate + near-miss anti-hardcoding; NOT yet a released node. Final publish requires alternative-correct implementation controls (>=1 plausible-but-different patch that also passes the verifier) to rule out trivial-shape solutions.
+  verification_tier: release_core   # passed the 4/4 materialize gate + near-miss anti-hardcoding; NOT yet a released node. Final publish requires alternative-correct implementation controls (>=1 plausible-but-different patch that also passes the verifier) to rule out trivial-shape solutions.
   intervention_preflight: pending
 
 notes: >
