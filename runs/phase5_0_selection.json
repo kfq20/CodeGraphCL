@@ -1,0 +1,128 @@
+{
+  "diagnostic": [
+    {
+      "stream_id": "delayed_001_seed42",
+      "motif": "delayed",
+      "task_ids": [
+        "fastify_reply_hasheader",
+        "fastify_reply_removeheader",
+        "fastify_reply_json_charset"
+      ]
+    },
+    {
+      "stream_id": "direct_000_seed42",
+      "motif": "direct",
+      "task_ids": [
+        "fastify_route_404_to_handler",
+        "fastify_reply_headerssent"
+      ]
+    },
+    {
+      "stream_id": "fork_004_seed42",
+      "motif": "fork",
+      "task_ids": [
+        "ripgrep_min_depth_option",
+        "ripgrep_deadlock_visitor_panic",
+        "ripgrep_skip_unreachable_ignore"
+      ]
+    },
+    {
+      "stream_id": "hard_negative_003_seed42",
+      "motif": "hard_negative",
+      "task_ids": [
+        "httpx_queryparam_types",
+        "clap_complete_value_index",
+        "httpx_queryparam_lists"
+      ]
+    },
+    {
+      "stream_id": "join_003_seed42",
+      "motif": "join",
+      "task_ids": [
+        "fastify_per_parser_bodylimit",
+        "fastify_contenttype_emptybody",
+        "fastify_contenttype_array"
+      ]
+    },
+    {
+      "stream_id": "scope_002_seed42",
+      "motif": "scope",
+      "task_ids": [
+        "httpx_sslconfig_accept_context",
+        "httpx_client_property_convert",
+        "fastify_header_case_validation"
+      ]
+    },
+    {
+      "stream_id": "update_001_seed42",
+      "motif": "update",
+      "task_ids": [
+        "fastify_404_route_handler",
+        "fastify_error_headers_404",
+        "fastify_log_after_error_handler"
+      ]
+    }
+  ],
+  "integrated": [
+    {
+      "stream_id": "integrated_021_seed42",
+      "motif": "integrated",
+      "task_ids": [
+        "ripgrep_c3",
+        "ripgrep_c5",
+        "fastify_loggr_responsetime",
+        "fastify_header_case_validation",
+        "clap_help_short_padding",
+        "clap_help_bracket_values"
+      ]
+    },
+    {
+      "stream_id": "integrated_023_seed42",
+      "motif": "integrated",
+      "task_ids": [
+        "ripgrep_min_depth_option",
+        "ripgrep_deadlock_visitor_panic",
+        "ripgrep_skip_unreachable_ignore",
+        "fastify_header_schema_case",
+        "fastify_header_case_validation",
+        "clap_help_bracket_values"
+      ]
+    },
+    {
+      "stream_id": "integrated_017_seed42",
+      "motif": "integrated",
+      "task_ids": [
+        "fastify_contenttype_emptybody",
+        "fastify_contenttype_array",
+        "fastify_reply_json_charset",
+        "fastify_reply_headerssent",
+        "fastify_error_headers_404",
+        "fastify_log_after_error_handler"
+      ]
+    },
+    {
+      "stream_id": "integrated_002_seed42",
+      "motif": "integrated",
+      "task_ids": [
+        "ripgrep_min_depth_option",
+        "ripgrep_deadlock_visitor_panic",
+        "ripgrep_skip_unreachable_ignore",
+        "clap_conflict_usage",
+        "clap_complete_value_index",
+        "clap_complete_fish_quote"
+      ]
+    },
+    {
+      "stream_id": "integrated_018_seed42",
+      "motif": "integrated",
+      "task_ids": [
+        "fastify_reply_removeheader",
+        "fastify_reply_json_charset",
+        "fastify_reply_headerssent",
+        "fastify_contenttype_array",
+        "viper_unmarshal_exact_merge",
+        "clap_conflict_usage"
+      ]
+    }
+  ]
+}
