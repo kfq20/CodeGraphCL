@@ -1,0 +1,13 @@
+family_id: httpx_url_builder
+repository: httpx
+
+# URL builder: copy_with() must reconstruct the authority component from individual
+# host/port/username/password kwargs. Builder-derive motif: individual components are
+# composed into the authority string that the underlying URI library expects.
+nodes:
+  - httpx_url_copywith_authority
+
+structure:
+  type: standalone
+
+diagnostic_targets: []

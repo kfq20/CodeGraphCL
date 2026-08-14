@@ -22,13 +22,13 @@ checks:
     answer: yes
     evidence: >
       A = flatten lists but not tuples (lists are the common case, isinstance list check);
-      B = flatten strings too (forget str/bytes exclusion, iterate string chars).
+      B = flatten correctly but corrupt the key with upper() (plausible "normalize keys").
   - id: S5_near_misses_distinct_axes
     question: "Do the near-misses fail along distinct axes?"
     answer: yes
     evidence: >
-      A fails on the tuple source (TypeError on tuple); B fails on the string source
-      (string split into characters, wrong query params).
+      A fails on the tuple source (TypeError on tuple); B fails on all sources (keys are
+      uppercased, wrong query param names).
   - id: S6_base_solvable
     question: "Is the base solvable?"
     answer: yes

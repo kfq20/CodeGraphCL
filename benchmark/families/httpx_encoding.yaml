@@ -1,0 +1,13 @@
+family_id: httpx_encoding
+repository: httpx
+
+# Encoding detection in Response.json. The .json() method must detect the charset
+# from the byte content (BOM / null-byte pattern) when the Content-Type header is
+# absent, rather than blindly decoding as utf-8. Parity motif: ported from requests.
+nodes:
+  - httpx_json_encoding_detection
+
+structure:
+  type: standalone
+
+diagnostic_targets: []

@@ -52,10 +52,12 @@ mechanism_audit:
     the cert-loading logic into a _load_client_certs method (DRY) so both the pre-built-context
     path and the normal load_ssl_context path share it.
   plausible_path_competing: >
-    Accept the SSLContext and stash it, but don't extract the cert-loading into a shared helper.
-    Instead, duplicate the cert-loading code inline. This is functionally correct for the SSLContext
-    path but misses the DRY refactor. Looks correct (the SSLContext is accepted and used) but
-    doesn't load client certs on the pre-built context.
+    Accept the SSLContext and set verify=True, but don't stash it as ssl_context (leave ssl_context
+    as None). This "accepts" the type but doesn't actually use the passed-in context — the caller's
+    custom configuration is lost. Looks correct (the type is accepted, verify is True) but the
+    ssl_context attribute is None instead of the passed context. Alternatively, stash the context
+    but don't set verify=True (leave it as the SSLContext object), breaking the verify attribute
+    contract.
   why_instruction_does_not_disambiguate: >
     The instruction says the symptom (passing a pre-built SSL context as the verify argument raises
     a TypeError) and the expectation (accept it and use it as-is). It does NOT name isinstance,

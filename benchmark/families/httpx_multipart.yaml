@@ -1,0 +1,13 @@
+family_id: httpx_multipart
+repository: httpx
+
+# Multipart header parameter encoding. Content-Disposition header params (name, filename)
+# must be HTML5-form-encoded (RFC 7578 §4.2 + WHATWG form encoding), not urllib quote'd.
+# Parity motif: behavior matches requests/WHATWG form encoding spec.
+nodes:
+  - httpx_multipart_header_encoding
+
+structure:
+  type: standalone
+
+diagnostic_targets: []

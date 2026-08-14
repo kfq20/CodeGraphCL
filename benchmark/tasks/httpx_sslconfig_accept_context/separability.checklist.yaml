@@ -21,15 +21,15 @@ checks:
     question: "Are the near-misses plausible-but-wrong?"
     answer: yes
     evidence: >
-      A = accept SSLContext but don't load client certs (the caller "already configured it");
-      B = accept SSLContext but don't set verify=True (leave it as the SSLContext object,
-      breaking the verify attribute contract).
+      A = accept SSLContext but don't set verify=True (leave it as the SSLContext object, plausible
+      "verify should reflect what they passed"); B = accept SSLContext, set verify=True, but don't
+      stash ssl_context (leave it None, plausible "I set verify, the context is implicit").
   - id: S5_near_misses_distinct_axes
     question: "Do the near-misses fail along distinct axes?"
     answer: yes
     evidence: >
-      A fails on cert loading assertion (certs not loaded into passed context); B fails on
-      the verify attribute check (verify is SSLContext, not True).
+      A fails on the verify attribute check (verify is SSLContext, not True); B fails on the
+      ssl_context identity check (ssl_context is None, not the passed context).
   - id: S6_base_solvable
     question: "Is the base solvable?"
     answer: yes

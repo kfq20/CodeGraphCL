@@ -56,7 +56,8 @@ mechanism_audit:
   plausible_path_competing: >
     Flatten lists but not tuples. Check isinstance(v, list) but forget tuples. This handles the
     most common case (dicts with list values) but raises TypeError for tuple values.
-    Looks correct (lists are the common case) but misses tuples.
+    Looks correct (lists are the common case) but misses tuples. The alternative competing path
+    flattens correctly but corrupts the key (e.g. uppercasing), producing wrong query param names.
   why_instruction_does_not_disambiguate: >
     The instruction says the symptom (passing a dict with list values for a key raises TypeError
     instead of producing repeated query params) and the expectation (flatten list values into

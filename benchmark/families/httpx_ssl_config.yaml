@@ -1,0 +1,13 @@
+family_id: httpx_ssl_config
+repository: httpx
+
+# SSLConfig accepts a pre-built SSLContext as the verify parameter. Scope motif:
+# the constructor must detect the SSLContext type, stash it, and delegate cert
+# loading to a shared helper (DRY refactor of load_cert_chain).
+nodes:
+  - httpx_sslconfig_accept_context
+
+structure:
+  type: standalone
+
+diagnostic_targets: []

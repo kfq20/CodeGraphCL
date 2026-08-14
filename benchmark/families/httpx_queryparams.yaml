@@ -1,0 +1,19 @@
+family_id: httpx_queryparams
+repository: httpx
+
+# Query parameter handling. Two nodes in this family:
+#   - httpx_queryparam_types: primitive type coercion (bool -> "true"/"false", None -> "")
+#   - httpx_queryparam_lists: list/tuple values flattened into multiple key-value pairs
+# Both are direct-motif (interface type expansion). 66754ad precedes 57ae7ea in the
+# commit history, so 57ae7ea builds on 66754ad's str_query_param + PrimitiveData.
+nodes:
+  - httpx_queryparam_types
+  - httpx_queryparam_lists
+
+structure:
+  type: sequential
+  order:
+    - httpx_queryparam_types
+    - httpx_queryparam_lists
+
+diagnostic_targets: []
