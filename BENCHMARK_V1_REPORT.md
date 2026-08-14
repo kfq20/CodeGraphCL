@@ -11,10 +11,10 @@ Run `python3 -m codegraphcl validate-benchmark` for the latest counts.
 |---|---|---|---|
 | repositories | 4 | ≥5 | need 1 more (viper Go, or another) |
 | languages | 3 (Rust, JS, Python) | ≥3 | ✓ (Go pending via viper) |
-| executable tasks | 34 (28 passed, 3 near-miss-blocked, 3 pending) | ≥60 | 26 more needed |
+| executable tasks | 44 (39 passed, 3 near-miss-blocked, 2 pending) | ≥60 | 16 more needed (httpx agent building 6) |
 | release-core tasks | 0 | ≥40 | upgrade pending |
-| task families | 13 | ≥18 | 5 more needed |
-| semantic+executable edges | 10 real + 1 external | ≥40 | 29 more needed |
+| task families | 20 | ≥18 | ✓ TARGET MET |
+| semantic+executable edges | 19 real + 1 external | ≥40 | 21 more needed |
 | graph motifs | 2 (update, parity) | ≥6 | 4 more needed |
 | diagnostic streams | 21 (5/7 motifs emit) | ≥40 families | fork/join need branching nodes |
 | integrated streams | 0 | ≥20 families | pending stream generation |
