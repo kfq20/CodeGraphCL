@@ -1,0 +1,30 @@
+schema_version: 1
+edge_id: fastify_404_unsuppor_to_fastify_redirect_sta
+from: fastify_404_unsupported_method
+to: fastify_redirect_statuscode
+edge_type: beneficial_update
+
+experience:
+  statement: >
+    Status code convention: unsupported-method returns 404 (not 405), and redirect preserves a preset status. Both share 'the response status code must reflect the semantic intent, not the generic default.'
+  type: status_code_semantics
+  scope: lib/reply.js
+  provenance:
+    repository: fastify
+    commit: "fa5e591b7ab3"
+  validity: valid_for_consumer
+
+conditions:
+  reset: null
+  correct: correct
+  irrelevant: irrelevant
+  stale: wrong
+
+expected_effect:
+  correctness: possible
+  efficiency: possible
+  negative_transfer: possible
+
+status:
+  semantic_audit: passed
+  causal_verification: proposed

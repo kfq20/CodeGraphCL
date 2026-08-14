@@ -1,0 +1,30 @@
+schema_version: 1
+edge_id: fastify_reply_remove_to_fastify_reply_json_c
+from: fastify_reply_removeheader
+to: fastify_reply_json_charset
+edge_type: beneficial_update
+
+experience:
+  statement: >
+    Reply header surface convention: removeHeader must lowercase the key, and JSON charset must substring-match. Both share 'header name handling is case-insensitive — normalize before comparing.'
+  type: header_case_insensitive
+  scope: lib/reply.js
+  provenance:
+    repository: fastify
+    commit: "cfa760cbd129"
+  validity: valid_for_consumer
+
+conditions:
+  reset: null
+  correct: correct
+  irrelevant: irrelevant
+  stale: wrong
+
+expected_effect:
+  correctness: possible
+  efficiency: possible
+  negative_transfer: possible
+
+status:
+  semantic_audit: passed
+  causal_verification: proposed

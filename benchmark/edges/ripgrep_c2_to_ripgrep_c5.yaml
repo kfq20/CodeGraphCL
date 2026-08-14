@@ -1,0 +1,30 @@
+schema_version: 1
+edge_id: ripgrep_c2_to_ripgrep_c5
+from: ripgrep_c2
+to: ripgrep_c5
+edge_type: beneficial_update
+
+experience:
+  statement: >
+    Ignore-path cache convention: c2's strip rule and c5's cache fix both handle how parent matcher paths are stored and reused. The cache-path convention evolves.
+  type: ignore_cache_path
+  scope: crates/ignore/src/dir.rs
+  provenance:
+    repository: ripgrep
+    commit: "cad1f5fae2"
+  validity: valid_for_consumer
+
+conditions:
+  reset: null
+  correct: correct
+  irrelevant: irrelevant
+  stale: wrong
+
+expected_effect:
+  correctness: possible
+  efficiency: possible
+  negative_transfer: possible
+
+status:
+  semantic_audit: passed
+  causal_verification: proposed

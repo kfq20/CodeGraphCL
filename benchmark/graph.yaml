@@ -70,6 +70,11 @@ edges:
   to: clap_complete_fish_quote
   edge_type: beneficial_update
   intervention_status: proposed
+- edge_id: fastify_404_unsuppor_to_fastify_redirect_sta
+  from: fastify_404_unsupported_method
+  to: fastify_redirect_statuscode
+  edge_type: beneficial_update
+  intervention_status: proposed
 - edge_id: fastify_404route_to_headerssent
   from: fastify_route_404_to_handler
   to: fastify_reply_headerssent
@@ -100,9 +105,44 @@ edges:
   to: fastify_reply_removeheader
   edge_type: beneficial_update
   intervention_status: intervention_smoke
+- edge_id: fastify_per_parser_b_to_fastify_contenttype_
+  from: fastify_per_parser_bodylimit
+  to: fastify_contenttype_array
+  edge_type: beneficial_update
+  intervention_status: proposed
+- edge_id: fastify_reply_hashea_to_fastify_reply_json_c
+  from: fastify_reply_hasheader
+  to: fastify_reply_json_charset
+  edge_type: beneficial_update
+  intervention_status: proposed
+- edge_id: fastify_reply_json_c_to_fastify_reply_header
+  from: fastify_reply_json_charset
+  to: fastify_reply_headerssent
+  edge_type: beneficial_update
+  intervention_status: proposed
+- edge_id: fastify_reply_remove_to_fastify_reply_header
+  from: fastify_reply_removeheader
+  to: fastify_reply_headerssent
+  edge_type: beneficial_update
+  intervention_status: proposed
+- edge_id: fastify_reply_remove_to_fastify_reply_json_c
+  from: fastify_reply_removeheader
+  to: fastify_reply_json_charset
+  edge_type: beneficial_update
+  intervention_status: proposed
 - edge_id: fastify_responsetime_to_headercase
   from: fastify_loggr_responsetime
   to: fastify_header_case_validation
+  edge_type: beneficial_update
+  intervention_status: proposed
+- edge_id: fastify_route_404_to_to_fastify_404_unsuppor
+  from: fastify_route_404_to_handler
+  to: fastify_404_unsupported_method
+  edge_type: beneficial_update
+  intervention_status: proposed
+- edge_id: fastify_route_404_to_to_fastify_reply_json_c
+  from: fastify_route_404_to_handler
+  to: fastify_reply_json_charset
   edge_type: beneficial_update
   intervention_status: proposed
 - edge_id: httpx_encoding_to_multipart
@@ -118,6 +158,11 @@ edges:
 - edge_id: httpx_sslconfig_to_urlauthority
   from: httpx_sslconfig_accept_context
   to: httpx_url_copywith_authority
+  edge_type: beneficial_update
+  intervention_status: proposed
+- edge_id: httpx_tA_to_httpx_tC
+  from: httpx_tA
+  to: httpx_tC
   edge_type: beneficial_update
   intervention_status: proposed
 - edge_id: httpx_tA_to_tB
@@ -140,19 +185,49 @@ edges:
   to: ripgrep_c3
   edge_type: beneficial_update
   intervention_status: rejected
+- edge_id: ripgrep_c2_to_ripgrep_c4
+  from: ripgrep_c2
+  to: ripgrep_c4
+  edge_type: beneficial_update
+  intervention_status: proposed
+- edge_id: ripgrep_c2_to_ripgrep_c5
+  from: ripgrep_c2
+  to: ripgrep_c5
+  edge_type: beneficial_update
+  intervention_status: proposed
 - edge_id: ripgrep_c3_to_c4
   from: ripgrep_c3
   to: ripgrep_c4
   edge_type: beneficial_update
   intervention_status: rejected
+- edge_id: ripgrep_c3_to_ripgrep_c5
+  from: ripgrep_c3
+  to: ripgrep_c5
+  edge_type: beneficial_update
+  intervention_status: proposed
 - edge_id: ripgrep_c4_to_c5
   from: ripgrep_c4
   to: ripgrep_c5
   edge_type: beneficial_update
   intervention_status: intervention_smoke
+- edge_id: ripgrep_crlf_preserv_to_ripgrep_look_around_
+  from: ripgrep_crlf_preserve_terminator
+  to: ripgrep_look_around_panic
+  edge_type: beneficial_update
+  intervention_status: proposed
+- edge_id: ripgrep_deadlock_vis_to_ripgrep_skip_unreach
+  from: ripgrep_deadlock_visitor_panic
+  to: ripgrep_skip_unreachable_ignore
+  edge_type: beneficial_update
+  intervention_status: proposed
 - edge_id: ripgrep_lookaround_to_globset
   from: ripgrep_look_around_panic
   to: ripgrep_globset_matches_all
+  edge_type: beneficial_update
+  intervention_status: proposed
+- edge_id: ripgrep_min_depth_op_to_ripgrep_skip_unreach
+  from: ripgrep_min_depth_option
+  to: ripgrep_skip_unreachable_ignore
   edge_type: beneficial_update
   intervention_status: proposed
 - edge_id: ripgrep_mindepth_to_deadlock

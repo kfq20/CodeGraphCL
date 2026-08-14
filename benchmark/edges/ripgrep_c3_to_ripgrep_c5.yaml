@@ -1,0 +1,30 @@
+schema_version: 1
+edge_id: ripgrep_c3_to_ripgrep_c5
+from: ripgrep_c3
+to: ripgrep_c5
+edge_type: beneficial_update
+
+experience:
+  statement: >
+    Ignore-path matcher convention: c3's precise strip and c5's absolute_base move both handle how matchers cache path-specific state. The cache-state separation convention evolves.
+  type: matcher_cache_state
+  scope: crates/ignore/src/dir.rs
+  provenance:
+    repository: ripgrep
+    commit: "14f4957b3d"
+  validity: valid_for_consumer
+
+conditions:
+  reset: null
+  correct: correct
+  irrelevant: irrelevant
+  stale: wrong
+
+expected_effect:
+  correctness: possible
+  efficiency: possible
+  negative_transfer: possible
+
+status:
+  semantic_audit: passed
+  causal_verification: proposed

@@ -1,0 +1,30 @@
+schema_version: 1
+edge_id: fastify_route_404_to_to_fastify_reply_json_c
+from: fastify_route_404_to_handler
+to: fastify_reply_json_charset
+edge_type: beneficial_update
+
+experience:
+  statement: >
+    Reply content-type/status handling: 404 routing intercepts early in handleError, and JSON+charset handling intercepts the content-type check. Both are 'the reply's send/handleError path has early intercepts for special conditions.'
+  type: reply_early_intercept
+  scope: lib/reply.js
+  provenance:
+    repository: fastify
+    commit: "63fce75e"
+  validity: valid_for_consumer
+
+conditions:
+  reset: null
+  correct: correct
+  irrelevant: irrelevant
+  stale: wrong
+
+expected_effect:
+  correctness: possible
+  efficiency: possible
+  negative_transfer: possible
+
+status:
+  semantic_audit: passed
+  causal_verification: proposed

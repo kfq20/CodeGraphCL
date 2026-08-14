@@ -1,0 +1,30 @@
+schema_version: 1
+edge_id: fastify_route_404_to_to_fastify_404_unsuppor
+from: fastify_route_404_to_handler
+to: fastify_404_unsupported_method
+edge_type: beneficial_update
+
+experience:
+  statement: >
+    404-status error routing convention: route-sent 404 goes through notFound handler, and unsupported-method 404 returns the not-found status. Both are '404 status errors are handled by the not-found path, not generic serialization.'
+  type: error_status_routing
+  scope: lib/reply.js
+  provenance:
+    repository: fastify
+    commit: "63fce75e"
+  validity: valid_for_consumer
+
+conditions:
+  reset: null
+  correct: correct
+  irrelevant: irrelevant
+  stale: wrong
+
+expected_effect:
+  correctness: possible
+  efficiency: possible
+  negative_transfer: possible
+
+status:
+  semantic_audit: passed
+  causal_verification: proposed

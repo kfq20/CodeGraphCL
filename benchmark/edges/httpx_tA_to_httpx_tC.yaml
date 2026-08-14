@@ -1,0 +1,30 @@
+schema_version: 1
+edge_id: httpx_tA_to_httpx_tC
+from: httpx_tA
+to: httpx_tC
+edge_type: beneficial_update
+
+experience:
+  statement: >
+    Start_tls contract: tA established the start_tls signature on ConcurrencyBackend, and tC propagates it to the stream backend. Both share 'the start_tls contract must be consistent across backend implementations.'
+  type: start_tls_contract
+  scope: httpx/concurrency/
+  provenance:
+    repository: httpx
+    commit: "1872ae873b"
+  validity: valid_for_consumer
+
+conditions:
+  reset: null
+  correct: correct
+  irrelevant: irrelevant
+  stale: wrong
+
+expected_effect:
+  correctness: possible
+  efficiency: possible
+  negative_transfer: possible
+
+status:
+  semantic_audit: passed
+  causal_verification: proposed

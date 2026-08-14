@@ -1,0 +1,30 @@
+schema_version: 1
+edge_id: ripgrep_min_depth_op_to_ripgrep_skip_unreach
+from: ripgrep_min_depth_option
+to: ripgrep_skip_unreachable_ignore
+edge_type: beneficial_update
+
+experience:
+  statement: >
+    Walk traversal control: min_depth gates which entries to yield, and skip-unreachable gates which dirs to load. Both share 'the walk must respect depth/boundary conditions — don't yield above the floor, don't load below the ceiling.'
+  type: walk_depth_control
+  scope: crates/ignore/src/walk.rs
+  provenance:
+    repository: ripgrep
+    commit: "2924d0c"
+  validity: valid_for_consumer
+
+conditions:
+  reset: null
+  correct: correct
+  irrelevant: irrelevant
+  stale: wrong
+
+expected_effect:
+  correctness: possible
+  efficiency: possible
+  negative_transfer: possible
+
+status:
+  semantic_audit: passed
+  causal_verification: proposed

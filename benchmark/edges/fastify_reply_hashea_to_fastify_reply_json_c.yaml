@@ -1,0 +1,30 @@
+schema_version: 1
+edge_id: fastify_reply_hashea_to_fastify_reply_json_c
+from: fastify_reply_hasheader
+to: fastify_reply_json_charset
+edge_type: beneficial_update
+
+experience:
+  statement: >
+    Reply header accessor convention: hasHeader lowercases the key before checking, and JSON charset substring-matches. Both share 'header matching is case-insensitive and uses partial matching, not exact.'
+  type: header_partial_match
+  scope: lib/reply.js
+  provenance:
+    repository: fastify
+    commit: "31c5f7e259d1"
+  validity: valid_for_consumer
+
+conditions:
+  reset: null
+  correct: correct
+  irrelevant: irrelevant
+  stale: wrong
+
+expected_effect:
+  correctness: possible
+  efficiency: possible
+  negative_transfer: possible
+
+status:
+  semantic_audit: passed
+  causal_verification: proposed

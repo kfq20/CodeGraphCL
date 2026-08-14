@@ -1,0 +1,30 @@
+schema_version: 1
+edge_id: fastify_reply_remove_to_fastify_reply_header
+from: fastify_reply_removeheader
+to: fastify_reply_headerssent
+edge_type: beneficial_update
+
+experience:
+  statement: >
+    Header lifecycle: removeHeader deletes the lowercased key, and headersSent guards against post-send header mutation. Both share 'header operations must check state before acting — check presence, check sent status.'
+  type: header_lifecycle_guard
+  scope: lib/reply.js
+  provenance:
+    repository: fastify
+    commit: "cfa760cbd129"
+  validity: valid_for_consumer
+
+conditions:
+  reset: null
+  correct: correct
+  irrelevant: irrelevant
+  stale: wrong
+
+expected_effect:
+  correctness: possible
+  efficiency: possible
+  negative_transfer: possible
+
+status:
+  semantic_audit: passed
+  causal_verification: proposed

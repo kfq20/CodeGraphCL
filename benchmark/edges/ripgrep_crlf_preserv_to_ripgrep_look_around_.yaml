@@ -1,0 +1,30 @@
+schema_version: 1
+edge_id: ripgrep_crlf_preserv_to_ripgrep_look_around_
+from: ripgrep_crlf_preserve_terminator
+to: ripgrep_look_around_panic
+edge_type: beneficial_update
+
+experience:
+  statement: >
+    Printer output handling: CRLF preservation threads the line terminator through the replace pipeline, and look-around panic fixes boundary handling. Both share 'the printer must handle edge-case inputs gracefully, not crash or lose data.'
+  type: printer_edge_case
+  scope: crates/printer/src/
+  provenance:
+    repository: ripgrep
+    commit: "64174b8"
+  validity: valid_for_consumer
+
+conditions:
+  reset: null
+  correct: correct
+  irrelevant: irrelevant
+  stale: wrong
+
+expected_effect:
+  correctness: possible
+  efficiency: possible
+  negative_transfer: possible
+
+status:
+  semantic_audit: passed
+  causal_verification: proposed

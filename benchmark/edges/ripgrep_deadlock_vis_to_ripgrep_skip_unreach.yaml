@@ -1,0 +1,30 @@
+schema_version: 1
+edge_id: ripgrep_deadlock_vis_to_ripgrep_skip_unreach
+from: ripgrep_deadlock_visitor_panic
+to: ripgrep_skip_unreachable_ignore
+edge_type: beneficial_update
+
+experience:
+  statement: >
+    Walk lifecycle: deadlock fix poisons the pool on panic, and skip-unreachable avoids loading unneeded files. Both share 'the walk worker lifecycle has resource-management edge cases — clean up on failure, skip on futility.'
+  type: walk_resource_management
+  scope: crates/ignore/src/walk.rs
+  provenance:
+    repository: ripgrep
+    commit: "0d7054d"
+  validity: valid_for_consumer
+
+conditions:
+  reset: null
+  correct: correct
+  irrelevant: irrelevant
+  stale: wrong
+
+expected_effect:
+  correctness: possible
+  efficiency: possible
+  negative_transfer: possible
+
+status:
+  semantic_audit: passed
+  causal_verification: proposed

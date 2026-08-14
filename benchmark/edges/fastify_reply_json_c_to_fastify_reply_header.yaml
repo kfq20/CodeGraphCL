@@ -1,0 +1,30 @@
+schema_version: 1
+edge_id: fastify_reply_json_c_to_fastify_reply_header
+from: fastify_reply_json_charset
+to: fastify_reply_headerssent
+edge_type: beneficial_update
+
+experience:
+  statement: >
+    Reply header handling: JSON charset must be detected (not exact-matched), and headers must not be re-set after send. Both are 'header handling has conditional guards — detect vs exact, guard vs unconditional set.'
+  type: header_conditional_guard
+  scope: lib/reply.js
+  provenance:
+    repository: fastify
+    commit: "2f4a84317885"
+  validity: valid_for_consumer
+
+conditions:
+  reset: null
+  correct: correct
+  irrelevant: irrelevant
+  stale: wrong
+
+expected_effect:
+  correctness: possible
+  efficiency: possible
+  negative_transfer: possible
+
+status:
+  semantic_audit: passed
+  causal_verification: proposed
