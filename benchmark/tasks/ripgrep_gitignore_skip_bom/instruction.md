@@ -9,11 +9,15 @@ line's pattern, so the pattern never matches a real path. Files that should be i
 Git strips the BOM from the start of a gitignore file; ripgrep does not, so a BOM-prefixed
 gitignore behaves differently from Git.
 
+Git strips the BOM from the start of a gitignore file; ripgrep does not, so a BOM-prefixed
+gitignore behaves differently from Git.
+
 ## Reproduction
 
 Write a `.gitignore` whose first line is `ignore/this/path` but the file begins with a UTF-8 BOM
-(`\u{feff}`). Walk a directory containing `ignore/this/path`. The file is NOT ignored (the BOM
-prefix prevents the first-line pattern from matching). The same file without the BOM ignores it.
+(the byte-order mark character). Walk a directory containing `ignore/this/path`. The file is NOT
+ignored (the BOM prefix prevents the first-line pattern from matching). The same file without the
+BOM ignores it.
 
 ## Acceptance
 
