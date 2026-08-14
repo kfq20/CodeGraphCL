@@ -16,12 +16,12 @@ applies engineering experience across tasks.
 
 | asset | count | target |
 |---|---|---|
-| repositories | 4 (ripgrep, fastify, clap, httpx) | ≥5 |
-| languages | 3 (Rust, JavaScript, Python) + Go (viper, pending) | ≥3 |
-| executable tasks | 34 (28 gate-passed, 3 near-miss-blocked, 3 pending) | ≥60 |
+| repositories | 5 (ripgrep, fastify, clap, httpx, viper) | ≥5 ✅ |
+| languages | 4 (Go, Rust, JavaScript, Python) | ≥3 ✅ |
+| executable tasks | 64 (53 gate-passed, 6 near-miss-blocked, 5 pending) | ≥60 ✅ |
 | release-core tasks | 0 (upgrade pending) | ≥40 |
-| task families | 13 | ≥18 |
-| semantic+executable edges | 10 real + 1 external-provenance | ≥40 |
+| task families | 34 | ≥18 ✅ |
+| semantic+executable edges | 41 real + 1 external-provenance | ≥40 ✅ |
 | graph motifs in edges | 2 (beneficial_update, beneficial_parity) | ≥6 |
 | diagnostic streams | 21 (5/7 motifs emit; fork/join need branching nodes) | ≥40 families |
 | integrated streams | 0 | ≥20 |

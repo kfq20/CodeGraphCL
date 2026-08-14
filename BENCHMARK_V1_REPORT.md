@@ -9,12 +9,12 @@ Run `python3 -m codegraphcl validate-benchmark` for the latest counts.
 
 | asset | count | target | status |
 |---|---|---|---|
-| repositories | 4 | ≥5 | need 1 more (viper Go, or another) |
-| languages | 3 (Rust, JS, Python) | ≥3 | ✓ (Go pending via viper) |
-| executable tasks | 44 (39 passed, 3 near-miss-blocked, 2 pending) | ≥60 | 16 more needed (httpx agent building 6) |
+| repositories | 5 (clap, fastify, httpx, ripgrep, viper) | ≥5 | ✅ TARGET MET |
+| languages | 4 (Go, Rust, JS, Python) | ≥3 | ✅ TARGET MET |
+| executable tasks | 64 (53 passed, 6 near-miss-blocked, 5 pending) | ≥60 | ✅ TARGET MET |
 | release-core tasks | 0 | ≥40 | upgrade pending |
-| task families | 20 | ≥18 | ✓ TARGET MET |
-| semantic+executable edges | 19 real + 1 external | ≥40 | 21 more needed |
+| task families | 34 | ≥18 | ✅ TARGET MET |
+| semantic+executable edges | 41 real + 1 external | ≥40 | ✅ TARGET MET |
 | graph motifs | 2 (update, parity) | ≥6 | 4 more needed |
 | diagnostic streams | 21 (5/7 motifs emit) | ≥40 families | fork/join need branching nodes |
 | integrated streams | 0 | ≥20 families | pending stream generation |
