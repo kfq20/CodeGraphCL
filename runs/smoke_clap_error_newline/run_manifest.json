@@ -1,0 +1,9 @@
+{
+  "run_id": "smoke_clap_error_newline",
+  "task_id": "clap_error_newline",
+  "image": "codegraphcl-ripgrep:rust",
+  "base_commit": "a72e5726f872^",
+  "gold_commit": "a72e5726f872",
+  "started_at": 1786710829,
+  "finished_at": 1786710986
+}

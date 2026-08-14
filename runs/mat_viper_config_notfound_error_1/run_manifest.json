@@ -1,0 +1,9 @@
+{
+  "run_id": "mat_viper_config_notfound_error_1",
+  "task_id": "viper_config_notfound_error",
+  "image": "codegraphcl-viper:go",
+  "base_commit": "2da50fe98c7e48a260c3f87156473344cb423849",
+  "gold_commit": "0afb0456be931163b9b402905160c3999b929c7f",
+  "started_at": 1786710256,
+  "finished_at": 1786710284
+}

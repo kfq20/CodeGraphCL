@@ -1,0 +1,2 @@
+work lives in pool: /vePFS-Mindverse/user/intern/fanqi/cgcl_pools/viper/smoke_viper_sub_keydelim/work -> /pool/smoke_viper_sub_keydelim/work
+container: cgcl-viper-box

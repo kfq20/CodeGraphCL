@@ -1,0 +1,2 @@
+work lives in pool: /vePFS-Mindverse/user/intern/fanqi/cgcl_pools/rg/smoke_clap_error_newline/work -> /pool/smoke_clap_error_newline/work
+container: cgcl-rg-box

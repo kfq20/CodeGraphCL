@@ -1,0 +1,9 @@
+{
+  "run_id": "smoke_viper_sub_keydelim",
+  "task_id": "viper_sub_keydelim",
+  "image": "codegraphcl-viper:go",
+  "base_commit": "ae564f05cb912ebe4642ff28b81b9c4cf8302071",
+  "gold_commit": "864a85aadadbaa4dce1e474714457ed37c553ce1",
+  "started_at": 1786711055,
+  "finished_at": 1786711079
+}

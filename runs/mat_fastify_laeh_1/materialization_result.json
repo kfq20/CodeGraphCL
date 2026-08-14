@@ -1,0 +1,24 @@
+{
+  "status": "inconclusive",
+  "reason": "near-miss could not be applied/injected (inconclusive): near_miss/nearmiss_laeh_move500only.py (inject_failed), near_miss/nearmiss_laeh_move400only.py (inject_failed)",
+  "gates": {
+    "base_fail": "passed",
+    "gold_pass": "passed",
+    "pass_to_pass": "passed",
+    "near_miss": "inconclusive"
+  },
+  "near_miss_results": [
+    {
+      "patch": "near_miss/nearmiss_laeh_move500only.py",
+      "status": "inject_failed",
+      "rc": -1,
+      "stderr": ""
+    },
+    {
+      "patch": "near_miss/nearmiss_laeh_move400only.py",
+      "status": "inject_failed",
+      "rc": -1,
+      "stderr": ""
+    }
+  ]
+}

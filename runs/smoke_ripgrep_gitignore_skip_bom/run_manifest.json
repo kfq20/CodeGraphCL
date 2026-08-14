@@ -1,0 +1,9 @@
+{
+  "run_id": "smoke_ripgrep_gitignore_skip_bom",
+  "task_id": "ripgrep_gitignore_skip_bom",
+  "image": "codegraphcl-ripgrep:rust",
+  "base_commit": "4836284^",
+  "gold_commit": "4836284",
+  "started_at": 1786710986,
+  "finished_at": 1786711029
+}

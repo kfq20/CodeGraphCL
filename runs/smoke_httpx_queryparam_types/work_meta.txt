@@ -1,0 +1,2 @@
+work lives in pool: /vePFS-Mindverse/user/intern/fanqi/cgcl_pools/httpx/smoke_httpx_queryparam_types/work -> /pool/smoke_httpx_queryparam_types/work
+container: cgcl-httpx-box

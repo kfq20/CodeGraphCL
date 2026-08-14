@@ -1,0 +1,2 @@
+work lives in pool: /vePFS-Mindverse/user/intern/fanqi/cgcl_pools/fs/mat_fastify_eh404_1/work -> /pool/mat_fastify_eh404_1/work
+container: cgcl-fs-box

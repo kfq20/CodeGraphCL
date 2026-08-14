@@ -1,0 +1,9 @@
+{
+  "run_id": "mat_fastify_pts_2",
+  "task_id": "fastify_prefix_trailing_slash",
+  "image": "codegraphcl-fastify:node",
+  "base_commit": "14a1e9d1a8ef24da2716ea38fc65a6715da498d8^",
+  "gold_commit": "14a1e9d1a8ef24da2716ea38fc65a6715da498d8",
+  "started_at": 1786710846,
+  "finished_at": 1786710909
+}

@@ -1,0 +1,9 @@
+{
+  "run_id": "mat_fastify_dbc_1",
+  "task_id": "fastify_delete_body_check",
+  "image": "codegraphcl-fastify:node",
+  "base_commit": "ef873bf04ba8fbc0ed151008b694ccc1d057a4df^",
+  "gold_commit": "ef873bf04ba8fbc0ed151008b694ccc1d057a4df",
+  "started_at": 1786710276,
+  "finished_at": 1786710377
+}

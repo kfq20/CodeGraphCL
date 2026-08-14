@@ -1,0 +1,7 @@
+{
+  "status": "task_failure",
+  "reason": "base+verifier passed \u2014 the bug is not present on base; FAIL_TO_PASS invalid",
+  "gates": {
+    "base_fail": "failed"
+  }
+}

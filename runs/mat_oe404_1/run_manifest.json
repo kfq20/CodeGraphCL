@@ -1,0 +1,9 @@
+{
+  "run_id": "mat_oe404_1",
+  "task_id": "fastify_onsend_encapsulated_404",
+  "image": "codegraphcl-fastify:node",
+  "base_commit": "cc2f9c9c6683a46c80ef72b1b81d6ca03dea506d^",
+  "gold_commit": "cc2f9c9c6683a46c80ef72b1b81d6ca03dea506d",
+  "started_at": 1786710822,
+  "finished_at": 1786710880
+}

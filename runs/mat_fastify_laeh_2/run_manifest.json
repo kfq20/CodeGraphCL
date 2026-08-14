@@ -1,0 +1,9 @@
+{
+  "run_id": "mat_fastify_laeh_2",
+  "task_id": "fastify_log_after_error_handler",
+  "image": "codegraphcl-fastify:node",
+  "base_commit": "01b09784f7bd051736e708ccf9442c6ac3ee073d^",
+  "gold_commit": "01b09784f7bd051736e708ccf9442c6ac3ee073d",
+  "started_at": 1786709959,
+  "finished_at": 1786710074
+}

@@ -1,0 +1,9 @@
+{
+  "run_id": "mat_viper_unmarshal_exact_merge_1",
+  "task_id": "viper_unmarshal_exact_merge",
+  "image": "codegraphcl-viper:go",
+  "base_commit": "f5fcb4a104f76357c270c3944c26a2e2c8a06fdf",
+  "gold_commit": "fb6eb1e8e9fbaa424b113248af35f048c5d86dea",
+  "started_at": 1786710189,
+  "finished_at": 1786710215
+}

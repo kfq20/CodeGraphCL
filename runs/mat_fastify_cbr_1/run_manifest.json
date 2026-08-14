@@ -1,0 +1,9 @@
+{
+  "run_id": "mat_fastify_cbr_1",
+  "task_id": "fastify_close_blocks_requests",
+  "image": "codegraphcl-fastify:node",
+  "base_commit": "cbd08afdf55c029cc2e8a1d12cdd55cb298c4185^",
+  "gold_commit": "cbd08afdf55c029cc2e8a1d12cdd55cb298c4185",
+  "started_at": 1786710472,
+  "finished_at": 1786710519
+}

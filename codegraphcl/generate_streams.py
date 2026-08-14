@@ -197,6 +197,65 @@ BUILDERS = {
 }
 
 
+def _build_integrated_stream(edges, rng, nodes, length=6, **kw):
+    """Build an integrated stream: 5-10 tasks, >=2 motifs, >=1 real edge, >=1 distractor.
+    Chains multiple motif-fragments together, with a distractor and optionally a stale/update."""
+    if not edges: return None
+    stream_ids = []
+    stream_edges = []
+    motifs_used = set()
+    used = set()
+    # pick a starting edge
+    e = rng.choice(edges)
+    stream_ids.extend([e["from"], e["to"]])
+    stream_edges.append(e["edge_id"])
+    used.update(stream_ids)
+    motifs_used.add("direct")
+    # add 1-2 more edges (delayed/fork/join) from the graph, building a chain
+    remaining = length - len(stream_ids)
+    for _ in range(remaining):
+        # try to extend from the last node
+        last = stream_ids[-1]
+        candidates = [ed for ed in edges if ed["from"] == last and ed["to"] not in used]
+        if candidates:
+            ed = rng.choice(candidates)
+            stream_ids.append(ed["to"])
+            stream_edges.append(ed["edge_id"])
+            used.add(ed["to"])
+            motifs_used.add("delayed")
+        else:
+            # add a distractor from a different family
+            last_fam = nodes.get(last, {}).get("family", "")
+            distractors = [n for n in nodes if nodes[n]["family"] != last_fam and n not in used]
+            if distractors:
+                d = rng.choice(distractors)
+                stream_ids.append(d)
+                used.add(d)
+                motifs_used.add("hard_negative")
+            else:
+                break
+    # ensure >=2 motifs
+    if len(motifs_used) < 2:
+        # add a scope distractor if only direct
+        last_fam = nodes.get(stream_ids[-1], {}).get("family", "")
+        distractors = [n for n in nodes if nodes[n]["family"] != last_fam and n not in used]
+        if distractors:
+            d = rng.choice(distractors)
+            stream_ids.append(d)
+            motifs_used.add("scope")
+    if len(stream_ids) < 4:
+        return None  # too short for an integrated stream
+    return {
+        "motif": "integrated",
+        "task_ids": stream_ids,
+        "edges": stream_edges,
+        "motifs_used": sorted(motifs_used),
+        "intervention": kw.get("intervention", "none"),
+        "has_distractor": len([t for t in stream_ids if t not in stream_edges]) > 0,
+        "has_real_edge": len(stream_edges) > 0,
+    }
+
+
 def cmd_generate(args):
     nodes, edges = _load_graph()
     rng = random.Random(args.seed)
@@ -206,6 +265,31 @@ def cmd_generate(args):
     seen_sigs = set()
     streams = []
     attempts = 0
+    # for integrated: use the multi-motif builder
+    if args.type == "integrated":
+        while len(streams) < args.count and attempts < args.count * 30:
+            attempts += 1
+            kw = {"length": args.length, "intervention": "none"}
+            if args.stale: kw["intervention"] = "stale"
+            s = _build_integrated_stream(edges, rng, nodes, **kw)
+            if not s: continue
+            sig = _canonical_sig(s)
+            if sig in seen_sigs: continue
+            seen_sigs.add(sig)
+            s["stream_id"] = f"integrated_{len(streams):03d}_seed{args.seed}"
+            s["canonical_sig"] = sig
+            streams.append(s)
+        out = out_dir / f"streams_seed{args.seed}.jsonl"
+        with out.open("w") as f:
+            for s in streams:
+                f.write(json.dumps(s) + "\n")
+        print(f"generated {len(streams)} {args.type} streams -> {out}")
+        for s in streams:
+            print(f"  {s['stream_id']}: {s['task_ids']} ({s.get('motifs_used', [s['motif']])})")
+        if not streams:
+            print(f"(0 streams — graph has {len(edges)} edges, {len(nodes)} nodes)")
+        return 0
+    # for diagnostic: single-motif builder
     motif = args.motif or rng.choice(list(BUILDERS))
     while len(streams) < args.count and attempts < args.count * 20:
         attempts += 1

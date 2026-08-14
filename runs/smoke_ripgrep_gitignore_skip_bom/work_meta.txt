@@ -1,0 +1,2 @@
+work lives in pool: /vePFS-Mindverse/user/intern/fanqi/cgcl_pools/rg/smoke_ripgrep_gitignore_skip_bom/work -> /pool/smoke_ripgrep_gitignore_skip_bom/work
+container: cgcl-rg-box

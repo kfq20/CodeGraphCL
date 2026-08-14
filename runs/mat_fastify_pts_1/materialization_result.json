@@ -1,0 +1,8 @@
+{
+  "status": "task_failure",
+  "reason": "base+gold+verifier failed \u2014 gold patch does not make the test pass",
+  "gates": {
+    "base_fail": "passed",
+    "gold_pass": "failed"
+  }
+}

@@ -1,0 +1,9 @@
+{
+  "run_id": "mat_viper_default_decode_hook_1",
+  "task_id": "viper_default_decode_hook",
+  "image": "codegraphcl-viper:go",
+  "base_commit": "5964efa262fa03ea9866953d734f04be97d0b7c4",
+  "gold_commit": "d2458a2abcf9c9af10f033aef75dad8b063a1789",
+  "started_at": 1786710222,
+  "finished_at": 1786710248
+}

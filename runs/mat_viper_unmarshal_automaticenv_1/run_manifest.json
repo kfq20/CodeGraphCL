@@ -1,0 +1,9 @@
+{
+  "run_id": "mat_viper_unmarshal_automaticenv_1",
+  "task_id": "viper_unmarshal_automaticenv",
+  "image": "codegraphcl-viper:go",
+  "base_commit": "6ea31ae4ca569f048d53a06e91574f1ebe4b0225",
+  "gold_commit": "73dfb94c57ad48bcdf3d40b7f47d69c2962d800d",
+  "started_at": 1786710155,
+  "finished_at": 1786710183
+}
