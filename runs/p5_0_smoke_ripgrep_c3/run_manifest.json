@@ -1,0 +1,9 @@
+{
+  "run_id": "p5_0_smoke_ripgrep_c3",
+  "task_id": "ripgrep_c3",
+  "image": "codegraphcl-ripgrep:rust",
+  "base_commit": "f722268",
+  "gold_commit": "14f4957b3d",
+  "started_at": 1786717029,
+  "finished_at": 1786717091
+}

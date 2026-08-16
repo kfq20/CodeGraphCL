@@ -1,0 +1,9 @@
+{
+  "run_id": "p5_0_smoke_clap_help_short_padding",
+  "task_id": "clap_help_short_padding",
+  "image": "codegraphcl-ripgrep:rust",
+  "base_commit": "126440ca^",
+  "gold_commit": "126440ca",
+  "started_at": 1786715606,
+  "finished_at": 1786715700
+}

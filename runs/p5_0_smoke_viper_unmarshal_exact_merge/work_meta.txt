@@ -1,0 +1,2 @@
+work lives in pool: /vePFS-Mindverse/user/intern/fanqi/cgcl_pools/viper/p5_0_smoke_viper_unmarshal_exact_merge/work -> /pool/p5_0_smoke_viper_unmarshal_exact_merge/work
+container: cgcl-viper-box

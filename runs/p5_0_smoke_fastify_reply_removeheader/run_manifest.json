@@ -1,0 +1,9 @@
+{
+  "run_id": "p5_0_smoke_fastify_reply_removeheader",
+  "task_id": "fastify_reply_removeheader",
+  "image": "codegraphcl-fastify:node",
+  "base_commit": "cfa760cbd129^",
+  "gold_commit": "cfa760cbd129",
+  "started_at": 1786716784,
+  "finished_at": 1786716854
+}

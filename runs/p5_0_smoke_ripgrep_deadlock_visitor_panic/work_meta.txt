@@ -1,0 +1,2 @@
+work lives in pool: /vePFS-Mindverse/user/intern/fanqi/cgcl_pools/rg/p5_0_smoke_ripgrep_deadlock_visitor_panic/work -> /pool/p5_0_smoke_ripgrep_deadlock_visitor_panic/work
+container: cgcl-rg-box

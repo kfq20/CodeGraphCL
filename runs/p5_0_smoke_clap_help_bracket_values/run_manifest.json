@@ -1,0 +1,9 @@
+{
+  "run_id": "p5_0_smoke_clap_help_bracket_values",
+  "task_id": "clap_help_bracket_values",
+  "image": "codegraphcl-ripgrep:rust",
+  "base_commit": "1ca55413^",
+  "gold_commit": "1ca55413",
+  "started_at": 1786715511,
+  "finished_at": 1786715605
+}

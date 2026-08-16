@@ -1,0 +1,2 @@
+work lives in pool: /vePFS-Mindverse/user/intern/fanqi/cgcl_pools/rg/p5_0_smoke_ripgrep_skip_unreachable_ignore/work -> /pool/p5_0_smoke_ripgrep_skip_unreachable_ignore/work
+container: cgcl-rg-box

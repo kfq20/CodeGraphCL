@@ -1,0 +1,9 @@
+{
+  "run_id": "p5_0_smoke_httpx_sslconfig_accept_context",
+  "task_id": "httpx_sslconfig_accept_context",
+  "image": "codegraphcl-httpx:py311",
+  "base_commit": "af907e85e175541289768e61ad21511cfa3ec1b7",
+  "gold_commit": "df8874b7339c9dcb7963689b304ce0179fc0d862",
+  "started_at": 1786717003,
+  "finished_at": 1786717029
+}

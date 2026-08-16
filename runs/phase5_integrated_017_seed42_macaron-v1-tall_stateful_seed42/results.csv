@@ -1,0 +1,7 @@
+task_idx,task_id,reward,outcome,elapsed_sec,input_tokens,output_tokens,cache_read_tokens,tool_uses,assistant_turns,session_id
+0,fastify_contenttype_emptybody,1,solved,270,137971,5168,1014112,37,77,39c31275-3cae-449d-8b75-0c77d7b2f34e
+1,fastify_contenttype_array,1,solved,20,55002,924,117920,4,10,39c31275-3cae-449d-8b75-0c77d7b2f34e
+2,fastify_reply_json_charset,0,agent_fail,354,107487,1493,293728,9,19,39c31275-3cae-449d-8b75-0c77d7b2f34e
+3,fastify_reply_headerssent,0,agent_fail,17,40474,752,122208,2,7,39c31275-3cae-449d-8b75-0c77d7b2f34e
+4,fastify_error_headers_404,0,agent_fail,18,77383,371,34304,1,4,39c31275-3cae-449d-8b75-0c77d7b2f34e
+5,fastify_log_after_error_handler,0,agent_fail,19,80317,610,34304,1,4,39c31275-3cae-449d-8b75-0c77d7b2f34e

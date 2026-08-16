@@ -1,0 +1,4 @@
+task_idx,task_id,reward,outcome,elapsed_sec,input_tokens,output_tokens,cache_read_tokens,tool_uses,assistant_turns,session_id
+0,httpx_sslconfig_accept_context,1,solved,342,20132,48387,1497803,41,85,c2cd80f6-651f-4b2f-bc0f-4d92548f6a1b
+1,httpx_client_property_convert,1,solved,71,19538,3978,684928,24,48,6d7fd8a4-be8e-479d-930b-482d3f827416
+2,fastify_header_case_validation,1,solved,351,29262,22809,3381387,99,175,d3e2d301-8d4d-4dec-a29b-9a0fb1c405e9

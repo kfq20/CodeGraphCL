@@ -1,0 +1,2 @@
+work lives in pool: /vePFS-Mindverse/user/intern/fanqi/cgcl_pools/rg/p5_0_smoke_ripgrep_c3/work -> /pool/p5_0_smoke_ripgrep_c3/work
+container: cgcl-rg-box

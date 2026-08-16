@@ -1,0 +1,2 @@
+work lives in pool: /vePFS-Mindverse/user/intern/fanqi/cgcl_pools/httpx/p5_0_smoke_httpx_sslconfig_accept_context/work -> /pool/p5_0_smoke_httpx_sslconfig_accept_context/work
+container: cgcl-httpx-box

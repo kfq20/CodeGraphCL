@@ -1,0 +1,4 @@
+task_idx,task_id,reward,outcome,elapsed_sec,input_tokens,output_tokens,cache_read_tokens,tool_uses,assistant_turns,session_id
+0,httpx_queryparam_types,0,agent_fail,46,57265,2611,291584,14,30,26000fc6-6116-4b7b-8d23-e4217a1c688d
+1,clap_complete_value_index,1,solved,338,133897,40793,1116587,33,72,c78afc31-e9af-4f2d-91ac-4a9e50cf2197
+2,httpx_queryparam_lists,0,agent_fail,488,230950,20207,3464704,102,215,52714602-d2e4-4692-a04c-893a453c532f

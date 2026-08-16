@@ -1,0 +1,9 @@
+{
+  "run_id": "p5_0_smoke_fastify_contenttype_emptybody",
+  "task_id": "fastify_contenttype_emptybody",
+  "image": "codegraphcl-fastify:node",
+  "base_commit": "8c5e732f2e9b^",
+  "gold_commit": "8c5e732f2e9b",
+  "started_at": 1786715909,
+  "finished_at": 1786715978
+}

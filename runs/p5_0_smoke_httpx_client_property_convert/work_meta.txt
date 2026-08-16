@@ -1,0 +1,2 @@
+work lives in pool: /vePFS-Mindverse/user/intern/fanqi/cgcl_pools/httpx/p5_0_smoke_httpx_client_property_convert/work -> /pool/p5_0_smoke_httpx_client_property_convert/work
+container: cgcl-httpx-box

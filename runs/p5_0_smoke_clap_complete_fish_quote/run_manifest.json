@@ -1,0 +1,9 @@
+{
+  "run_id": "p5_0_smoke_clap_complete_fish_quote",
+  "task_id": "clap_complete_fish_quote",
+  "image": "codegraphcl-ripgrep:rust",
+  "base_commit": "49a05cdc^",
+  "gold_commit": "49a05cdc",
+  "started_at": 1786715294,
+  "finished_at": 1786715350
+}

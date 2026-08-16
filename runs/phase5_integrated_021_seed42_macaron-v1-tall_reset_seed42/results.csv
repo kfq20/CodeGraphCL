@@ -1,0 +1,7 @@
+task_idx,task_id,reward,outcome,elapsed_sec,input_tokens,output_tokens,cache_read_tokens,tool_uses,assistant_turns,session_id
+0,ripgrep_c3,ERR,infra_fail,600,0,0,0,69,129,80cb75cd-a3cf-427d-adbd-8f6913562a2f
+1,ripgrep_c5,1,solved,355,103006,44635,1055656,35,75,9ea70c04-e907-4763-96ba-2e8b9ebf84a6
+2,fastify_loggr_responsetime,1,solved,48,46890,3494,156779,12,23,0d1f199f-dced-4fc8-8a14-0653cdee6b40
+3,fastify_header_case_validation,1,solved,105,51896,4317,454856,19,46,0a2953d9-0635-4c41-b838-ac1959bbadf3
+4,clap_help_short_padding,0,agent_fail,600,0,0,0,27,48,5e88250d-2bab-4791-ad9c-5cda9eb0edef
+5,clap_help_bracket_values,0,agent_fail,600,0,0,0,7,12,cac6361f-4081-4627-a9d7-e91e8a8de876

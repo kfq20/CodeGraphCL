@@ -1,0 +1,4 @@
+task_idx,task_id,reward,outcome,elapsed_sec,input_tokens,output_tokens,cache_read_tokens,tool_uses,assistant_turns,session_id
+0,ripgrep_min_depth_option,1,solved,600,0,0,0,98,175,75a4e071-9f14-4801-8f22-8371de3d7f26
+1,ripgrep_deadlock_visitor_panic,1,solved,600,0,0,0,60,107,a921c474-f755-4073-8dfd-a108ee99eec4
+2,ripgrep_skip_unreachable_ignore,1,solved,600,0,0,0,24,54,34766ffb-b05d-40a5-aac3-7c0fbfad7976

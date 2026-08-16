@@ -1,0 +1,9 @@
+{
+  "run_id": "p5_0_smoke_ripgrep_min_depth_option",
+  "task_id": "ripgrep_min_depth_option",
+  "image": "codegraphcl-ripgrep:rust",
+  "base_commit": "2924d0c^",
+  "gold_commit": "2924d0c",
+  "started_at": 1786717331,
+  "finished_at": 1786717374
+}

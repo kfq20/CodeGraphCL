@@ -1,0 +1,4 @@
+task_idx,task_id,reward,outcome,elapsed_sec,input_tokens,output_tokens,cache_read_tokens,tool_uses,assistant_turns,session_id
+0,fastify_404_route_handler,0,agent_fail,113,157296,9622,533856,19,40,da0e35e4-b61c-4c8c-9ccd-477a4b4c21be
+1,fastify_error_headers_404,1,solved,600,0,0,0,33,72,9abd7e39-0651-45c5-9d00-2a64cf3e4a1a
+2,fastify_log_after_error_handler,1,solved,600,0,0,0,73,154,cb0704b7-d181-4e52-a832-6e46ecebd91c

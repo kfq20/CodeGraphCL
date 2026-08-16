@@ -1,0 +1,7 @@
+task_idx,task_id,reward,outcome,elapsed_sec,input_tokens,output_tokens,cache_read_tokens,tool_uses,assistant_turns,session_id
+0,ripgrep_min_depth_option,0,agent_fail,600,0,0,0,89,145,88f1406c-17a5-42e6-b973-2bf1e68df3c9
+1,ripgrep_deadlock_visitor_panic,1,solved,542,25680,32561,1364864,45,93,b0431952-3970-4b6b-8ecf-e654a046e366
+2,ripgrep_skip_unreachable_ignore,1,solved,600,0,0,0,33,55,28293e5d-bb3e-460e-bb02-a5c038e07b3b
+3,clap_conflict_usage,1,solved,600,0,0,0,77,124,2c7dc15a-a003-4a42-aa5f-0e1b5dc13fff
+4,clap_complete_value_index,1,solved,317,42134,27717,3360933,73,134,9b1836c0-3d87-4fe0-b64d-5c24d94832be
+5,clap_complete_fish_quote,0,agent_fail,600,0,0,0,36,60,556194cb-3cac-407a-a717-6fd1767cc9ea

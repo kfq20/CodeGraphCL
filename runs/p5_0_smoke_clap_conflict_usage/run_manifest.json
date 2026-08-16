@@ -1,0 +1,9 @@
+{
+  "run_id": "p5_0_smoke_clap_conflict_usage",
+  "task_id": "clap_conflict_usage",
+  "image": "codegraphcl-ripgrep:rust",
+  "base_commit": "578cd43a^",
+  "gold_commit": "578cd43a",
+  "started_at": 1786715413,
+  "finished_at": 1786715511
+}

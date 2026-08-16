@@ -1,0 +1,9 @@
+{
+  "run_id": "p5_0_smoke_ripgrep_skip_unreachable_ignore",
+  "task_id": "ripgrep_skip_unreachable_ignore",
+  "image": "codegraphcl-ripgrep:rust",
+  "base_commit": "435f59f^",
+  "gold_commit": "435f59f",
+  "started_at": 1786717374,
+  "finished_at": 1786717420
+}

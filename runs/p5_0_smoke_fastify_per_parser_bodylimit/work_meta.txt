@@ -1,0 +1,2 @@
+work lives in pool: /vePFS-Mindverse/user/intern/fanqi/cgcl_pools/fs/p5_0_smoke_fastify_per_parser_bodylimit/work -> /pool/p5_0_smoke_fastify_per_parser_bodylimit/work
+container: cgcl-fs-box

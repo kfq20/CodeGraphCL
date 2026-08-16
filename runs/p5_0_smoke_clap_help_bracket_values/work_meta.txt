@@ -1,0 +1,2 @@
+work lives in pool: /vePFS-Mindverse/user/intern/fanqi/cgcl_pools/rg/p5_0_smoke_clap_help_bracket_values/work -> /pool/p5_0_smoke_clap_help_bracket_values/work
+container: cgcl-rg-box

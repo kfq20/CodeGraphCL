@@ -1,0 +1,4 @@
+task_idx,task_id,reward,outcome,elapsed_sec,input_tokens,output_tokens,cache_read_tokens,tool_uses,assistant_turns,session_id
+0,fastify_reply_hasheader,1,solved,34,90307,1535,113632,8,19,6cae8329-5449-455e-9750-ffe6de6911ce
+1,fastify_reply_removeheader,1,solved,59,42100,3490,276576,14,27,6d052a20-f807-4083-9a4c-0032b231d850
+2,fastify_reply_json_charset,0,timeout_failed,600,74195,3220,493120,21,44,6127b2fc-05ce-4ca9-8348-d6c0b07ea665
