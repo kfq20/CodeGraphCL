@@ -78,31 +78,116 @@ def _resolve_pool(cname: str) -> str:
     return "/tmp/cgcl_box_pool"
 
 
+_BUILD_CACHE_DIRS = ("node_modules", "target", ".venv", "venv", "__pypackages__")
+
+
+def _rematerialize_shared_work(cfg, work, cache_root):
+    """Replace the shared stateful work tree with THIS task's repo at base_commit.
+
+    The shared cwd path is constant across the whole stream (so --resume keeps working),
+    but the code tree is fully swapped per task: we blow away all contents (tracked files,
+    .git, untracked agent edits, staged verifier/) and re-copy from the task's own clone,
+    then checkout base_commit. Build caches (node_modules/target/...) are saved to and
+    restored from a per-repo side cache (keyed by repo+base_commit), so single-repo streams
+    reuse their install across tasks and avoid a cold npm/cargo install every swap.
+    """
+    from .materialize import _local_clone, _git
+    clone = _local_clone(cfg)
+    if not clone:
+        return False
+    repo_url = cfg.get("repository", {}).get("url", "")
+    repo_name = repo_url.rstrip("/").split("/")[-1] if repo_url else "anon"
+    base = cfg["repository"]["base_commit"]
+    cache_slot = cache_root / f"{repo_name}_{base[:10]}"
+    cache_slot.mkdir(parents=True, exist_ok=True)
+
+    # ensure the shared cwd exists (first task of a stream: work may not exist yet)
+    work.mkdir(parents=True, exist_ok=True)
+    # 1) save build caches currently in the work tree to the side cache
+    for d in _BUILD_CACHE_DIRS:
+        wd = work / d
+        if wd.exists() and wd.is_dir() and not wd.is_symlink():
+            cslot = cache_slot / d
+            if cslot.exists():
+                shutil.rmtree(cslot, ignore_errors=True)
+            try:
+                shutil.move(str(wd), str(cslot))
+            except Exception:
+                pass
+    # 2) wipe everything else under the shared cwd (tracked files, .git, agent edits, ...)
+    # IMPORTANT: handle symlinks explicitly — a symlink-to-dir (e.g. ripgrep's HomebrewFormula
+    # -> pkg/brew) reports is_dir()==True, so shutil.rmtree would follow it and wipe the LINK
+    # TARGET, leaving a dangling symlink that breaks the re-copy (Errno 17). Unlink symlinks
+    # in place instead; only rmtree real directories.
+    for p in list(work.iterdir()):
+        if p.is_symlink():
+            try: p.unlink()
+            except Exception: pass
+        elif p.is_dir():
+            shutil.rmtree(p, ignore_errors=True)
+        else:
+            try: p.unlink()
+            except Exception: pass
+    # 3) re-copy this task's repo (tracked tree + .git)
+    shutil.copytree(clone, work, dirs_exist_ok=True, ignore=shutil.ignore_patterns(".git"))
+    shutil.copytree(clone / ".git", work / ".git", dirs_exist_ok=True)
+    _git(["checkout", "-q", "-f", base], work)
+    _git(["clean", "-fdxq", "--", "tests/"], work)
+    # 4) restore build caches from the side cache into the fresh work tree
+    for d in _BUILD_CACHE_DIRS:
+        cslot = cache_slot / d
+        if cslot.exists() and cslot.is_dir():
+            try:
+                shutil.move(str(cslot), str(work / d))
+            except Exception:
+                pass
+    return True
+
+
 def _run_task_episode(cfg, td, cname, pool_host, model, stream_id, task_idx, condition,
-                      prev_session_id=None) -> dict:
+                      prev_session_id=None, shared_work=None, cache_root=None,
+                      out_root=None) -> dict:
     """Run one task as a claude agent episode. Returns result dict.
 
-    Reset: fresh session (no --resume)
-    Stateful: if prev_session_id, use --resume to continue the session
+    Reset: fresh session, per-task work dir.
+    Stateful: ONE shared cwd (shared_work) for the whole stream. The code tree is
+              rematerialized to each task's own repo+base_commit before its agent runs
+              (session carries, code edits do NOT). --resume works because cwd is constant.
+              Build caches are preserved across swaps via cache_root (per repo+base_commit).
     """
     from .materialize import _local_clone, _git, _container_exec
     clone = _local_clone(cfg)
     if not clone:
         return {"reward": "ERR", "outcome": "infra_fail", "error": "no clone"}
 
-    epid = f"{stream_id}_t{task_idx:02d}"
-    ep_host = pool_host / epid
-    if ep_host.exists():
-        shutil.rmtree(ep_host)
-    work = ep_host / "work"; work.mkdir(parents=True)
-    out = ep_host / "out"; out.mkdir()
-    container_work = f"/pool/{epid}/work"
-    shutil.copytree(clone, work, dirs_exist_ok=True, ignore=shutil.ignore_patterns(".git"))
-    shutil.copytree(clone / ".git", work / ".git", dirs_exist_ok=True)
-    _git(["checkout", "-q", "-f", cfg["repository"]["base_commit"]], work)
-    _git(["clean", "-fdxq", "--", "tests/"], work)
+    if condition == "stateful" and shared_work is not None:
+        # shared cwd for the whole stream — rematerialize to THIS task's repo+base
+        if not _rematerialize_shared_work(cfg, shared_work, cache_root):
+            return {"reward": "ERR", "outcome": "infra_fail", "error": "no clone"}
+        work = shared_work
+        # shared_work lives under the /stateful shared mount, so the container sees it at
+        # /stateful/<stream>/work (every repo container has /stateful bind-mounted in).
+        st_root = Path(os.environ.get("CGCL_STATEFUL_ROOT", "/vePFS-Mindverse/user/intern/fanqi/cgcl_stateful"))
+        if str(work).startswith(str(st_root)):
+            container_work = "/stateful" + str(work).replace(str(st_root), "", 1)
+        else:
+            container_work = f"/pool/{stream_id}_shared/work"
+        # per-task out dir lives under the namespaced out root created by cmd_run_stream
+        out = out_root / f"t{task_idx:02d}"; out.mkdir()
+    else:
+        epid = f"{stream_id}_t{task_idx:02d}"
+        ep_host = pool_host / epid
+        if ep_host.exists():
+            shutil.rmtree(ep_host)
+        work = ep_host / "work"; work.mkdir(parents=True)
+        out = ep_host / "out"; out.mkdir()
+        container_work = f"/pool/{epid}/work"
+        shutil.copytree(clone, work, dirs_exist_ok=True, ignore=shutil.ignore_patterns(".git"))
+        shutil.copytree(clone / ".git", work / ".git", dirs_exist_ok=True)
+        _git(["checkout", "-q", "-f", cfg["repository"]["base_commit"]], work)
+        _git(["clean", "-fdxq", "--", "tests/"], work)
 
-    # stage verifier
+    # stage verifier (re-stage each task into the work tree)
     vdir = td / "verifier"
     if vdir.exists():
         (work / "verifier").mkdir(exist_ok=True)
@@ -145,11 +230,17 @@ def _run_task_episode(cfg, td, cname, pool_host, model, stream_id, task_idx, con
         pass
 
     start = time.time()
-    agent_cmd = (f"{export} timeout 600 claude -p --model {model} --output-format stream-json "
+    # Use -s KILL: claude ignores SIGTERM on endpoint hangs, so a soft timeout leaves zombie
+    # processes that block the batch. SIGKILL is the only thing that reliably reaps them.
+    agent_cmd = (f"{export} timeout -s KILL 600 claude -p --model {model} --output-format stream-json "
                  f"--verbose {allow} {resume_flag} < {prompt_file}")
-    with open(out / "agent.jsonl", "w") as af, open(out / "agent.stderr", "w") as ef:
-        r = subprocess.run(agent_cmd, shell=True, cwd=str(work), stdout=af, stderr=ef, timeout=620)
-    rc = r.returncode
+    try:
+        with open(out / "agent.jsonl", "w") as af, open(out / "agent.stderr", "w") as ef:
+            r = subprocess.run(agent_cmd, shell=True, cwd=str(work), stdout=af, stderr=ef, timeout=620)
+        rc = r.returncode
+    except subprocess.TimeoutExpired:
+        # outer backstop: kill the whole process group if inner timeout -s KILL somehow missed
+        rc = 137
     elapsed = int(time.time() - start)
 
     # extract session_id from agent.jsonl (first system event)
@@ -244,17 +335,46 @@ def cmd_run_stream(args):
     results = []
     prev_session = None
 
+    # For stateful: ONE shared cwd for the whole stream (so --resume keeps working; claude
+    # sessions are keyed by cwd). The shared cwd lives under the /stateful shared mount,
+    # which is bind-mounted into EVERY repo container — so a multi-repo stream can run
+    # each task's verifier in its own toolchain container while keeping the session on a
+    # constant host path. The code tree is rematerialized to each task's repo+base_commit.
+    shared_work = None
+    cache_root = None
+    out_root = None
+    if args.condition == "stateful":
+        st_root = Path(os.environ.get("CGCL_STATEFUL_ROOT",
+                                        "/vePFS-Mindverse/user/intern/fanqi/cgcl_stateful"))
+        # namespace by stream+model+seed so concurrent/sequential runs of the same stream
+        # under different models don't clobber each other's shared cwd or out dirs
+        ns = f"{args.stream_id}__{args.model.replace('/', '_')}__seed{args.seed}"
+        shared_host = st_root / ns
+        if shared_host.exists():
+            shutil.rmtree(shared_host)
+        shared_work = shared_host / "work"
+        shared_work.mkdir(parents=True)
+        out_root = st_root / f"{ns}_out"
+        if out_root.exists():
+            shutil.rmtree(out_root)
+        out_root.mkdir(parents=True)
+        # per-repo build-cache dir (shared across streams; cache slots are keyed by repo+base)
+        cache_root = st_root / "_buildcache"
+        cache_root.mkdir(parents=True, exist_ok=True)
+        print(f"  stateful shared work: {shared_work}")
+
     for idx, tid in enumerate(task_ids):
         cfg, td = _load_task(tid)
-        image = cfg["environment"]["image"]
-        cname = _find_container(image)
+        cname = _find_container(cfg["environment"]["image"])
         if not cname:
-            print(f"  no container for {image}"); return 1
+            print(f"  no container for {cfg['environment']['image']}"); return 1
         pool_host = Path(_resolve_pool(cname))
 
         print(f"  [{idx+1}/{len(task_ids)}] {tid} (cond={args.condition})...", end="", flush=True)
         r = _run_task_episode(cfg, td, cname, pool_host, args.model, args.stream_id, idx,
-                              args.condition, prev_session_id=prev_session)
+                              args.condition, prev_session_id=prev_session,
+                              shared_work=shared_work, cache_root=cache_root,
+                              out_root=out_root)
         results.append(r)
 
         # for stateful: carry the session_id forward
