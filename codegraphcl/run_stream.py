@@ -187,12 +187,10 @@ def _run_task_episode(cfg, td, cname, pool_host, model, stream_id, task_idx, con
         _git(["checkout", "-q", "-f", cfg["repository"]["base_commit"]], work)
         _git(["clean", "-fdxq", "--", "tests/"], work)
 
-    # stage verifier (re-stage each task into the work tree)
-    vdir = td / "verifier"
-    if vdir.exists():
-        (work / "verifier").mkdir(exist_ok=True)
-        for f in vdir.iterdir():
-            if f.is_file(): shutil.copy2(f, work / "verifier" / f.name)
+    # NOTE: verifier/ is deliberately NOT staged here. It is injected AFTER the agent phase
+    # (see "inject verifier" below) so the agent cannot read verifier/test.sh comments that
+    # leak the gold mechanism or anti-hardcoding axes. This matches harbor's isolation
+    # (agent phase sees no /tests; verifier phase gets its own tests).
 
     # build prompt
     instr = (td / cfg["instruction"]["path"]).read_text().strip()
@@ -277,7 +275,13 @@ def _run_task_episode(cfg, td, cname, pool_host, model, stream_id, task_idx, con
         f"session_id={session_id}\ninput_tokens={in_t}\noutput_tokens={out_t}\n"
         f"cache_read_tokens={cr}\ntool_uses={tools}\nassistant_turns={turns}\n")
 
-    # inject verifier + score
+    # inject verifier + score — stage verifier AFTER the agent phase so the agent could
+    # not read verifier/test.sh (which leaks the gold mechanism in comments).
+    vdir = td / "verifier"
+    if vdir.exists():
+        (work / "verifier").mkdir(exist_ok=True)
+        for f in vdir.iterdir():
+            if f.is_file(): shutil.copy2(f, work / "verifier" / f.name)
     vpatch_rel = cfg.get("patches", {}).get("verifier")
     if vpatch_rel:
         _git(["apply", str(td / vpatch_rel)], work)
